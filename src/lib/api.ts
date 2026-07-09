@@ -64,6 +64,7 @@ interface VenueDTO {
   id: string; name: string; address?: string; city?: string | null; postcode?: string;
   location_object?: { lat: number; lng: number }; latitude?: number; longitude?: number;
   website?: string; profileImageUrl?: string | null;
+  socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string;
 }
 export function toVenue(v: VenueDTO): Venue | null {
   const loc = v.location_object ?? (typeof v.latitude === "number" && typeof v.longitude === "number" ? { lat: v.latitude, lng: v.longitude } : null);
@@ -78,6 +79,7 @@ export function toVenue(v: VenueDTO): Venue | null {
 interface ArtistDTO {
   id: string; name: string; genres?: string[]; artist_type?: string; artistType?: string;
   actType?: string[]; location?: string; profileImageUrl?: string | null; bio?: string;
+  socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string; websiteUrl?: string; spotifyUrl?: string;
 }
 export function toArtist(a: ArtistDTO): Artist {
   return {
