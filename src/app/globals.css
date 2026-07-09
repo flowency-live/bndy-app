@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============ DESIGN TOKENS ============ */
+:root {
+  /* brand — rgb triplets so Tailwind opacity modifiers work; --x for direct CSS */
+  --orange-rgb: 255 122 26;
+  --pink-rgb: 255 46 136;
+  --cyan-rgb: 25 211 245;
+  --violet-rgb: 139 91 255;
+  --orange: rgb(var(--orange-rgb));
+  --orange-hot: #ffe2c4;
+  --pink: rgb(var(--pink-rgb));
+  --pink-hot: #ffd0e4;
+  --cyan: rgb(var(--cyan-rgb));
+  --cyan-hot: #cdf4ff;
+  --violet: rgb(var(--violet-rgb));
+
+  /* light theme (default) */
+  --ink-rgb: 244 246 251;
+  --ink: rgb(var(--ink-rgb));
+  --surface: #ffffff;
+  --card: #ffffff;
+  --line: rgba(10, 14, 24, 0.10);
+  --line-hi: rgba(10, 14, 24, 0.16);
+  --txt: #0c1018;
+  --dim: #5b6376;
+  --dim2: #8b93a9;
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-hi: rgba(255, 255, 255, 0.9);
+  --shadow: 0 6px 24px rgba(20, 24, 40, 0.10);
+}
+
+.dark {
+  --ink-rgb: 5 6 11;
+  --ink: rgb(var(--ink-rgb));
+  --surface: #0a0d17;
+  --card: #0e121d;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-hi: rgba(255, 255, 255, 0.16);
+  --txt: #f3f6fc;
+  --dim: #8b93a9;
+  --dim2: #5b6376;
+  --glass: rgba(12, 16, 26, 0.72);
+  --glass-hi: rgba(18, 23, 38, 0.9);
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+html, body { padding: 0; margin: 0; }
+body {
+  background: var(--ink);
+  color: var(--txt);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============ HELPERS ============ */
+.glass { background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.glass-hi { background: var(--glass-hi); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tnum { font-variant-numeric: tabular-nums; }
+.brand-glow { text-shadow: 0 0 16px color-mix(in srgb, var(--orange) 70%, transparent); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* maplibre theming */
+.maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--ink) 55%, transparent) !important; font-size: 9px; }
+.maplibregl-ctrl-attrib a { color: var(--dim2) !important; }
+.maplibregl-ctrl-group {
+  background: var(--glass) !important; border: 1px solid var(--line) !important;
+  backdrop-filter: blur(14px); box-shadow: var(--shadow) !important;
+}
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--line) !important; }
+.dark .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg) brightness(1.6) opacity(0.8); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
