@@ -3,7 +3,8 @@
 // Skin picker — the user-facing "choose your skin" control.
 // Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md §3.5
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Sheet } from "@/components/ui/Sheet";
 import { useTheme } from "@/lib/theme";
 import { APP_SKINS, SKIN_ORDER, type AppSkinId } from "@/lib/appSkins";
@@ -26,6 +27,8 @@ function Swatch({ dots, size = 18 }: { dots: [string, string, string]; size?: nu
 export function SkinControl({ variant }: { variant: "sidebar" | "fab" }) {
   const [open, setOpen] = useState(false);
   const [wiping, setWiping] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const { appSkin, setAppSkin } = useTheme();
   const current = APP_SKINS[appSkin];
 
@@ -62,9 +65,10 @@ export function SkinControl({ variant }: { variant: "sidebar" | "fab" }) {
         </button>
       )}
 
-      {wiping && <div className="skin-wipe go" />}
-
-      <Sheet open={open} onClose={() => setOpen(false)}>
+      {mounted && createPortal(
+        <>
+          {wiping && <div className="skin-wipe go" />}
+          <Sheet open={open} onClose={() => setOpen(false)}>
         <h2 className="disp text-lg text-txt">Choose your skin</h2>
         <p className="mb-4 mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-dim2">
           Same gigs · your vibe · switches live
@@ -98,7 +102,10 @@ export function SkinControl({ variant }: { variant: "sidebar" | "fab" }) {
             );
           })}
         </div>
-      </Sheet>
+          </Sheet>
+        </>,
+        document.body,
+      )}
     </>
   );
 }
