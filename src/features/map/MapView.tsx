@@ -125,13 +125,28 @@ export function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { const m = mapRef.current; if (!m || !readyRef.current) return; (m.getSource("gigs") as maplibregl.GeoJSONSource | undefined)?.setData(gigGeo as GeoJSON.GeoJSON); (m.getSource("vens") as maplibregl.GeoJSONSource | undefined)?.setData(venGeo as GeoJSON.GeoJSON); }, [gigGeo, venGeo]);
+  useEffect(() => {
+    const m = mapRef.current; if (!m || !readyRef.current) return;
+    // self-heal: if a style swap dropped the sources, rebuild instead of no-op
+    if (!m.getSource("gigs") || !m.getSource("vens")) { if (m.isStyleLoaded()) ensureSourcesAndLayers(m); return; }
+    (m.getSource("gigs") as maplibregl.GeoJSONSource).setData(gigGeo as GeoJSON.GeoJSON);
+    (m.getSource("vens") as maplibregl.GeoJSONSource).setData(venGeo as GeoJSON.GeoJSON);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gigGeo, venGeo]);
   useEffect(() => { const m = mapRef.current; if (m && readyRef.current) applyMode(m); }, [mode]);
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
-    const onData = () => { if (m.isStyleLoaded()) { m.off("styledata", onData); ensureSourcesAndLayers(m); } };
-    m.on("styledata", onData);
+    // setStyle wipes sources/layers/images. styledata can fire BEFORE the new
+    // style is fully loaded (and then never again), so poll until it is.
+    let cancelled = false;
+    const rebuild = () => {
+      if (cancelled) return;
+      if (m.isStyleLoaded()) ensureSourcesAndLayers(m);
+      else window.setTimeout(rebuild, 80);
+    };
     m.setStyle(basemapFor(appSkin));
+    m.once("styledata", rebuild);
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appSkin]);
 

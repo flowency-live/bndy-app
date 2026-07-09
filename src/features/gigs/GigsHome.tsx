@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
 import { Search, ChevronDown, Check } from "lucide-react";
 import { useUpcomingGigs, useArtistImageMap } from "@/lib/hooks";
 import { useGeolocation } from "@/lib/useGeolocation";
@@ -44,13 +44,16 @@ export function GigsHome() {
   const usingCurrent = origin.loc === null;
 
   // location + ticket + text filtered, ignoring the date/period filter — feeds the calendar's day dots
+  // deferred: keystrokes/slider stay responsive; filtering runs at low priority
+  const dq = useDeferredValue(q);
+  const dRadius = useDeferredValue(radius);
   const eligible = useMemo(() => {
-    const query = q.trim().toLowerCase();
+    const query = dq.trim().toLowerCase();
     let out = gigs.filter((g) => g.date >= today);
     if (!showTicketed) out = out.filter((g) => !g.ticketed);
     if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title}`.toLowerCase().includes(query));
-    return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= radius);
-  }, [gigs, showTicketed, q, originLoc, radius, today]);
+    return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= dRadius);
+  }, [gigs, showTicketed, dq, originLoc, dRadius, today]);
 
   const dayCounts = useMemo(() => { const m = new Map<string, number>(); for (const x of eligible) m.set(x.gig.date, (m.get(x.gig.date) ?? 0) + 1); return m; }, [eligible]);
 

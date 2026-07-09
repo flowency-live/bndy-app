@@ -30,8 +30,12 @@ export function basemapFor(skin: AppSkinId): string {
 }
 
 /* ---------------- tokens → layer colours ---------------- */
-function cssVar(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function readVars(names: string[]): Record<string, string> {
+  // single getComputedStyle call — repeated calls force style recalc (reflow)
+  const cs = getComputedStyle(document.documentElement);
+  const out: Record<string, string> = {};
+  for (const n of names) out[n] = cs.getPropertyValue(n).trim();
+  return out;
 }
 function hexToRgba(hex: string, a: number): string {
   const h = hex.replace("#", "");
@@ -42,13 +46,14 @@ function hexToRgba(hex: string, a: number): string {
 }
 
 export function readSkinColors(): SkinColors {
-  const acc = cssVar("--acc") || "#ff7a1a";
-  const onAcc = cssVar("--on-acc") || "#ffffff";
-  const acc2 = cssVar("--acc2") || "#19d3f5";
-  const onAcc2 = cssVar("--on-acc2") || "#ffffff";
-  const card = cssVar("--card") || "#0e121d";
-  const idle = cssVar("--dim2") || "#8b93a9";
-  const surface = cssVar("--surface") || card;
+  const v = readVars(["--acc", "--on-acc", "--acc2", "--on-acc2", "--card", "--dim2", "--surface"]);
+  const acc = v["--acc"] || "#ff7a1a";
+  const onAcc = v["--on-acc"] || "#ffffff";
+  const acc2 = v["--acc2"] || "#19d3f5";
+  const onAcc2 = v["--on-acc2"] || "#ffffff";
+  const card = v["--card"] || "#0e121d";
+  const idle = v["--dim2"] || "#8b93a9";
+  const surface = v["--surface"] || card;
   return {
     gigGlow: acc,
     gigCore: onAcc,
@@ -82,7 +87,12 @@ function diamondImage(fill: string, border: string, hole: string, sizePx = 30): 
   const rad = px * 0.09;               // corner rounding
   const draw = (s: number) => {
     ctx.beginPath();
-    ctx.roundRect(-s / 2, -s / 2, s, s, rad);
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(-s / 2, -s / 2, s, s, rad);
+    } else {
+      // fallback: plain square path for browsers without roundRect
+      ctx.rect(-s / 2, -s / 2, s, s);
+    }
   };
   // border
   draw(side);
@@ -104,14 +114,19 @@ export const DIA_IDLE = "bndy-dia-idle";
 
 /** (Re)register diamond icons for the current skin. Call before adding layers. */
 export function registerDiamonds(map: maplibregl.Map, colors: SkinColors): void {
-  const border = cssVar("--pin-bd") || "#ffffff";
-  const hole = cssVar("--surface") || "#0e121d";
+  const v = readVars(["--pin-bd", "--surface"]);
+  const border = v["--pin-bd"] || "#ffffff";
+  const hole = v["--surface"] || "#0e121d";
   const entries: [string, ImageData][] = [
     [DIA_LIVE, diamondImage(colors.venLive, border, hole)],
     [DIA_IDLE, diamondImage(colors.venIdle, border, hole)],
   ];
   for (const [name, img] of entries) {
-    if (map.hasImage(name)) map.removeImage(name);
-    map.addImage(name, img, { pixelRatio: 2 });
+    try {
+      if (map.hasImage(name)) map.removeImage(name);
+      map.addImage(name, img, { pixelRatio: 2 });
+    } catch (err) {
+      console.error("[bndy-map] diamond icon registration failed:", err);
+    }
   }
 }

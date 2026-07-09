@@ -21,7 +21,7 @@ export function LiveTicker() {
     return parts.join(" ★ ") + " ★ ";
   }, [gigs, venues]);
 
-  const row = text.repeat(4);
+  const row = text.repeat(2);
   return (
     <div className="bndy-ticker" aria-hidden="true">
       <div className="bndy-ticker-in">
