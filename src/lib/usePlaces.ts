@@ -4,8 +4,25 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+// Minimal types for Google Places API (no @types/google.maps needed)
+interface GoogleMaps {
+  maps: {
+    places: {
+      AutocompleteService: new () => GoogleAutocompleteService;
+      PlacesService: new (el: HTMLElement) => GooglePlacesService;
+      AutocompleteSessionToken: new () => unknown;
+    };
+  };
+}
+interface GoogleAutocompleteService {
+  getPlacePredictions(req: unknown, cb: (preds: Array<{ place_id: string; description: string }> | null, status: string) => void): void;
+}
+interface GooglePlacesService {
+  getDetails(req: unknown, cb: (place: { geometry?: { location: { lat(): number; lng(): number } }; name?: string; formatted_address?: string } | null, status: string) => void): void;
+}
+
 declare global {
-  interface Window { google?: unknown; __bndyPlaces?: Promise<void> }
+  interface Window { google?: GoogleMaps; __bndyPlaces?: Promise<void> }
 }
 
 const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -32,20 +49,19 @@ export interface ResolvedPlace { lat: number; lng: number; label: string }
 export function usePlaces() {
   const available = !!KEY;
   const [ready, setReady] = useState(false);
-  const svc = useRef<any>(null);
-  const details = useRef<any>(null);
-  const token = useRef<any>(null);
+  const svc = useRef<GoogleAutocompleteService | null>(null);
+  const details = useRef<GooglePlacesService | null>(null);
+  const token = useRef<unknown>(null);
 
   useEffect(() => {
     if (!KEY) return;
     let alive = true;
     loadGoogle()
       .then(() => {
-        if (!alive) return;
-        const g = window.google;
-        svc.current = new g.maps.places.AutocompleteService();
-        details.current = new g.maps.places.PlacesService(document.createElement("div"));
-        token.current = new g.maps.places.AutocompleteSessionToken();
+        if (!alive || !window.google) return;
+        svc.current = new window.google.maps.places.AutocompleteService();
+        details.current = new window.google.maps.places.PlacesService(document.createElement("div"));
+        token.current = new window.google.maps.places.AutocompleteSessionToken();
         setReady(true);
       })
       .catch(() => setReady(false));
@@ -57,7 +73,7 @@ export function usePlaces() {
       if (!svc.current || !input.trim()) return resolve([]);
       svc.current.getPlacePredictions(
         { input, componentRestrictions: { country: "gb" }, types: ["(cities)"], sessionToken: token.current },
-        (preds: any[] | null, status: string) => resolve(status === "OK" && preds ? preds.map((p) => ({ id: p.place_id as string, label: p.description as string })) : []),
+        (preds, status) => resolve(status === "OK" && preds ? preds.map((p) => ({ id: p.place_id, label: p.description })) : []),
       );
     });
   }, []);
@@ -67,10 +83,10 @@ export function usePlaces() {
       if (!details.current) return resolve(null);
       details.current.getDetails(
         { placeId, fields: ["geometry", "name", "formatted_address"], sessionToken: token.current },
-        (place: any, status: string) => {
+        (place, status) => {
           if (status === "OK" && place?.geometry?.location) {
             resolve({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng(), label: place.name || place.formatted_address || "Location" });
-            token.current = new window.google.maps.places.AutocompleteSessionToken();
+            if (window.google) token.current = new window.google.maps.places.AutocompleteSessionToken();
           } else resolve(null);
         },
       );
