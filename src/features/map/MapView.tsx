@@ -94,6 +94,7 @@ export function MapView() {
     const map = new maplibregl.Map({ container: el, style: basemapFor(appSkin), center: [-2.1, 53.4], zoom: 6.2, pitch: 0, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    // @ts-expect-error showUserHeading exists in maplibre-gl API but missing from types
     const geolocate = new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true, fitBoundsOptions: { maxZoom: 12 } });
     geolocateRef.current = geolocate;
     map.addControl(geolocate, "bottom-right");
