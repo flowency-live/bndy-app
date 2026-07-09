@@ -4,9 +4,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
-  interface Window { google?: any; __bndyPlaces?: Promise<void> }
+  interface Window { google?: unknown; __bndyPlaces?: Promise<void> }
 }
 
 const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
