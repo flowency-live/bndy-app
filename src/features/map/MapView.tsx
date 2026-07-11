@@ -26,6 +26,7 @@ export function MapView() {
   const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null);
   const readyRef = useRef(false);
   const rafRef = useRef(0);
+  const prevBasemapRef = useRef<string | null>(null);
   const { mode: theme, toggle, appSkin } = useTheme();
   const { location } = useGeolocation();
 
@@ -91,7 +92,9 @@ export function MapView() {
   useEffect(() => {
     const el = containerRef.current;
     if (!el || mapRef.current) return;
-    const map = new maplibregl.Map({ container: el, style: basemapFor(appSkin), center: [-2.1, 53.4], zoom: 6.2, pitch: 0, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
+    const initialBasemap = basemapFor(appSkin);
+    prevBasemapRef.current = initialBasemap;
+    const map = new maplibregl.Map({ container: el, style: initialBasemap, center: [-2.1, 53.4], zoom: 6.2, pitch: 0, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     // @ts-expect-error showUserHeading exists in maplibre-gl API but missing from types
@@ -139,16 +142,26 @@ export function MapView() {
   useEffect(() => { const m = mapRef.current; if (m && readyRef.current) applyMode(m); }, [mode]);
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
-    // setStyle wipes sources/layers/images. styledata can fire BEFORE the new
-    // style is fully loaded (and then never again), so poll until it is.
+    const newUrl = basemapFor(appSkin);
+    // If basemap URL unchanged (skins sharing a basemap), skip setStyle entirely
+    // and just rebuild layers with new CSS tokens. This avoids the race where
+    // styledata fires synchronously before m.once() attaches.
+    if (newUrl === prevBasemapRef.current) {
+      const poll = () => { if (m.isStyleLoaded()) ensureSourcesAndLayers(m); else window.setTimeout(poll, 80); };
+      poll();
+      return;
+    }
+    // Basemap changed: setStyle wipes sources/layers/images. Attach listener
+    // BEFORE calling setStyle to avoid missing a synchronous styledata event.
+    prevBasemapRef.current = newUrl;
     let cancelled = false;
     const rebuild = () => {
       if (cancelled) return;
       if (m.isStyleLoaded()) ensureSourcesAndLayers(m);
       else window.setTimeout(rebuild, 80);
     };
-    m.setStyle(basemapFor(appSkin));
     m.once("styledata", rebuild);
+    m.setStyle(newUrl);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appSkin]);
