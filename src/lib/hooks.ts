@@ -45,8 +45,6 @@ export function useArtistImageMap(): Map<string, string> {
   }, [artists]);
 }
 
-const GEO_ENABLED = process.env.NEXT_PUBLIC_GEO_EVENTS === "1";
-
 /** Round bbox to 2dp so tiny pans hit cache. */
 function roundBBox(bbox: BBox): BBox {
   return {
@@ -57,13 +55,13 @@ function roundBBox(bbox: BBox): BBox {
   };
 }
 
-/** Fetch gigs within a viewport bbox (geo endpoint). Only enabled when NEXT_PUBLIC_GEO_EVENTS=1. */
+/** Fetch gigs within a viewport bbox (geo endpoint). */
 export function useGigsInView(bbox: BBox | null, startDate: string, endDate: string) {
   const rounded = bbox ? roundBBox(bbox) : null;
   return useQuery({
     queryKey: ["gigs", "geo", rounded?.west, rounded?.south, rounded?.east, rounded?.north, startDate, endDate],
     queryFn: () => fetchGigsInView(rounded!, startDate, endDate),
-    enabled: GEO_ENABLED && !!rounded,
+    enabled: !!rounded,
     staleTime: MIN,
     gcTime: 5 * MIN,
     placeholderData: keepPreviousData,

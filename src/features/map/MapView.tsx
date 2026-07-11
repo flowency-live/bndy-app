@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import { Moon, Sun } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
 import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
-import { fetchEventsBatch, type BBox, type LightEvent } from "@/lib/api";
+import { fetchEventsBatch, type BBox } from "@/lib/api";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { useTheme } from "@/lib/theme";
 import { distanceMiles } from "@/domain/geo";
@@ -20,7 +20,6 @@ import { basemapFor, registerDiamonds, tokenSkin } from "./skinMap";
 import { ALL_LAYERS, GIG_LAYERS, VEN_LAYERS, buildGigLayers, buildVenueLayers } from "./layers";
 
 type Mode = "events" | "venues";
-const GEO_ENABLED = process.env.NEXT_PUBLIC_GEO_EVENTS === "1";
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -46,9 +45,9 @@ export function MapView() {
     }, 300);
   }, []);
 
-  // Data fetching: geo endpoint (flag on) or full gigs (flag off)
+  // Data fetching: geo endpoint for map pins, full gigs for venue sheet
   const { data: gigs = [] } = useUpcomingGigs();
-  const { data: geoData } = useGigsInView(GEO_ENABLED ? bbox : null, today, endDate);
+  const { data: geoData } = useGigsInView(bbox, today, endDate);
   const lightEvents = geoData?.events ?? [];
 
   const { data: venues = [] } = useVenues();
@@ -65,39 +64,29 @@ export function MapView() {
   const venueByIdRef = useRef(venueById); venueByIdRef.current = venueById;
   // venueIdsLive needs full gigs for venue mode (geo endpoint is for gig pins only)
   const venueIdsLive = useMemo(() => new Set(gigs.map((g) => g.venueId)), [gigs]);
-  // shownCount: when geo enabled, count lightEvents; otherwise count filtered gigs
-  const shownCount = useMemo(() => {
-    if (GEO_ENABLED) return lightEvents.filter((e) => matchesMapDate(e.date, sel, today)).length;
-    return gigs.reduce((n, g) => (matchesMapDate(g.date, sel, today) ? n + 1 : n), 0);
-  }, [gigs, lightEvents, sel, today]);
+  // shownCount: count lightEvents in viewport matching date filter
+  const shownCount = useMemo(
+    () => lightEvents.filter((e) => matchesMapDate(e.date, sel, today)).length,
+    [lightEvents, sel, today],
+  );
 
   const venueGigs = useMemo(() => {
     if (!selectedVenue) return [];
     return gigs.filter((g) => g.venueId === selectedVenue.id).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`));
   }, [selectedVenue, gigs]);
 
-  // gigGeo: when flag on, build from lightEvents; otherwise from full gigs
+  // gigGeo: build from lightEvents (geo endpoint)
   const gigGeo = useMemo<FeatureCollection<Point>>(() => {
-    if (GEO_ENABLED) {
-      const filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
-      return {
-        type: "FeatureCollection",
-        features: filtered.map((e) => ({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [e.geoLng, e.geoLat] },
-          properties: { id: e.id, tonight: e.date === today ? 1 : 0 },
-        })),
-      };
-    }
+    const filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     return {
       type: "FeatureCollection",
-      features: gigs.filter((g) => matchesMapDate(g.date, sel, today)).map((g) => ({
+      features: filtered.map((e) => ({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [g.location.lng, g.location.lat] },
-        properties: { id: g.id, tonight: g.date === today ? 1 : 0 },
+        geometry: { type: "Point", coordinates: [e.geoLng, e.geoLat] },
+        properties: { id: e.id, tonight: e.date === today ? 1 : 0 },
       })),
     };
-  }, [gigs, lightEvents, sel, today]);
+  }, [lightEvents, sel, today]);
   const venGeo = useMemo<FeatureCollection<Point>>(
     () => ({ type: "FeatureCollection", features: venues.map((v) => ({ type: "Feature", geometry: { type: "Point", coordinates: [v.location.lng, v.location.lat] }, properties: { id: v.id, live: venueIdsLive.has(v.id) ? 1 : 0 } })) }),
     [venues, venueIdsLive],
@@ -129,17 +118,12 @@ export function MapView() {
       const f = e.features?.[0];
       if (!f || f.properties?.point_count) return;
       const id = (f.properties as { id: string }).id;
-      if (GEO_ENABLED) {
-        // Fetch full gig via batch endpoint
-        setLoadingGig(true);
-        fetchEventsBatch([id])
-          .then((gigs) => { if (gigs[0]) setSelected(gigs[0]); })
-          .catch(() => {})
-          .finally(() => setLoadingGig(false));
-      } else {
-        const g = gigByIdRef.current[id];
-        if (g) setSelected(g);
-      }
+      // Fetch full gig via batch endpoint
+      setLoadingGig(true);
+      fetchEventsBatch([id])
+        .then((gigs) => { if (gigs[0]) setSelected(gigs[0]); })
+        .catch(() => {})
+        .finally(() => setLoadingGig(false));
     };
     map.on("click", "g-hit", gigClick); map.on("click", "g-core", gigClick);
     const venClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const v = venueByIdRef.current[(f.properties as { id: string }).id]; if (v) { map.easeTo({ center: [v.location.lng, v.location.lat], duration: 500, offset: [0, -120] }); setSelectedVenue(v); } } };
@@ -182,11 +166,9 @@ export function MapView() {
       ensureSourcesAndLayers(map);
       wireInteractions(map);
       startPulse(map);
-      // Geo endpoint: track viewport bbox for fetching
-      if (GEO_ENABLED) {
-        updateBbox(map);
-        map.on("moveend", () => updateBbox(map));
-      }
+      // Track viewport bbox for geo-based fetching
+      updateBbox(map);
+      map.on("moveend", () => updateBbox(map));
       setTimeout(() => { try { geolocate.trigger(); } catch { /* ignore */ } }, 600);
     });
     map.on("error", (e) => { console.error("[bndy-map] maplibre error:", e?.error?.message || e); });
