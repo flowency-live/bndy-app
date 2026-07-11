@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
-/** Responsive overlay: bottom sheet on mobile, centered modal on desktop. */
+/** Responsive overlay: bottom sheet on mobile, centered modal on desktop.
+ *  Portals to <body>: an ancestor with backdrop-filter/transform otherwise becomes
+ *  the containing block for position:fixed and traps the sheet inside it. */
 export function Sheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -12,7 +17,8 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+  return createPortal(
     <div className={cn("fixed inset-0 z-50", open ? "" : "pointer-events-none")} aria-hidden={!open}>
       <div
         onClick={onClose}
@@ -35,6 +41,7 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

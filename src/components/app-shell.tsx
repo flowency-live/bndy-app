@@ -12,15 +12,15 @@ import { Disclaimer } from "@/components/Disclaimer";
 import type { ReactNode } from "react";
 
 const NAV = [
-  { key: "gigs", label: "Gigs", href: "/", icon: Music },
   { key: "map", label: "Map", href: "/map", icon: MapIcon },
+  { key: "gigs", label: "Gigs", href: "/gigs", icon: Music },
   { key: "artists", label: "Artists", href: "/artists", icon: Users },
 ] as const;
 
 function activeKey(path: string): string {
   if (path.startsWith("/artists")) return "artists";
-  if (path.startsWith("/map")) return "map";
-  return "gigs";
+  if (path.startsWith("/gigs")) return "gigs";
+  return "map";
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

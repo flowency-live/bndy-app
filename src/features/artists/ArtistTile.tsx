@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { avatarGradient, initials } from "@/domain/avatar";
 import type { Artist } from "@/domain/types";
 
-export function ArtistTile({ artist, gigging }: { artist: Artist; gigging?: boolean }) {
+export const ArtistTile = memo(function ArtistTile({ artist, gigging }: { artist: Artist; gigging?: boolean }) {
   const [failed, setFailed] = useState(false);
   const showImg = !!artist.profileImageUrl && !failed;
   const act = artist.actType?.[0];
@@ -42,4 +42,4 @@ export function ArtistTile({ artist, gigging }: { artist: Artist; gigging?: bool
       </div>
     </Link>
   );
-}
+});

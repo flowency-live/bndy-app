@@ -97,7 +97,7 @@ export function MapDateControl({ sel, onChange, gigs, today }: { sel: MapDateSel
           })}
         </div>
 
-        <Link href="/" className="mt-5 flex items-center justify-center gap-1.5 rounded-2xl border border-line bg-white/5 py-3 text-[13px] font-bold text-dim">
+        <Link href="/gigs" className="mt-5 flex items-center justify-center gap-1.5 rounded-2xl border border-line bg-white/5 py-3 text-[13px] font-bold text-dim">
           Planning further ahead? Browse all gigs <ArrowRight size={15} />
         </Link>
       </Sheet>

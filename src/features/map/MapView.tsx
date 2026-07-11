@@ -102,7 +102,10 @@ export function MapView() {
     ro.observe(el);
     requestAnimationFrame(() => map.resize());
     const startPulse = (m: maplibregl.Map) => {
+      let last = 0;
       const frame = (t: number) => {
+        if (document.hidden || t - last < 33) { rafRef.current = requestAnimationFrame(frame); return; }
+        last = t;
         if (m.getLayer("g-ping") && (m.getLayoutProperty("g-ping", "visibility") ?? "visible") !== "none") {
           const p = (t % 1600) / 1600;
           m.setPaintProperty("g-ping", "circle-radius", 10 + p * 22);

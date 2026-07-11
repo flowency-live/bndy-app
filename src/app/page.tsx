@@ -1,5 +1,5 @@
-import { GigsHome } from "@/features/gigs/GigsHome";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return <GigsHome />;
+  redirect("/map");
 }
