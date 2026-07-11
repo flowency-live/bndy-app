@@ -89,6 +89,37 @@ export function toArtist(a: ArtistDTO): Artist {
   };
 }
 
+/* ---------- geo-based event fetching (map viewport) ---------- */
+export interface LightEvent {
+  id: string;
+  artistId?: string;
+  venueId: string;
+  date: string;
+  startTime?: string;
+  geoLat: number;
+  geoLng: number;
+}
+
+export interface BBox { west: number; south: number; east: number; north: number }
+
+export async function fetchGigsInView(bbox: BBox, startDate: string, endDate: string): Promise<{ events: LightEvent[]; truncated: boolean }> {
+  const bboxParam = `${bbox.west},${bbox.south},${bbox.east},${bbox.north}`;
+  const data = await get<{ events?: LightEvent[]; truncated?: boolean }>(`/api/events/public/geo?bbox=${bboxParam}&startDate=${startDate}&endDate=${endDate}`);
+  return { events: data.events || [], truncated: !!data.truncated };
+}
+
+export async function fetchEventsBatch(ids: string[]): Promise<Gig[]> {
+  if (ids.length === 0) return [];
+  const res = await fetch(`${BASE}/api/events/batch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventIds: ids.slice(0, 100) }),
+  });
+  if (!res.ok) throw new Error(`POST /api/events/batch → ${res.status}`);
+  const data = await res.json() as { events?: GigDTO[] };
+  return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
+}
+
 /* ---------- endpoints ---------- */
 export async function fetchGigs(params?: { startDate?: string; endDate?: string }): Promise<Gig[]> {
   const q = new URLSearchParams();

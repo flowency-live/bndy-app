@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchVenue, fetchVenueGigs, fetchVenues } from "./api";
+import { fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
 import { todayISO, addDaysISO } from "@/domain/dates";
 
 const MIN = 60 * 1000;
@@ -43,4 +43,29 @@ export function useArtistImageMap(): Map<string, string> {
     for (const a of artists) if (a.profileImageUrl) m.set(a.id, a.profileImageUrl);
     return m;
   }, [artists]);
+}
+
+const GEO_ENABLED = process.env.NEXT_PUBLIC_GEO_EVENTS === "1";
+
+/** Round bbox to 2dp so tiny pans hit cache. */
+function roundBBox(bbox: BBox): BBox {
+  return {
+    west: Math.round(bbox.west * 100) / 100,
+    south: Math.round(bbox.south * 100) / 100,
+    east: Math.round(bbox.east * 100) / 100,
+    north: Math.round(bbox.north * 100) / 100,
+  };
+}
+
+/** Fetch gigs within a viewport bbox (geo endpoint). Only enabled when NEXT_PUBLIC_GEO_EVENTS=1. */
+export function useGigsInView(bbox: BBox | null, startDate: string, endDate: string) {
+  const rounded = bbox ? roundBBox(bbox) : null;
+  return useQuery({
+    queryKey: ["gigs", "geo", rounded?.west, rounded?.south, rounded?.east, rounded?.north, startDate, endDate],
+    queryFn: () => fetchGigsInView(rounded!, startDate, endDate),
+    enabled: GEO_ENABLED && !!rounded,
+    staleTime: MIN,
+    gcTime: 5 * MIN,
+    placeholderData: keepPreviousData,
+  });
 }

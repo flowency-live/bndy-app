@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Moon, Sun } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
-import { useUpcomingGigs, useVenues } from "@/lib/hooks";
+import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
+import { fetchEventsBatch, type BBox, type LightEvent } from "@/lib/api";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { useTheme } from "@/lib/theme";
 import { distanceMiles } from "@/domain/geo";
-import { todayISO } from "@/domain/dates";
+import { todayISO, addDaysISO } from "@/domain/dates";
 import { type MapDateSel, matchesMapDate } from "@/domain/mapdate";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import { VenueSheet } from "@/features/venues/VenueSheet";
@@ -19,6 +20,7 @@ import { basemapFor, registerDiamonds, tokenSkin } from "./skinMap";
 import { ALL_LAYERS, GIG_LAYERS, VEN_LAYERS, buildGigLayers, buildVenueLayers } from "./layers";
 
 type Mode = "events" | "venues";
+const GEO_ENABLED = process.env.NEXT_PUBLIC_GEO_EVENTS === "1";
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -27,34 +29,75 @@ export function MapView() {
   const readyRef = useRef(false);
   const rafRef = useRef(0);
   const prevBasemapRef = useRef<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { mode: theme, toggle, appSkin } = useTheme();
   const { location } = useGeolocation();
 
+  const today = todayISO();
+  const endDate = addDaysISO(today, 730);
+
+  // Bbox state for geo-based fetching (flag on)
+  const [bbox, setBbox] = useState<BBox | null>(null);
+  const updateBbox = useCallback((m: maplibregl.Map) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const b = m.getBounds();
+      setBbox({ west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() });
+    }, 300);
+  }, []);
+
+  // Data fetching: geo endpoint (flag on) or full gigs (flag off)
   const { data: gigs = [] } = useUpcomingGigs();
+  const { data: geoData } = useGigsInView(GEO_ENABLED ? bbox : null, today, endDate);
+  const lightEvents = geoData?.events ?? [];
+
   const { data: venues = [] } = useVenues();
   const [mode, setMode] = useState<Mode>("events");
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
   const [selected, setSelected] = useState<Gig | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
-
-  const today = todayISO();
+  const [loadingGig, setLoadingGig] = useState(false);
   const modeRef = useRef(mode); modeRef.current = mode;
+  // When flag off: use full gigs. When flag on: gigById only used for venue sheet fallback.
   const gigById = useMemo(() => { const m: Record<string, Gig> = {}; gigs.forEach((g) => (m[g.id] = g)); return m; }, [gigs]);
   const gigByIdRef = useRef(gigById); gigByIdRef.current = gigById;
   const venueById = useMemo(() => { const m: Record<string, Venue> = {}; venues.forEach((v) => (m[v.id] = v)); return m; }, [venues]);
   const venueByIdRef = useRef(venueById); venueByIdRef.current = venueById;
+  // venueIdsLive needs full gigs for venue mode (geo endpoint is for gig pins only)
   const venueIdsLive = useMemo(() => new Set(gigs.map((g) => g.venueId)), [gigs]);
-  const shownCount = useMemo(() => gigs.reduce((n, g) => (matchesMapDate(g.date, sel, today) ? n + 1 : n), 0), [gigs, sel, today]);
+  // shownCount: when geo enabled, count lightEvents; otherwise count filtered gigs
+  const shownCount = useMemo(() => {
+    if (GEO_ENABLED) return lightEvents.filter((e) => matchesMapDate(e.date, sel, today)).length;
+    return gigs.reduce((n, g) => (matchesMapDate(g.date, sel, today) ? n + 1 : n), 0);
+  }, [gigs, lightEvents, sel, today]);
 
   const venueGigs = useMemo(() => {
     if (!selectedVenue) return [];
     return gigs.filter((g) => g.venueId === selectedVenue.id).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`));
   }, [selectedVenue, gigs]);
 
-  const gigGeo = useMemo<FeatureCollection<Point>>(
-    () => ({ type: "FeatureCollection", features: gigs.filter((g) => matchesMapDate(g.date, sel, today)).map((g) => ({ type: "Feature", geometry: { type: "Point", coordinates: [g.location.lng, g.location.lat] }, properties: { id: g.id, tonight: g.date === today ? 1 : 0 } })) }),
-    [gigs, sel, today],
-  );
+  // gigGeo: when flag on, build from lightEvents; otherwise from full gigs
+  const gigGeo = useMemo<FeatureCollection<Point>>(() => {
+    if (GEO_ENABLED) {
+      const filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
+      return {
+        type: "FeatureCollection",
+        features: filtered.map((e) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [e.geoLng, e.geoLat] },
+          properties: { id: e.id, tonight: e.date === today ? 1 : 0 },
+        })),
+      };
+    }
+    return {
+      type: "FeatureCollection",
+      features: gigs.filter((g) => matchesMapDate(g.date, sel, today)).map((g) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [g.location.lng, g.location.lat] },
+        properties: { id: g.id, tonight: g.date === today ? 1 : 0 },
+      })),
+    };
+  }, [gigs, lightEvents, sel, today]);
   const venGeo = useMemo<FeatureCollection<Point>>(
     () => ({ type: "FeatureCollection", features: venues.map((v) => ({ type: "Feature", geometry: { type: "Point", coordinates: [v.location.lng, v.location.lat] }, properties: { id: v.id, live: venueIdsLive.has(v.id) ? 1 : 0 } })) }),
     [venues, venueIdsLive],
@@ -82,7 +125,22 @@ export function MapView() {
       (map.getSource(src) as maplibregl.GeoJSONSource).getClusterExpansionZoom((f.properties as { cluster_id: number }).cluster_id).then((z) => map.easeTo({ center: (f.geometry as Point).coordinates as [number, number], zoom: Math.min(z + 0.2, 15), duration: 600 })).catch(() => {});
     };
     map.on("click", "g-cl-core", clExp("gigs")); map.on("click", "v-cl-core", clExp("vens"));
-    const gigClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const g = gigByIdRef.current[(f.properties as { id: string }).id]; if (g) setSelected(g); } };
+    const gigClick = (e: maplibregl.MapLayerMouseEvent) => {
+      const f = e.features?.[0];
+      if (!f || f.properties?.point_count) return;
+      const id = (f.properties as { id: string }).id;
+      if (GEO_ENABLED) {
+        // Fetch full gig via batch endpoint
+        setLoadingGig(true);
+        fetchEventsBatch([id])
+          .then((gigs) => { if (gigs[0]) setSelected(gigs[0]); })
+          .catch(() => {})
+          .finally(() => setLoadingGig(false));
+      } else {
+        const g = gigByIdRef.current[id];
+        if (g) setSelected(g);
+      }
+    };
     map.on("click", "g-hit", gigClick); map.on("click", "g-core", gigClick);
     const venClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const v = venueByIdRef.current[(f.properties as { id: string }).id]; if (v) { map.easeTo({ center: [v.location.lng, v.location.lat], duration: 500, offset: [0, -120] }); setSelectedVenue(v); } } };
     map.on("click", "v-hit", venClick); map.on("click", "v-core", venClick);
@@ -124,10 +182,15 @@ export function MapView() {
       ensureSourcesAndLayers(map);
       wireInteractions(map);
       startPulse(map);
+      // Geo endpoint: track viewport bbox for fetching
+      if (GEO_ENABLED) {
+        updateBbox(map);
+        map.on("moveend", () => updateBbox(map));
+      }
       setTimeout(() => { try { geolocate.trigger(); } catch { /* ignore */ } }, 600);
     });
     map.on("error", (e) => { console.error("[bndy-map] maplibre error:", e?.error?.message || e); });
-    return () => { ro.disconnect(); cancelAnimationFrame(rafRef.current); map.remove(); mapRef.current = null; readyRef.current = false; };
+    return () => { ro.disconnect(); cancelAnimationFrame(rafRef.current); if (debounceRef.current) clearTimeout(debounceRef.current); map.remove(); mapRef.current = null; readyRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
