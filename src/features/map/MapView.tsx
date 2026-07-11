@@ -29,6 +29,7 @@ export function MapView() {
   const rafRef = useRef(0);
   const prevBasemapRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const epochRef = useRef(0); // incremented on each skin change to kill stale closures
   const { mode: theme, toggle, appSkin } = useTheme();
   const { location } = useGeolocation();
 
@@ -95,14 +96,20 @@ export function MapView() {
   const gigGeoRef = useRef(gigGeo); gigGeoRef.current = gigGeo;
   const venGeoRef = useRef(venGeo); venGeoRef.current = venGeo;
 
-  function ensureSourcesAndLayers(map: maplibregl.Map) {
-    if (!map.getSource("gigs")) map.addSource("gigs", { type: "geojson", data: gigGeoRef.current as GeoJSON.GeoJSON, cluster: true, clusterRadius: 46, clusterMaxZoom: 12, clusterProperties: { tonight: ["max", ["get", "tonight"]] } });
-    if (!map.getSource("vens")) map.addSource("vens", { type: "geojson", data: venGeoRef.current as GeoJSON.GeoJSON, cluster: true, clusterRadius: 40, clusterMaxZoom: 11, clusterProperties: { live: ["max", ["get", "live"]] } });
-    ALL_LAYERS.forEach((id) => { if (map.getLayer(id)) map.removeLayer(id); });
-    const s = tokenSkin();
-    registerDiamonds(map, s.colors);
-    [...buildGigLayers(s), ...buildVenueLayers(s, modeRef.current === "venues")].forEach((spec) => map.addLayer(spec as unknown as maplibregl.AddLayerObject));
-    applyMode(map);
+  function ensureSourcesAndLayers(map: maplibregl.Map, epoch?: number) {
+    try {
+      if (!map.getSource("gigs")) map.addSource("gigs", { type: "geojson", data: gigGeoRef.current as GeoJSON.GeoJSON, cluster: true, clusterRadius: 46, clusterMaxZoom: 12, clusterProperties: { tonight: ["max", ["get", "tonight"]] } });
+      if (!map.getSource("vens")) map.addSource("vens", { type: "geojson", data: venGeoRef.current as GeoJSON.GeoJSON, cluster: true, clusterRadius: 40, clusterMaxZoom: 11, clusterProperties: { live: ["max", ["get", "live"]] } });
+      ALL_LAYERS.forEach((id) => { if (map.getLayer(id)) map.removeLayer(id); });
+      const s = tokenSkin();
+      registerDiamonds(map, s.colors);
+      [...buildGigLayers(s), ...buildVenueLayers(s, modeRef.current === "venues")].forEach((spec) => map.addLayer(spec as unknown as maplibregl.AddLayerObject));
+      applyMode(map);
+    } catch (err) {
+      console.warn("[bndy-map] ensureSourcesAndLayers failed, will retry on idle:", err);
+      const capturedEpoch = epoch ?? epochRef.current;
+      map.once("idle", () => { if (epochRef.current === capturedEpoch) ensureSourcesAndLayers(map, capturedEpoch); });
+    }
   }
   function applyMode(map: maplibregl.Map) {
     const gv = modeRef.current === "events";
@@ -170,6 +177,12 @@ export function MapView() {
       // Track viewport bbox for geo-based fetching
       updateBbox(map);
       map.on("moveend", () => updateBbox(map));
+      // Safety net: if any race eats the layers, this restores them within a frame (idempotent)
+      map.on("idle", () => {
+        if (map.isStyleLoaded() && (!map.getSource("gigs") || !map.getLayer("g-core"))) {
+          ensureSourcesAndLayers(map);
+        }
+      });
       setTimeout(() => { try { geolocate.trigger(); } catch { /* ignore */ } }, 600);
     });
     map.on("error", (e) => { console.error("[bndy-map] maplibre error:", e?.error?.message || e); });
@@ -188,12 +201,19 @@ export function MapView() {
   useEffect(() => { const m = mapRef.current; if (m && readyRef.current) applyMode(m); }, [mode]);
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
+    // Increment epoch to invalidate stale closures from rapid skin cycling
+    epochRef.current += 1;
+    const epoch = epochRef.current;
     const newUrl = basemapFor(appSkin);
     // If basemap URL unchanged (skins sharing a basemap), skip setStyle entirely
     // and just rebuild layers with new CSS tokens. This avoids the race where
     // styledata fires synchronously before m.once() attaches.
     if (newUrl === prevBasemapRef.current) {
-      const poll = () => { if (m.isStyleLoaded()) ensureSourcesAndLayers(m); else window.setTimeout(poll, 80); };
+      const poll = () => {
+        if (epochRef.current !== epoch) return; // stale closure
+        if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
+        else window.setTimeout(poll, 80);
+      };
       poll();
       return;
     }
@@ -202,8 +222,8 @@ export function MapView() {
     prevBasemapRef.current = newUrl;
     let cancelled = false;
     const rebuild = () => {
-      if (cancelled) return;
-      if (m.isStyleLoaded()) ensureSourcesAndLayers(m);
+      if (cancelled || epochRef.current !== epoch) return; // stale closure
+      if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
       else window.setTimeout(rebuild, 80);
     };
     m.once("styledata", rebuild);
