@@ -33,7 +33,8 @@ export function MapView() {
   const { location } = useGeolocation();
 
   const today = todayISO();
-  const endDate = addDaysISO(today, 730);
+  // geo endpoint caps windows at 400 days; the map only browses 14 days ahead — keep this window small
+  const geoEndDate = addDaysISO(today, 30);
 
   // Bbox state for geo-based fetching (flag on)
   const [bbox, setBbox] = useState<BBox | null>(null);
@@ -47,7 +48,7 @@ export function MapView() {
 
   // Data fetching: geo endpoint for map pins, full gigs for venue sheet
   const { data: gigs = [] } = useUpcomingGigs();
-  const { data: geoData } = useGigsInView(bbox, today, endDate);
+  const { data: geoData } = useGigsInView(bbox, today, geoEndDate);
   const lightEvents = geoData?.events ?? [];
 
   const { data: venues = [] } = useVenues();

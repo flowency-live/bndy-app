@@ -104,7 +104,14 @@ export interface BBox { west: number; south: number; east: number; north: number
 
 export async function fetchGigsInView(bbox: BBox, startDate: string, endDate: string): Promise<{ events: LightEvent[]; truncated: boolean }> {
   const bboxParam = `${bbox.west},${bbox.south},${bbox.east},${bbox.north}`;
-  const data = await get<{ events?: LightEvent[]; truncated?: boolean }>(`/api/events/public/geo?bbox=${bboxParam}&startDate=${startDate}&endDate=${endDate}`);
+  const path = `/api/events/public/geo?bbox=${bboxParam}&startDate=${startDate}&endDate=${endDate}`;
+  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 60 } });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error(`[bndy-api] GET ${path} → ${res.status}`, body);
+    throw new Error(`GET ${path} → ${res.status}: ${body}`);
+  }
+  const data = await res.json() as { events?: LightEvent[]; truncated?: boolean };
   return { events: data.events || [], truncated: !!data.truncated };
 }
 
