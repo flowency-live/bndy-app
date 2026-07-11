@@ -24,12 +24,10 @@ export function buildGigLayers(skin: Skin): LayerSpec[] {
   layers.push({ id: "g-cl-count", type: "symbol", source: GIG, filter: isCl, layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": ["Open Sans Bold"], "text-size": 13, "text-allow-overlap": true }, paint: { "text-color": "#fff", "text-halo-color": c.clRing, "text-halo-width": 0.6 } });
   layers.push({ id: "g-hit", type: "circle", source: GIG, filter: notCl, paint: { "circle-radius": 18, "circle-opacity": 0 } });
   layers.push({ id: "g-ping", type: "circle", source: GIG, filter: ["all", notCl, ["==", ["get", "tonight"], 1]], paint: { "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": c.gigGlow, "circle-stroke-width": 2, "circle-radius": 10, "circle-stroke-opacity": 0.85, "circle-pitch-alignment": "map" } });
-  layers.push({ id: "g-bloom", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": c.gigGlow, "circle-blur": 1, "circle-opacity": ["interpolate", ["linear"], ["zoom"], 8, skin.markerStyle === "dot" ? 0.45 : 0.35, 13, 0.6], "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 7, 13, 15, 16, 20] } });
-  if (skin.markerStyle === "ring") {
-    layers.push({ id: "g-core", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": "rgba(10,8,14,.55)", "circle-stroke-color": c.gigCore, "circle-stroke-width": 2.4, "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 4.5, 13, 7.5, 16, 10], "circle-pitch-alignment": "map" } });
-  } else {
-    layers.push({ id: "g-core", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": c.gigCore, "circle-stroke-color": c.gigGlow, "circle-stroke-width": skin.markerStyle === "dot" ? 2 : 1.6, "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, skin.markerStyle === "dot" ? 4.2 : 3.6, 13, 6, 16, 8] } });
-  }
+  // g-bloom: glow behind pins, radius bumped ~20% for larger cores
+  layers.push({ id: "g-bloom", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": c.gigGlow, "circle-blur": 1, "circle-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.4, 13, 0.6], "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 9, 13, 18, 16, 24] } });
+  // g-core: solid accent-filled circles with contrast ring on all skins
+  layers.push({ id: "g-core", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": c.gigGlow, "circle-stroke-color": c.gigStroke, "circle-stroke-width": 2.5, "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 6, 13, 9, 16, 12], "circle-pitch-alignment": "map" } });
   return layers;
 }
 
@@ -43,7 +41,7 @@ export function buildVenueLayers(skin: Skin, visible: boolean): LayerSpec[] {
   layers.push({ id: "v-cl-count", type: "symbol", source: VEN, filter: isCl, layout: { visibility: vis, "text-field": ["get", "point_count_abbreviated"], "text-font": ["Open Sans Bold"], "text-size": 12, "text-allow-overlap": true }, paint: { "text-color": "#fff", "text-halo-color": liveColor, "text-halo-width": 0.5 } });
   layers.push({ id: "v-hit", type: "circle", source: VEN, filter: notCl, layout: { visibility: vis }, paint: { "circle-radius": 16, "circle-opacity": 0 } });
   layers.push({ id: "v-bloom", type: "circle", source: VEN, filter: notCl, layout: { visibility: vis }, paint: { "circle-color": liveColor, "circle-blur": 1, "circle-opacity": ["case", ["==", ["get", "live"], 1], 0.6, 0.32], "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 5, 13, 12] } });
-  // Diamond venue marker (generated icons registered by skinMap.registerDiamonds)
-  layers.push({ id: "v-core", type: "symbol", source: VEN, filter: notCl, layout: { visibility: vis, "icon-image": ["case", ["==", ["get", "live"], 1], "bndy-dia-live", "bndy-dia-idle"], "icon-size": ["interpolate", ["linear"], ["zoom"], 8, 0.55, 13, 0.85, 16, 1], "icon-allow-overlap": true } });
+  // Diamond venue marker (generated icons registered by skinMap.registerDiamonds) — icon-size bumped ~15%
+  layers.push({ id: "v-core", type: "symbol", source: VEN, filter: notCl, layout: { visibility: vis, "icon-image": ["case", ["==", ["get", "live"], 1], "bndy-dia-live", "bndy-dia-idle"], "icon-size": ["interpolate", ["linear"], ["zoom"], 8, 0.63, 13, 0.98, 16, 1.15], "icon-allow-overlap": true } });
   return layers;
 }

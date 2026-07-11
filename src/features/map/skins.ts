@@ -8,7 +8,7 @@ export const BASEMAPS = {
 } as const;
 
 export interface SkinColors {
-  gigGlow: string; gigCore: string;
+  gigGlow: string; gigCore: string; gigStroke: string;
   venLive: string; venIdle: string; venLiveCore: string; venIdleCore: string;
   clRing: string; clFill: string;
 }
@@ -21,15 +21,15 @@ const ORANGE = "#ff7a1a", ORANGE_HOT = "#ffe2c4", PINK = "#ff2e88", PINK_HOT = "
 export const SKINS: Record<SkinId, Skin> = {
   pulse: {
     id: "pulse", label: "Pulse", markerStyle: "glow", heat: true, pitch: 0,
-    colors: { gigGlow: ORANGE, gigCore: ORANGE_HOT, venLive: PINK, venIdle: CYAN, venLiveCore: PINK_HOT, venIdleCore: CYAN_HOT, clRing: ORANGE, clFill: "rgba(8,10,18,.85)" },
+    colors: { gigGlow: ORANGE, gigCore: ORANGE_HOT, gigStroke: "#ffffff", venLive: PINK, venIdle: CYAN, venLiveCore: PINK_HOT, venIdleCore: CYAN_HOT, clRing: ORANGE, clFill: "rgba(8,10,18,.85)" },
   },
   aurora: {
     id: "aurora", label: "Aurora", markerStyle: "ring", heat: false, pitch: 48,
-    colors: { gigGlow: ORANGE, gigCore: "#fff0da", venLive: PINK, venIdle: CYAN, venLiveCore: PINK_HOT, venIdleCore: CYAN_HOT, clRing: VIOLET, clFill: "rgba(10,10,26,.7)" },
+    colors: { gigGlow: ORANGE, gigCore: "#fff0da", gigStroke: "#ffffff", venLive: PINK, venIdle: CYAN, venLiveCore: PINK_HOT, venIdleCore: CYAN_HOT, clRing: VIOLET, clFill: "rgba(10,10,26,.7)" },
   },
   "neon-dot": {
     id: "neon-dot", label: "Neon Dot", markerStyle: "dot", heat: false, pitch: 0,
-    colors: { gigGlow: ORANGE, gigCore: ORANGE_HOT, venLive: PINK, venIdle: CYAN, venLiveCore: PINK_HOT, venIdleCore: CYAN_HOT, clRing: ORANGE, clFill: "rgba(10,14,24,.9)" },
+    colors: { gigGlow: ORANGE, gigCore: ORANGE_HOT, gigStroke: "#ffffff", venLive: PINK, venIdle: CYAN, venLiveCore: PINK_HOT, venIdleCore: CYAN_HOT, clRing: ORANGE, clFill: "rgba(10,14,24,.9)" },
   },
 };
 

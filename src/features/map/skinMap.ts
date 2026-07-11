@@ -46,7 +46,7 @@ function hexToRgba(hex: string, a: number): string {
 }
 
 export function readSkinColors(): SkinColors {
-  const v = readVars(["--acc", "--on-acc", "--acc2", "--on-acc2", "--card", "--dim2", "--surface"]);
+  const v = readVars(["--acc", "--on-acc", "--acc2", "--on-acc2", "--card", "--dim2", "--surface", "--pin-bd"]);
   const acc = v["--acc"] || "#ff7a1a";
   const onAcc = v["--on-acc"] || "#ffffff";
   const acc2 = v["--acc2"] || "#19d3f5";
@@ -54,9 +54,11 @@ export function readSkinColors(): SkinColors {
   const card = v["--card"] || "#0e121d";
   const idle = v["--dim2"] || "#8b93a9";
   const surface = v["--surface"] || card;
+  const pinBd = v["--pin-bd"] || "#ffffff";
   return {
     gigGlow: acc,
     gigCore: onAcc,
+    gigStroke: pinBd,
     venLive: acc2,
     venIdle: idle,
     venLiveCore: onAcc2,
@@ -71,10 +73,10 @@ export function tokenSkin(): Skin {
   return { id: "pulse", label: "Tokens", markerStyle: "glow", heat: false, pitch: 0, colors: readSkinColors() };
 }
 
-/* ---------------- diamond venue marker (the good one) ---------------- */
-/** Draws the prototype's rotated-square venue marker: fill diamond,
- *  contrast border, punched centre. Returned at 2x for crisp rendering. */
-function diamondImage(fill: string, border: string, hole: string, sizePx = 30): ImageData {
+/* ---------------- diamond venue marker (solid) ---------------- */
+/** Draws a rotated-square venue marker: solid fill diamond with contrast border.
+ *  Returned at 2x for crisp rendering. */
+function diamondImage(fill: string, border: string, sizePx = 30): ImageData {
   const px = sizePx * 2;
   const cv = document.createElement("canvas");
   cv.width = px; cv.height = px;
@@ -98,13 +100,9 @@ function diamondImage(fill: string, border: string, hole: string, sizePx = 30): 
   draw(side);
   ctx.fillStyle = border;
   ctx.fill();
-  // fill
+  // solid fill (no punched centre)
   draw(side - px * 0.085);
   ctx.fillStyle = fill;
-  ctx.fill();
-  // punched centre
-  draw(side * 0.34);
-  ctx.fillStyle = hole;
   ctx.fill();
   return ctx.getImageData(0, 0, px, px);
 }
@@ -114,12 +112,11 @@ export const DIA_IDLE = "bndy-dia-idle";
 
 /** (Re)register diamond icons for the current skin. Call before adding layers. */
 export function registerDiamonds(map: maplibregl.Map, colors: SkinColors): void {
-  const v = readVars(["--pin-bd", "--surface"]);
+  const v = readVars(["--pin-bd"]);
   const border = v["--pin-bd"] || "#ffffff";
-  const hole = v["--surface"] || "#0e121d";
   const entries: [string, ImageData][] = [
-    [DIA_LIVE, diamondImage(colors.venLive, border, hole)],
-    [DIA_IDLE, diamondImage(colors.venIdle, border, hole)],
+    [DIA_LIVE, diamondImage(colors.venLive, border)],
+    [DIA_IDLE, diamondImage(colors.venIdle, border)],
   ];
   for (const [name, img] of entries) {
     try {
