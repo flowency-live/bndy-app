@@ -1,32 +1,12 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useArtists, useUpcomingGigs } from "@/lib/hooks";
 import { ArtistTile } from "./ArtistTile";
 import { groupByInitial, ALPHA_INDEX } from "@/domain/grouping";
 import { cn } from "@/lib/cn";
-
-/** Renders children only when scrolled near the viewport. Off-screen letter
- *  groups cost zero React/DOM work — the placeholder holds estimated height
- *  so scrollbar + A-Z jumps stay stable. */
-function Deferred({ count, children }: { count: number; children: ReactNode }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || show) return;
-    const io = new IntersectionObserver(
-      (es) => { if (es.some((e) => e.isIntersecting)) { setShow(true); io.disconnect(); } },
-      { rootMargin: "900px 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [show]);
-  // worst case 3 cols on mobile, ~124px per row incl. gap
-  const est = Math.ceil(count / 3) * 124;
-  return <div ref={ref} style={show ? undefined : { minHeight: est }}>{show ? children : null}</div>;
-}
+import { Deferred } from "@/components/DeferredSection";
 
 export function ArtistsBrowse() {
   const { data: artists = [], isLoading } = useArtists();

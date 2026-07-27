@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronRight, MapPin } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { prettyDate, formatTime } from "@/domain/dates";
@@ -5,7 +6,7 @@ import { formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
 
-export function GigCard({ gig, imageUrl, distance, tonight, onClick }: { gig: Gig; imageUrl?: string; distance?: number; tonight: boolean; onClick: () => void }) {
+export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight, onClick }: { gig: Gig; imageUrl?: string; distance?: number; tonight: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -30,7 +31,7 @@ export function GigCard({ gig, imageUrl, distance, tonight, onClick }: { gig: Gi
       <ChevronRight size={18} className="shrink-0 text-dim2" />
     </button>
   );
-}
+});
 
 const TONE: Record<string, string> = {
   date: "bg-card2 text-txt",

@@ -8,6 +8,7 @@ import { distanceMiles } from "@/domain/geo";
 import { inWhenRange, todayISO, type WhenRange } from "@/domain/dates";
 import { bucketGigs, dayHeading } from "@/domain/gigGrouping";
 import { cn } from "@/lib/cn";
+import { Deferred } from "@/components/DeferredSection";
 import { GigCard } from "./GigCard";
 import { GigSheet } from "./GigSheet";
 import { LocationField, type OriginChoice } from "./LocationField";
@@ -136,11 +137,13 @@ export function GigsHome() {
                   <div className="mb-2 text-[12px] font-extrabold uppercase tracking-wide text-dim">
                     {dayHeading(day.date, today)} <span className="text-dim2">· {day.gigs.length}</span>
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {day.gigs.map((g) => (
-                      <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distById.get(g.id)} tonight={g.date === today} onClick={() => openGig(g)} />
-                    ))}
-                  </div>
+                  <Deferred count={day.gigs.length} heightPerItem={92} itemsPerRow={1}>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {day.gigs.map((g) => (
+                        <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distById.get(g.id)} tonight={g.date === today} onClick={() => openGig(g)} />
+                      ))}
+                    </div>
+                  </Deferred>
                 </div>
               ))}
             </div>
