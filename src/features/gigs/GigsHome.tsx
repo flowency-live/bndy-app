@@ -134,8 +134,15 @@ export function GigsHome() {
               </button>
               {open && b.days.map((day) => (
                 <div key={day.date} className="mt-4">
-                  <div className="mb-2 text-[12px] font-extrabold uppercase tracking-wide text-dim">
-                    {dayHeading(day.date, today)} <span className="text-dim2">· {day.gigs.length}</span>
+                  {/* Day header bar (Option B, 2026-07-27) — dedicated --dayhead-* tokens, all pairs WCAG AA ≥ 4.5:1. Do NOT swap in --acc/--on-acc (fails AA on 6/9 skins). */}
+                  <div
+                    className="mb-2 flex items-baseline justify-between rounded-[var(--rad)] px-3 py-[7px]"
+                    style={day.date === today
+                      ? { background: "var(--dayhead-hot-bg)", color: "var(--dayhead-hot-fg)" }
+                      : { background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}
+                  >
+                    <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{dayHeading(day.date, today)}</span>
+                    <span className="text-[11px] font-bold tnum opacity-75">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</span>
                   </div>
                   <Deferred count={day.gigs.length} heightPerItem={92} itemsPerRow={1}>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
