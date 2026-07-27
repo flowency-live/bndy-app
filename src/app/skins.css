@@ -26,6 +26,7 @@ html[data-theme="print"] {
   --disp: var(--font-archivo-black), sans-serif; --disp-wt: 400; --disp-case: uppercase;
   --ui: var(--font-archivo), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-instrument), serif;
   --tick-bg: #181309; --tick-fg: #F5EFE2; --tick-hl: #FFC61A;
+  --dayhead-bg: #181309; --dayhead-fg: #F5EFE2; --dayhead-hot-bg: #C42A12; --dayhead-hot-fg: #FDFBF5;
   --m-bg: #EFE7D4; --m-block: #E6DCC5; --m-road1: #C9BC9E; --m-road2: #D6CBAF;
   --m-river: #BCD2E4; --m-park: #CBDDBC; --m-lab: #A79B7E;
   --pin-bd: var(--line); --pin-sh: var(--sh); --pin2-sh: var(--sh); --pin-stem: var(--line);
@@ -43,6 +44,7 @@ html[data-theme="bndy-light"] {
   --disp: var(--font-inter), sans-serif; --disp-wt: 800; --disp-case: none;
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #0F172A; --tick-fg: #CBD5E1; --tick-hl: #F97316;
+  --dayhead-bg: #0F172A; --dayhead-fg: #CBD5E1; --dayhead-hot-bg: #F97316; --dayhead-hot-fg: #0F172A;
   --m-bg: #E8EDF3; --m-block: #F3F6FA; --m-road1: #C9D4E0; --m-road2: #D8E0EA;
   --m-river: #BBD7E8; --m-park: #C8E3CF; --m-lab: #9AA9BC;
   --pin-bd: #fff; --pin-sh: 0 3px 10px rgba(15, 23, 42, .3); --pin2-sh: 0 3px 10px rgba(15, 23, 42, .3); --pin-stem: #0F172A;
@@ -60,6 +62,7 @@ html[data-theme="bndy-dark"] {
   --disp: var(--font-inter), sans-serif; --disp-wt: 800; --disp-case: none;
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #1C2637; --tick-fg: #94A3B8; --tick-hl: #F97316;
+  --dayhead-bg: #1C2637; --dayhead-fg: #94A3B8; --dayhead-hot-bg: #F97316; --dayhead-hot-fg: #0F172A;
   --m-bg: #0B1220; --m-block: #131E30; --m-road1: #223046; --m-road2: #1B2739;
   --m-river: #0F2A3D; --m-park: #12291E; --m-lab: #3D4F68;
   --pin-bd: rgba(255, 255, 255, .85); --pin-sh: 0 0 10px rgba(249, 115, 22, .85), 0 0 26px rgba(249, 115, 22, .4);
@@ -78,6 +81,7 @@ html[data-theme="openair"] {
   --disp: var(--font-inter), sans-serif; --disp-wt: 800; --disp-case: none;
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #113B33; --tick-fg: #A9CFC3; --tick-hl: #FFD166;
+  --dayhead-bg: #113B33; --dayhead-fg: #A9CFC3; --dayhead-hot-bg: #0B7A67; --dayhead-hot-fg: #FFFFFF;
   --m-bg: #E7F3EC; --m-block: #F4FAF6; --m-road1: #C5DACE; --m-road2: #D6E7DC;
   --m-river: #B5D8EA; --m-park: #BFE6C4; --m-lab: #93B3A6;
   --pin-bd: #fff; --pin-sh: 0 3px 10px rgba(17, 59, 51, .28); --pin2-sh: 0 3px 10px rgba(17, 59, 51, .28); --pin-stem: #113B33;
@@ -95,6 +99,7 @@ html[data-theme="goldenhour"] {
   --disp: var(--font-inter), sans-serif; --disp-wt: 800; --disp-case: none;
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #42291C; --tick-fg: #D9B99B; --tick-hl: #FFB020;
+  --dayhead-bg: #42291C; --dayhead-fg: #D9B99B; --dayhead-hot-bg: #B93F20; --dayhead-hot-fg: #FFFFFF;
   --m-bg: #F2E2CE; --m-block: #F9EEDF; --m-road1: #D9C0A0; --m-road2: #E5D2B9;
   --m-river: #BCCFE0; --m-park: #C9D9AE; --m-lab: #B39877;
   --pin-bd: #fff; --pin-sh: 0 3px 10px rgba(66, 41, 28, .3); --pin2-sh: 0 3px 10px rgba(66, 41, 28, .3); --pin-stem: #42291C;
@@ -112,6 +117,7 @@ html[data-theme="solar"] {
   --disp: var(--font-inter), sans-serif; --disp-wt: 800; --disp-case: none;
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #073642; --tick-fg: #93A1A1; --tick-hl: #B58900;
+  --dayhead-bg: #073642; --dayhead-fg: #93A1A1; --dayhead-hot-bg: #CB4B16; --dayhead-hot-fg: #FFFFFF;
   --m-bg: #F3ECD9; --m-block: #FAF3E0; --m-road1: #D8CFB6; --m-road2: #E5DCC6;
   --m-river: #BFD8D8; --m-park: #CCDCB8; --m-lab: #A8A083;
   --pin-bd: #FDF6E3; --pin-sh: 0 3px 10px rgba(7, 54, 66, .28); --pin2-sh: 0 3px 10px rgba(7, 54, 66, .28); --pin-stem: #073642;
@@ -129,6 +135,7 @@ html[data-theme="synthwave"] {
   --disp: var(--font-chakra), sans-serif; --disp-wt: 700; --disp-case: uppercase;
   --ui: var(--font-grotesk), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-grotesk), sans-serif;
   --tick-bg: #2A2139; --tick-fg: #AF9BD3; --tick-hl: #FF7EDB;
+  --dayhead-bg: #2A2139; --dayhead-fg: #AF9BD3; --dayhead-hot-bg: #FF7EDB; --dayhead-hot-fg: #2B0A22;
   --m-bg: #1D1529; --m-block: #271E37; --m-road1: #3A2C55; --m-road2: #302442;
   --m-river: #1F2E50; --m-park: #223428; --m-lab: #5C4A80;
   --pin-bd: rgba(242, 233, 255, .9); --pin-sh: 0 0 12px rgba(255, 126, 219, .95), 0 0 30px rgba(255, 126, 219, .5);
@@ -147,6 +154,7 @@ html[data-theme="blackout"] {
   --disp: var(--font-inter), sans-serif; --disp-wt: 900; --disp-case: uppercase;
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #FFFFFF; --tick-fg: #000; --tick-hl: #4D7CFE;
+  --dayhead-bg: #FFFFFF; --dayhead-fg: #000000; --dayhead-hot-bg: #4D7CFE; --dayhead-hot-fg: #000000;
   --m-bg: #050505; --m-block: #101010; --m-road1: #242424; --m-road2: #1A1A1A;
   --m-river: #10141C; --m-park: #0F140F; --m-lab: #3A3A3A;
   --pin-bd: #000; --pin-sh: 0 0 0 1.5px #fff, 0 4px 14px rgba(0, 0, 0, .8);
@@ -165,6 +173,7 @@ html[data-theme="hyper"] {
   --disp: var(--font-chakra), sans-serif; --disp-wt: 700; --disp-case: uppercase;
   --ui: var(--font-grotesk), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-grotesk), sans-serif;
   --tick-bg: linear-gradient(90deg, #4B2EFF, #FF2ED2, #22E4FF); --tick-fg: #fff; --tick-hl: #10131C;
+  --dayhead-bg: #10131C; --dayhead-fg: #FFFFFF; --dayhead-hot-bg: linear-gradient(90deg, #4B2EFF, #B5108A); --dayhead-hot-fg: #FFFFFF;
   --m-bg: #E3E9F3; --m-block: #EFF3FA; --m-road1: #C6D0E2; --m-road2: #D5DDEB;
   --m-river: #B8D3F2; --m-park: #C6E7CD; --m-lab: #9AA6BE;
   --pin-bd: #fff; --pin-sh: 0 4px 14px rgba(75, 46, 255, .35); --pin2-sh: 0 4px 14px rgba(75, 46, 255, .35); --pin-stem: #10131C;
