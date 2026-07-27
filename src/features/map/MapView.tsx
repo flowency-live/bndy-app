@@ -233,7 +233,7 @@ export function MapView() {
   }, [appSkin]);
 
   return (
-    <div className="relative -mt-6 h-[100dvh] w-full overflow-hidden">
+    <div className="relative h-[100dvh] w-full overflow-hidden" style={{ marginTop: `calc(-1.5rem - env(safe-area-inset-top, 0px))` }}>
       <div ref={containerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
 
       <div className="absolute left-3 top-8 z-20 flex items-center gap-2 pt-[env(safe-area-inset-top,0px)] lg:left-4 lg:top-9">

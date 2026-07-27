@@ -196,7 +196,7 @@ html[data-theme] .glass-hi { background: var(--glass-hi); }
 .bndy-splash-stamp{font-family:var(--ital);font-style:italic;font-size:21px;color:var(--acc);border:2.5px solid var(--acc);border-radius:10px;padding:8px 18px;transform:rotate(-3deg);animation:bndy-stampin .5s .6s cubic-bezier(.34,1.56,.64,1) both}
 html[data-family="soft"] .bndy-splash-stamp,html[data-family="mono"] .bndy-splash-stamp{font-style:normal;font-weight:700;transform:none}
 .bndy-splash-stamp b{color:var(--acc2)}
-.bndy-ticker{position:fixed;top:0;left:0;right:0;z-index:35;overflow:hidden;background:var(--tick-bg);padding:5px 0;pointer-events:none}
+.bndy-ticker{position:fixed;top:0;left:0;right:0;z-index:35;overflow:hidden;background:var(--tick-bg);padding-top:env(safe-area-inset-top,5px);padding-bottom:5px;pointer-events:none}
 @media(min-width:1024px){.bndy-ticker{left:15rem}}
 .bndy-ticker-in{display:inline-flex;white-space:nowrap;animation:bndy-tick 28s linear infinite;font-family:var(--meta);font-size:9.5px;letter-spacing:3px;color:var(--tick-fg);text-transform:uppercase}
 @keyframes bndy-tick{to{transform:translateX(-50%)}}

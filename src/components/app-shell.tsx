@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* ---- content ---- */}
-      <main className="pt-6 lg:pl-60">{children}</main>
+      <main className="lg:pl-60" style={{ paddingTop: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}>{children}</main>
 
       {/* ---- mobile bottom nav ---- */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex h-16 border-t border-line glass-hi pb-safe lg:hidden">
