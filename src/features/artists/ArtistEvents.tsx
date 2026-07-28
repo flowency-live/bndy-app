@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin } from "lucide-react";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles, formatDistance } from "@/domain/geo";
-import { todayISO, formatTime } from "@/domain/dates";
+import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import { MiniMap } from "./MiniMap";
@@ -13,16 +13,50 @@ import type { Gig } from "@/domain/types";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MON_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 type View = "date" | "distance" | "map";
 
 export function ArtistEvents({ gigs }: { gigs: Gig[] }) {
   const { location, located } = useGeolocation();
   const today = todayISO();
+  const collapse90 = addDaysISO(today, 90); // anything starting at or after this date defaults to collapsed
   const [view, setView] = useState<View>("date");
   const [selected, setSelected] = useState<Gig | null>(null);
 
   const withDist = useMemo(() => gigs.map((g) => ({ g, dist: distanceMiles(location, g.location) })), [gigs, location]);
   const byDate = useMemo(() => [...withDist].sort((a, b) => `${a.g.date}${a.g.startTime ?? ""}`.localeCompare(`${b.g.date}${b.g.startTime ?? ""}`)), [withDist]);
+
+  // Group by month for the "By date" view
+  const byMonth = useMemo(() => {
+    const groups: { key: string; label: string; items: { g: Gig; dist: number }[]; firstDate: string }[] = [];
+    const sorted = [...withDist].sort((a, b) => `${a.g.date}${a.g.startTime ?? ""}`.localeCompare(`${b.g.date}${b.g.startTime ?? ""}`));
+    for (const x of sorted) {
+      const [y, m] = x.g.date.split("-");
+      const key = `${y}-${m}`;
+      let grp = groups.find((g) => g.key === key);
+      if (!grp) {
+        grp = { key, label: `${MON_FULL[Number(m) - 1]} ${y}`, items: [], firstDate: x.g.date };
+        groups.push(grp);
+      }
+      grp.items.push(x);
+    }
+    return groups;
+  }, [withDist]);
+
+  // Track which months are expanded; default collapsed for months starting 90+ days out
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(() => {
+    const expanded = new Set<string>();
+    for (const m of byMonth) {
+      if (m.firstDate < collapse90) expanded.add(m.key);
+    }
+    return expanded;
+  });
+  const toggleMonth = (key: string) => setExpandedMonths((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+
   const bands = useMemo(() => {
     const sorted = [...withDist].sort((a, b) => a.dist - b.dist);
     const defs = [{ l: "Within 5 miles", lo: 0, hi: 5 }, { l: "5–10 miles", lo: 5, hi: 10 }, { l: "10–25 miles", lo: 10, hi: 25 }, { l: "25+ miles", lo: 25, hi: Infinity }];
@@ -61,9 +95,30 @@ export function ArtistEvents({ gigs }: { gigs: Gig[] }) {
           </div>
         ))
       ) : (
-        <div>
-          <SectionHeader label="Upcoming" count={byDate.length} />
-          {byDate.map((x) => <EventRow key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
+        <div className="space-y-1">
+          {byMonth.map((m) => {
+            const isExpanded = expandedMonths.has(m.key);
+            return (
+              <div key={m.key}>
+                <button
+                  onClick={() => toggleMonth(m.key)}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2"
+                  style={{ background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}
+                >
+                  <span className="flex items-center gap-2">
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{m.label}</span>
+                  </span>
+                  <span className="text-[11px] font-bold opacity-75">{m.items.length} gig{m.items.length === 1 ? "" : "s"}</span>
+                </button>
+                {isExpanded && (
+                  <div className="mt-1">
+                    {m.items.map((x) => <EventRow key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
