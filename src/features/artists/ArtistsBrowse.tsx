@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { useArtists, useDeleteArtist, useUpcomingGigs } from "@/lib/hooks";
+import { useArtists, useUpcomingGigs } from "@/lib/hooks";
 import { ArtistTile } from "./ArtistTile";
 import { groupByInitial, ALPHA_INDEX } from "@/domain/grouping";
 import { cn } from "@/lib/cn";
@@ -11,7 +11,6 @@ import { Deferred } from "@/components/DeferredSection";
 export function ArtistsBrowse() {
   const { data: artists = [], isLoading } = useArtists();
   const { data: gigs = [] } = useUpcomingGigs();
-  const deleteArtist = useDeleteArtist(); // pre-launch cleanup — unplug this wiring before public launch
   const gigging = useMemo(() => new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)), [gigs]);
   const [q, setQ] = useState("");
 
@@ -60,7 +59,7 @@ export function ArtistsBrowse() {
               </div>
               <Deferred count={g.items.length}>
                 <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 2xl:grid-cols-8">
-                  {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={gigging.has(a.id)} onDelete={deleteArtist} />)}
+                  {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={gigging.has(a.id)} />)}
                 </div>
               </Deferred>
             </section>
