@@ -1,8 +1,9 @@
 "use client";
 
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
+import { deleteArtist, fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
+import type { Artist } from "@/domain/types";
 import { todayISO, addDaysISO } from "@/domain/dates";
 
 const MIN = 60 * 1000;
@@ -33,6 +34,21 @@ export function useArtistGigs(id: string) {
 export function useVenueGigs(id: string) {
   const today = todayISO();
   return useQuery({ queryKey: ["venue-gigs", id, today], queryFn: () => fetchVenueGigs(id, today), enabled: !!id, staleTime: 5 * MIN });
+}
+
+/** Pre-launch cleanup: delete artist + cascade its events, then sync every cache that could hold it. */
+export function useDeleteArtist() {
+  const qc = useQueryClient();
+  return useCallback(async (artist: Artist) => {
+    const res = await deleteArtist(artist.id);
+    qc.setQueryData<Artist[]>(["artists"], (prev) => prev?.filter((a) => a.id !== artist.id));
+    // events are gone server-side — ["gigs"] prefix covers both the upcoming list and the map viewport ("gigs","geo",...) caches
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["gigs"] }),
+      qc.invalidateQueries({ queryKey: ["artist-gigs", artist.id] }),
+    ]);
+    return res;
+  }, [qc]);
 }
 
 /** artistId → profileImageUrl, from the cached artists list. Used to show real avatars on gigs. */

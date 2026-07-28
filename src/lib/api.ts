@@ -149,6 +149,14 @@ export async function fetchVenue(id: string): Promise<Venue | null> {
 export async function fetchArtist(id: string): Promise<Artist> {
   return toArtist(await get<ArtistDTO>(`/api/artists/${id}`));
 }
+/** Pre-launch cleanup: hard-deletes the artist AND cascades all its events + memberships (backend MCP route, no auth). Remove before public launch. */
+export async function deleteArtist(id: string): Promise<{ cascadedEvents: number; cascadedMemberships: number }> {
+  const res = await fetch(`${BASE}/api/artists/${id}/mcp`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`DELETE artist ${id} → ${res.status}`);
+  const body = await res.json();
+  return { cascadedEvents: body.cascadedEvents ?? 0, cascadedMemberships: body.cascadedMemberships ?? 0 };
+}
+
 export async function fetchArtistGigs(id: string, startDate: string): Promise<Gig[]> {
   const data = await get<{ events?: GigDTO[] }>(`/api/artists/${id}/public-events?startDate=${startDate}`);
   return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
