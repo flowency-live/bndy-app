@@ -142,7 +142,7 @@ export function GigsHome() {
                       : { background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}
                   >
                     <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{dayHeading(day.date, today)}</span>
-                    <span className="text-[11px] font-bold tnum opacity-75">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</span>
+                    <span className="text-[11px] font-bold tnum">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</span>
                   </div>
                   <Deferred count={day.gigs.length} heightPerItem={92} itemsPerRow={1}>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

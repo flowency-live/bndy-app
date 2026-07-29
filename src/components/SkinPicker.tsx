@@ -24,7 +24,7 @@ function Swatch({ dots, size = 18 }: { dots: [string, string, string]; size?: nu
   );
 }
 
-export function SkinControl({ variant }: { variant: "sidebar" | "fab" }) {
+export function SkinControl({ variant }: { variant: "sidebar" | "fab" | "map" }) {
   const [open, setOpen] = useState(false);
   const [wiping, setWiping] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -45,7 +45,7 @@ export function SkinControl({ variant }: { variant: "sidebar" | "fab" }) {
 
   return (
     <>
-      {variant === "sidebar" ? (
+      {variant === "sidebar" && (
         <div className="mt-auto">
           <button
             onClick={() => setOpen(true)}
@@ -55,13 +55,23 @@ export function SkinControl({ variant }: { variant: "sidebar" | "fab" }) {
             <span className="truncate">Skin · {current.name}</span>
           </button>
         </div>
-      ) : (
+      )}
+      {variant === "fab" && (
         <button
           onClick={() => setOpen(true)}
           aria-label="Choose your skin"
           className="glass-hi fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line shadow-[var(--shadow)] transition-transform active:scale-90 lg:hidden"
         >
           <Swatch dots={current.dots} size={22} />
+        </button>
+      )}
+      {variant === "map" && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Choose your skin"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-line glass text-txt"
+        >
+          <Swatch dots={current.dots} size={18} />
         </button>
       )}
 

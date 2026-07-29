@@ -111,7 +111,7 @@ function Quick({ label, count, on, onClick }: { label: string; count: number; on
       className={cn("flex flex-col items-center gap-0.5 rounded-2xl border py-3 text-center transition-colors",
         on ? "bndy-chip on" : "bndy-chip text-dim hover:text-txt")}>
       <span className="text-[12.5px] font-extrabold leading-tight">{label}</span>
-      <span className={cn("text-[10px] font-bold", on ? "opacity-75" : "text-dim2")}>{count} gig{count === 1 ? "" : "s"}</span>
+      <span className={cn("text-[10px] font-bold", on ? "" : "text-dim2")}>{count} gig{count === 1 ? "" : "s"}</span>
     </button>
   );
 }

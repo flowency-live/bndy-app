@@ -113,7 +113,7 @@ html[data-theme="goldenhour"] {
 html[data-theme="solar"] {
   --ink-rgb: 253 246 227;
   --surface: #FDF6E3; --card: #EEE8D5; --card2: #E4DCC4;
-  --txt: #073642; --dim: #586E75; --dim2: #93A1A1;
+  --txt: #073642; --dim: #4D6268; --dim2: #93A1A1; /* dim darkened for AA on card (4.7:1 vs prior 4.4) */
   --line: #D3CBB7; --line-hi: #B8AE93; --bw: 1px; --rad: 12px; --rad-lg: 16px;
   --glass: rgba(238, 232, 213, 0.8); --glass-hi: rgba(238, 232, 213, 0.94);
   --sh: 0 4px 14px rgba(88, 110, 117, .14); --sh-lg: 0 10px 28px rgba(88, 110, 117, .18); --sh-hover: 0 12px 26px rgba(203, 75, 22, .2);

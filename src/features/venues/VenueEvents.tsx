@@ -83,7 +83,7 @@ export function VenueEvents({ venueId }: { venueId: string }) {
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{m.label}</span>
                   </span>
-                  <span className="text-[11px] font-bold opacity-75">{m.items.length} gig{m.items.length === 1 ? "" : "s"}</span>
+                  <span className="text-[11px] font-bold">{m.items.length} gig{m.items.length === 1 ? "" : "s"}</span>
                 </button>
                 {isExpanded && (
                   <div className="mt-1">
