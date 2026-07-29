@@ -46,7 +46,7 @@ function hexToRgba(hex: string, a: number): string {
 }
 
 export function readSkinColors(): SkinColors {
-  const v = readVars(["--acc", "--on-acc", "--acc2", "--on-acc2", "--card", "--dim2", "--surface", "--pin-bd"]);
+  const v = readVars(["--acc", "--on-acc", "--acc2", "--on-acc2", "--card", "--dim2", "--surface", "--pin-bd", "--txt"]);
   const acc = v["--acc"] || "#ff7a1a";
   const onAcc = v["--on-acc"] || "#ffffff";
   const acc2 = v["--acc2"] || "#19d3f5";
@@ -65,6 +65,10 @@ export function readSkinColors(): SkinColors {
     venIdleCore: surface,
     clRing: acc,
     clFill: hexToRgba(card, 0.9),
+    // venue name pills: the skin's standard card/txt pairing.
+    // WCAG AA verified across all 9 skins (worst = solar 10.6:1; bndy-dark 13.9, synthwave 13.1, light skins >13).
+    pillBg: card,
+    pillTxt: v["--txt"] || "#F1F5F9",
   };
 }
 
@@ -109,6 +113,50 @@ function diamondImage(fill: string, border: string, sizePx = 30): ImageData {
 
 export const DIA_LIVE = "bndy-dia-live";
 export const DIA_IDLE = "bndy-dia-idle";
+export const PILL_LIVE = "bndy-pill-live";
+export const PILL_IDLE = "bndy-pill-idle";
+
+/* ---------------- venue name pill (stretchable nine-patch) ---------------- */
+/** Rounded-rect background for venue name labels. Used with icon-text-fit so the
+ *  pill hugs its text. Drawn at 2x; stretch/content coords are physical pixels. */
+function pillImage(fill: string, border: string): ImageData {
+  const w = 64, h = 32, r = 14;
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d")!;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") ctx.roundRect(1.5, 1.5, w - 3, h - 3, r);
+  else ctx.rect(1.5, 1.5, w - 3, h - 3); // fallback: square pill
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = border;
+  ctx.stroke();
+  return ctx.getImageData(0, 0, w, h);
+}
+const PILL_OPTS = {
+  pixelRatio: 2,
+  stretchX: [[24, 40]] as [number, number][],
+  stretchY: [[14, 18]] as [number, number][],
+  content: [10, 7, 54, 25] as [number, number, number, number],
+};
+
+/** (Re)register venue-name pill backgrounds for the current skin. Call with registerDiamonds. */
+export function registerPills(map: maplibregl.Map, colors: SkinColors): void {
+  const fill = colors.pillBg ?? "#10131C";
+  const entries: [string, ImageData][] = [
+    [PILL_LIVE, pillImage(fill, colors.venLive)],
+    [PILL_IDLE, pillImage(fill, colors.venIdle)],
+  ];
+  for (const [name, img] of entries) {
+    try {
+      if (map.hasImage(name)) map.removeImage(name);
+      map.addImage(name, img, PILL_OPTS);
+    } catch (err) {
+      console.error("[bndy-map] pill icon registration failed:", err);
+    }
+  }
+}
 
 /** (Re)register diamond icons for the current skin. Call before adding layers. */
 export function registerDiamonds(map: maplibregl.Map, colors: SkinColors): void {

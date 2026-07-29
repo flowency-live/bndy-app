@@ -16,7 +16,7 @@ import { VenueSheet } from "@/features/venues/VenueSheet";
 import { MapDateControl } from "./MapDateControl";
 import { cn } from "@/lib/cn";
 import type { Gig, Venue } from "@/domain/types";
-import { basemapFor, registerDiamonds, tokenSkin } from "./skinMap";
+import { basemapFor, registerDiamonds, registerPills, tokenSkin } from "./skinMap";
 import { ALL_LAYERS, GIG_LAYERS, VEN_LAYERS, buildGigLayers, buildVenueLayers } from "./layers";
 
 type Mode = "events" | "venues";
@@ -138,7 +138,7 @@ export function MapView() {
       features: filtered.map((v) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [v.location.lng, v.location.lat] },
-        properties: { id: v.id, live: venueIdsLive.has(v.id) ? 1 : 0 },
+        properties: { id: v.id, name: v.name, live: venueIdsLive.has(v.id) ? 1 : 0 },
       })),
     };
   }, [venues, venueIdsLive, matchingVenueIds]);
@@ -152,6 +152,7 @@ export function MapView() {
       ALL_LAYERS.forEach((id) => { if (map.getLayer(id)) map.removeLayer(id); });
       const s = tokenSkin();
       registerDiamonds(map, s.colors);
+      registerPills(map, s.colors);
       [...buildGigLayers(s), ...buildVenueLayers(s, modeRef.current === "venues")].forEach((spec) => map.addLayer(spec as unknown as maplibregl.AddLayerObject));
       applyMode(map);
     } catch (err) {
@@ -184,8 +185,8 @@ export function MapView() {
     };
     map.on("click", "g-hit", gigClick); map.on("click", "g-core", gigClick);
     const venClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const v = venueByIdRef.current[(f.properties as { id: string }).id]; if (v) { map.easeTo({ center: [v.location.lng, v.location.lat], duration: 500, offset: [0, -120] }); setSelectedVenue(v); } } };
-    map.on("click", "v-hit", venClick); map.on("click", "v-core", venClick);
-    ["g-cl-core", "v-cl-core", "g-hit", "g-core", "v-hit", "v-core"].forEach((id) => { map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer")); map.on("mouseleave", id, () => (map.getCanvas().style.cursor = "")); });
+    map.on("click", "v-hit", venClick); map.on("click", "v-core", venClick); map.on("click", "v-label", venClick);
+    ["g-cl-core", "v-cl-core", "g-hit", "g-core", "v-hit", "v-core", "v-label"].forEach((id) => { map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer")); map.on("mouseleave", id, () => (map.getCanvas().style.cursor = "")); });
   }
 
   useEffect(() => {

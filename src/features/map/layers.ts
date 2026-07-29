@@ -1,5 +1,9 @@
 // GPU layer specs — validated against @maplibre/maplibre-gl-style-spec (0 errors).
 import type { Skin } from "./skins";
+import { PILL_IDLE, PILL_LIVE } from "./skinMap";
+
+/** Venue name pills appear from this zoom (clusters dominate below it anyway). */
+export const VENUE_LABEL_MINZOOM = 11;
 
 export type LayerSpec = Record<string, unknown>;
 const GIG = "gigs", VEN = "vens";
@@ -7,7 +11,7 @@ const isCl = ["has", "point_count"];
 const notCl = ["!", ["has", "point_count"]];
 
 export const GIG_LAYERS = ["g-heat", "g-cl-bloom", "g-cl-core", "g-cl-count", "g-hit", "g-ping", "g-bloom", "g-core"];
-export const VEN_LAYERS = ["v-cl-bloom", "v-cl-core", "v-cl-count", "v-hit", "v-bloom", "v-core"];
+export const VEN_LAYERS = ["v-cl-bloom", "v-cl-core", "v-cl-count", "v-hit", "v-bloom", "v-core", "v-label"];
 export const ALL_LAYERS = [...GIG_LAYERS, ...VEN_LAYERS];
 
 export function buildGigLayers(skin: Skin): LayerSpec[] {
@@ -43,5 +47,21 @@ export function buildVenueLayers(skin: Skin, visible: boolean): LayerSpec[] {
   layers.push({ id: "v-bloom", type: "circle", source: VEN, filter: notCl, layout: { visibility: vis }, paint: { "circle-color": liveColor, "circle-blur": 1, "circle-opacity": ["case", ["==", ["get", "live"], 1], 0.6, 0.32], "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 5, 13, 12] } });
   // Diamond venue marker (generated icons registered by skinMap.registerDiamonds) — icon-size bumped ~15%
   layers.push({ id: "v-core", type: "symbol", source: VEN, filter: notCl, layout: { visibility: vis, "icon-image": ["case", ["==", ["get", "live"], 1], "bndy-dia-live", "bndy-dia-idle"], "icon-size": ["interpolate", ["linear"], ["zoom"], 8, 0.63, 13, 0.98, 16, 1.15], "icon-allow-overlap": true } });
+  // v-label: venue name pill (nine-patch registered by skinMap.registerPills). Singles only —
+  // clusters can never grow labels. Native collision drops clashing pills (never the diamonds:
+  // v-core has icon-allow-overlap). Variable anchors fan pills below→above→right→left before
+  // one drops; live venues out-prioritise idle via symbol-sort-key. Pill = --txt on --card,
+  // WCAG AA verified on all 9 skins (worst = solar 10.6:1).
+  layers.push({ id: "v-label", type: "symbol", source: VEN, filter: notCl, minzoom: VENUE_LABEL_MINZOOM, layout: {
+    visibility: vis,
+    "icon-image": ["case", ["==", ["get", "live"], 1], PILL_LIVE, PILL_IDLE],
+    "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9],
+    "text-field": ["get", "name"],
+    "text-font": ["Open Sans Bold"],
+    "text-size": ["interpolate", ["linear"], ["zoom"], 11, 10.5, 14, 12.5],
+    "text-variable-anchor": ["top", "bottom", "left", "right"],
+    "text-radial-offset": 1.05,
+    "symbol-sort-key": ["case", ["==", ["get", "live"], 1], 0, 1],
+  }, paint: { "text-color": c.pillTxt ?? "#ffffff" } });
   return layers;
 }

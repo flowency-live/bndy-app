@@ -11,6 +11,8 @@ export interface SkinColors {
   gigGlow: string; gigCore: string; gigStroke: string;
   venLive: string; venIdle: string; venLiveCore: string; venIdleCore: string;
   clRing: string; clFill: string;
+  /** venue name pill (token skins only — legacy map skins don't set these) */
+  pillBg?: string; pillTxt?: string;
 }
 export interface Skin {
   id: SkinId; label: string; markerStyle: "dot" | "glow" | "ring"; heat: boolean; pitch: number; colors: SkinColors;
