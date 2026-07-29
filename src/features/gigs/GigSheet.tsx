@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Clock, MapPin, Navigation, Ticket, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Navigation, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
 import { Avatar } from "@/components/ui/Avatar";
@@ -39,6 +39,26 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
     scrollRef.current?.scrollTo({ left: 0 });
   }, [stackKey]);
 
+  const goTo = (i: number) => {
+    if (!stack) return;
+    const clamped = Math.max(0, Math.min(stack.length - 1, i));
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ left: (el.scrollWidth / stack.length) * clamped, behavior: "smooth" });
+    setIdx(clamped);
+  };
+
+  // desktop: arrow keys page the deck (mouse users can't horizontal-scroll)
+  useEffect(() => {
+    if (!multi) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") goTo(idx + 1);
+      else if (e.key === "ArrowLeft") goTo(idx - 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [multi, idx, stackKey]);
+
   return (
     <Sheet open={!!gig} onClose={onClose}>
       {gig && !multi && (
@@ -48,33 +68,54 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
         <>
           <div className="mb-2.5 flex items-center justify-between">
             <span className="truncate text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">
-              {stack!.length} gigs at {stack![0].venueName}
+              {stack!.length} gigs {stack![0].venueName ? `at ${stack![0].venueName}` : "at this venue"}
             </span>
             <span className="tnum shrink-0 pl-3 text-[11px] font-bold text-dim2">{idx + 1} / {stack!.length}</span>
           </div>
-          <div
-            ref={scrollRef}
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              const i = Math.round(el.scrollLeft / (el.scrollWidth / stack!.length));
-              if (i !== idx && i >= 0 && i < stack!.length) setIdx(i);
-            }}
-            className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5"
-          >
-            {stack!.map((g) => (
-              <div
-                key={g.id}
-                className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
-                style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
-              >
-                <Body gig={g} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
-              </div>
-            ))}
+          <div className="relative">
+            <div
+              ref={scrollRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                const i = Math.round(el.scrollLeft / (el.scrollWidth / stack!.length));
+                if (i !== idx && i >= 0 && i < stack!.length) setIdx(i);
+              }}
+              className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5"
+            >
+              {stack!.map((g) => (
+                <div
+                  key={g.id}
+                  className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
+                  style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
+                >
+                  <Body gig={g} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
+                </div>
+              ))}
+            </div>
+            {/* desktop chevrons — mouse users have no horizontal scroll; touch swipes */}
+            <button
+              onClick={() => goTo(idx - 1)}
+              disabled={idx === 0}
+              aria-label="Previous gig"
+              className="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line-hi glass-hi shadow-lg transition-opacity disabled:opacity-25 lg:flex"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => goTo(idx + 1)}
+              disabled={idx === stack!.length - 1}
+              aria-label="Next gig"
+              className="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line-hi glass-hi shadow-lg transition-opacity disabled:opacity-25 lg:flex"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
-          <div className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
+          <div className="mt-3 flex justify-center gap-1.5">
             {stack!.map((_, i) => (
-              <span
+              <button
                 key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Gig ${i + 1} of ${stack!.length}`}
                 className={cn("h-1.5 rounded-full transition-all duration-300", i === idx ? "w-5" : "w-1.5")}
                 style={{ background: i === idx ? "var(--acc)" : "color-mix(in srgb, var(--dim2) 45%, transparent)" }}
               />

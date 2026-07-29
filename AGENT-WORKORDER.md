@@ -125,6 +125,80 @@ One commit for tokens, one for the component. Deploy to gigmap, log below.
 
 ---
 
+## TASK 5 — Artist delete + event cascade (pre-launch cleanup tool, 2026-07-28)
+
+**Already implemented by Claude (uncommitted, both repos). tsc clean; cascade lib has 5 passing jest tests. Your job: review, validate, commit, deploy both, smoke test.**
+
+What was built:
+- **bndy-serverless-api / artists-lambda:** NEW `lib/cascade-delete-events.js` (+ `.test.js`) — queries `bndy-events` via `artistId-date-index` GSI (paginated, no date bound), BatchWrite-deletes in chunks of 25 with UnprocessedItems retry/backoff, returns an audit list. Wired into `handleMCPDeleteArtist` (the existing no-auth `DELETE /api/artists/{id}/mcp` route — NO new route, no template change): cascade runs after memberships, audit is console.logged BEFORE the artist record is deleted (capture-before-prune), response now includes `cascadedEvents`.
+- **bndy-app:** `api.ts` `deleteArtist()`; `hooks.ts` `useDeleteArtist()` (removes artist from ["artists"] cache, invalidates ["gigs"] prefix — covers upcoming list + map geo cache — and ["artist-gigs", id]); `ArtistTile.tsx` trash button (top-left) → in-tile confirm overlay ("Delete NAME + ALL its events?") → busy spinner → error state on failure; `ArtistsBrowse.tsx` wires `onDelete`.
+
+Steps:
+1. Review diffs in both repos. `npx jest lib/cascade-delete-events.test.js` in artists-lambda must pass 5/5.
+2. Guardrails: `node scripts/validate-deployment.js` + `node scripts/verify-routes.js` (route count unchanged — reused existing MCP route).
+3. Commit both repos (backend: lib+test one commit, handler wiring second; frontend: one commit). Deploy artists-lambda; push bndy-app for Amplify.
+4. **Smoke test with a disposable record:** create a throwaway artist + 2 events for it (MCP tools or curl), then `curl -X DELETE https://api.bndy.co.uk/api/artists/{throwawayId}/mcp` → expect 200 with `cascadedEvents: 2`; verify events 404/gone; check CloudWatch for the audit log line.
+5. Log results below.
+
+⚠️ **LAUNCH BLOCKER (add to pre-launch checklist):** this is intentionally unauthenticated per Jason (pre-launch manual cleanup). Before go-live: remove the `onDelete` wiring in ArtistsBrowse + auth-gate or remove the MCP delete routes.
+
+---
+
+## TASK 6 — Venue name pills on the map (implemented 2026-07-29, needs tsc + visual gate)
+
+**Implemented by Claude in the working tree (uncommitted). ⚠️ Claude could NOT run `npx tsc --noEmit` this time (sandbox down) — you MUST run it before committing.** Jason approved the mock (`Projects/bndy/venue-labels-mock.html`) incl. next-door-venue behaviour; requirement: WCAG 2 AA on every skin.
+
+What was built:
+- `skins.ts` — `SkinColors` gains optional `pillBg`/`pillTxt`.
+- `skinMap.ts` — `pillImage()` nine-patch (64×32 @2x, stretchX [[24,40]], stretchY [[14,18]], content [10,7,54,25]) + `registerPills()` (PILL_LIVE/PILL_IDLE, fill `--card`, border venLive/venIdle, same try/catch pattern as diamonds). `readSkinColors` now also reads `--txt` → `pillTxt`, `pillBg` = card.
+- `layers.ts` — new `v-label` symbol layer (added to VEN_LAYERS): singles only (never clusters), `minzoom: VENUE_LABEL_MINZOOM = 11`, icon-text-fit pill, text-font "Open Sans Bold" (same glyph stack as existing count layers), text-size 10.5→12.5 across z11–14, `text-variable-anchor` top/bottom/left/right + radial-offset 1.05 (pills fan around the diamond before dropping), `symbol-sort-key` live-first. Diamonds keep icon-allow-overlap — they never vanish, only pills drop.
+- `MapView.tsx` — venue features carry `name`; `registerPills` called beside `registerDiamonds`; `v-label` wired to venClick + pointer cursor.
+
+**Contrast (Jason's hard gate):** pill = `--txt` on `--card` per skin. Verified ratios: solar 10.6 (worst), synthwave 13.1, bndy-dark 13.9, all light skins >13 — AA needs 4.5. Re-run the TASK 4 contrast script over (card,txt) pairs to confirm independently.
+
+Steps:
+1. `npx tsc --noEmit` — MUST be clean (Claude verified greps only). Watch `PILL_OPTS`/addImage typing in skinMap.ts if anything trips.
+2. Visual pass: /map → Venues, all 9 skins: pills from z11, none on clusters, next-door venues fan/drop correctly (only pills drop, diamonds stay), pill click opens the venue sheet, skin-switch keeps pills (idle self-heal re-registers images).
+3. Commit (one commit), deploy to gigmap, log below.
+
+---
+
+## TASK 7 — Ticketed-gig UX: ticket stub + £ map glyph (implemented 2026-07-29, needs tsc/jest + GSI change)
+
+**Implemented by Claude in the working tree (uncommitted — sandbox down again, so NO tsc/jest run: you MUST run both).** Jason approved the stub mock (`Projects/bndy/ticketed-ux-mock.html`, option A). Principle: free = clean default, NEVER badged (no "£ree" anywhere — can't prove free); ticketed gets marked.
+
+Frontend (bndy-app):
+- `skins.css` — per-skin `--stub-bg`/`--stub-fg` (appended after each dayhead token line) + `.bndy-stub` component (perforated notches via `--stub-notch`, defaults `--surface`, `.bndy-stub-oncard` → `--card`). AA-verified pairs incl. bndy-light→navy-on-cyan 4.87, blackout→black-on-blue 5.63, solar→darkened `#1F7A73` (raw acc2 can't pass). **Worst margins: openair 4.62, solar 4.76 — hand-computed; re-verify with the TASK 4 script and if openair lands <4.5, darken `--stub-bg` to `#F85E92` and recheck.**
+- NEW `src/components/TicketStub.tsx` — plain stub in rows/cards (they're `<button>`s; no nested `<a>`), link variant used nowhere yet (GigSheet CTA covers tap-through). Optional `price` prop awaits a backend `ticketPrice` field (NOT plumbed yet — do not invent it).
+- `ArtistEvents.tsx` + `VenueEvents.tsx` rows and `GigCard.tsx` — `{g.ticketed && <TicketStub/>}` (card variant on GigCard; its old `tik` Pill tone removed). `GigSheet.tsx` — stub in chip row + "Get tickets" CTA (`bndy-btn`, above Directions) when `ticketUrl` present.
+- Map: `layers.ts` new `g-tik` symbol layer (£ glyph, filter ticketed==1, minzoom 12, sizes 9.5→13 across z12–16, allow-overlap) added to GIG_LAYERS; glyph colour = `SkinColors.gigCore`, now runtime-picked in `skinMap.ts` via new WCAG `bestOn()` helper (on-acc fails 6/9 skins against the accent fill). `MapView.tsx` gig features carry `ticketed` (geo value, falls back to a join from the whole-window gigs cache — remove the join when that path retires). `api.ts` LightEvent + `ticketed?`.
+
+Backend (bndy-serverless-api / events-lambda):
+- `handlers/public.js` geo lightweight shape now includes `ticketed: !!e.ticketed`; `public.geo.test.js` ITEM + shape assertion updated.
+- **GSI change needed:** `geohash4-date-index` INCLUDE projection lacks `ticketed`, so GSI-path responses return `false` until fixed. DynamoDB projections are immutable → **delete + recreate the GSI with `ticketed` added to the INCLUDE list** (same spec as DEPLOYMENT.md geo section otherwise). Pre-launch + 4633 items = minutes of rebuild; do it in a quiet window, wait ACTIVE, then smoke `?bbox=` city query → events carry `ticketed`. Check whether `geohash6-date-index` needs the same treatment (it's the walking-scale path in the same handler).
+
+Steps: 1) `npx tsc --noEmit` clean + `npx jest` in events-lambda (geo suite must pass with the new field). 2) Contrast script over all `--stub-*` pairs. 3) Commit both repos, deploy events-lambda (guardrails: validate + verify-routes), push bndy-app. 4) GSI recreate per above. 5) Visual pass: artist page (that OTO artist has ticketed gigs), venue page, gigs list, gig sheet CTA, map £ glyphs at z≥12 across a few skins. Log below.
+
+---
+
+## TASK 8 — Stacked same-venue gig pins → swipeable card deck (implemented 2026-07-29, needs tsc gate)
+
+**Bug (Jason repro):** "This weekend" filter, Macclesfield: Queen's Hotel has 2 gigs in the window → both gig pins sit at IDENTICAL coordinates, click only ever reached `features[0]` (top of stack). The other gig was unreachable from the gig map.
+
+**Fix implemented by Claude (uncommitted; sandbox down again — NO tsc run, you MUST run it):**
+- `MapView.tsx` — `stackForRef` (ref-pattern like gigByIdRef, click closures are built once per style): on gig-pin click, collects ALL lightEvents sharing the clicked event's `venueId` within the ACTIVE date filter + search, sorted date+startTime, batch-fetches the lot (batch endpoint preserves id order). >1 → `selectedStack`; sheet close clears both. Events with null venueId degrade to single-gig behaviour.
+- `GigSheet.tsx` — new optional `stack` + `distanceOf` props (single-gig callers untouched). When stack >1: header "N gigs at {venue}" + "i / N" counter, horizontal snap carousel (`snap-x snap-mandatory`, slides `w-[86%]` so the next card physically peeks — that's the stacked-deck affordance), per-card full gig body (avatar/chips/stub/tickets CTA/directions/artist/venue), accent dot indicators synced on scroll, deck rewinds to soonest gig on open. Inner body extracted to a `Body` component — zero visual change for single gigs.
+
+**Addendum (Jason feedback):** desktop mouse users can't horizontal-scroll → added lg-only prev/next chevron buttons overlaying the carousel edges (glass-hi round, disabled at ends), ArrowLeft/ArrowRight key paging while the deck is open, clickable dots, and a venueName fallback in the header ("at this venue") — Jason's repro event has an empty venueName (leading "·" in the meta line confirms; that's a data-quality itch, not a UI bug).
+
+Verify:
+1. `npx tsc --noEmit` clean.
+2. Repro Jason's case: This weekend → Macclesfield → tap Queen's Hotel gig pin → sheet shows "2 gigs at Queen's Hotel", House of Ska first (Fri), swipe right → The Select Committee (Sat); dots + counter track; Artist/Venue/Directions work per card; single-gig pins unchanged; venue-mode pins unchanged. **Desktop: chevrons page the deck, arrow keys work, dots clickable, left chevron disabled on card 1 / right on last.**
+3. Check a couple of skins (print + bndy-dark) — carousel cards use --card2 mix + --line, dots use --acc/--dim2.
+4. Commit + deploy with the rest.
+
+---
+
 # STATUS LOG (agent: append entries here)
 
 | Date | Task | Status | Notes / evidence (hashes, counts, URLs) |
@@ -138,6 +212,7 @@ One commit for tokens, one for the component. Deploy to gigmap, log below.
 | 2026-07-27 | 3.1 | ✅ DONE | **Ticker:** skins.css updated with `padding-top:env(safe-area-inset-top,5px)`. **Main:** app-shell.tsx padding updated to `calc(1.5rem + env(safe-area-inset-top, 0px))`. **Map:** MapView.tsx negative margin updated to match. **Commit:** f63b3db |
 | 2026-07-27 | 3.2 | ✅ DONE | **robots.ts:** Allow all, sitemap at gigmap.bndy.co.uk/sitemap.xml. **sitemap.ts:** Static routes (/, /map, /gigs, /artists) + dynamic artist/venue profiles from fetchArtists/fetchVenues, revalidate 3600. **Commit:** ce7a6e9 |
 | 2026-07-27 | 4 | ✅ DONE | **Day header bars (Option B):** All 9 skins have 4 `--dayhead-*` tokens (inserted after tick tokens). GigsHome.tsx day heading now full-width bar with `var(--rad)` radius, tonight uses hot colors. **WCAG verification:** ALL 8 skins + hyper gradient stops PASS AA (≥4.5:1). **Type check:** 0 errors. **Commits:** 0911126 (tokens), 408de34 (component) |
+| 2026-07-28 | 5 | ✅ DONE | **Artist delete + event cascade:** Backend: cascade-delete-events.js lib (5/5 jest tests), wired into MCP delete route. Frontend: deleteArtist API, useDeleteArtist hook, ArtistTile trash button with confirm overlay. **Commits:** 1083e9f (lib+test), bf7cc38 (handler), b452b69 (frontend). **Deploy:** artists-lambda deployed via SAM. **Smoke test:** Created test artist + 2 events → DELETE /mcp returned `cascadedEvents: 2` → all records gone from DynamoDB. ⚠️ Pre-launch: remove onDelete wiring before public launch. |
 
 **missingCoords venues (from geo-backfill-report.json):**
 [] (empty - no venues missing coordinates)
