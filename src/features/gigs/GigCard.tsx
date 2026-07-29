@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { prettyDate, formatTime } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
+import { TicketStub } from "@/components/TicketStub";
 import type { Gig } from "@/domain/types";
 
 export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight, onClick }: { gig: Gig; imageUrl?: string; distance?: number; tonight: boolean; onClick: () => void }) {
@@ -25,7 +26,7 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           <Pill tone={tonight ? "ton" : "date"}>{prettyDate(gig.date)}{gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""}</Pill>
           {distance !== undefined && isFinite(distance) && <Pill tone="dist">{formatDistance(distance)}</Pill>}
-          {gig.ticketed && <Pill tone="tik">Ticketed</Pill>}
+          {gig.ticketed && <TicketStub onCard />}
         </div>
       </div>
       <ChevronRight size={18} className="shrink-0 text-dim2" />
@@ -37,7 +38,6 @@ const TONE: Record<string, string> = {
   date: "bg-card2 text-txt",
   ton: "bg-acc text-on-acc",
   dist: "bg-card2 text-dim",
-  tik: "bg-acc2 text-on-acc2",
 };
 function Pill({ tone, children }: { tone: keyof typeof TONE; children: React.ReactNode }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10.5px] font-extrabold", TONE[tone])}>{children}</span>;

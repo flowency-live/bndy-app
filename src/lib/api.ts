@@ -98,6 +98,8 @@ export interface LightEvent {
   startTime?: string;
   geoLat: number;
   geoLng: number;
+  /** absent until the geo GSI carries it (see AGENT-WORKORDER TASK 7) — MapView falls back to a join */
+  ticketed?: boolean;
 }
 
 export interface BBox { west: number; south: number; east: number; north: number }

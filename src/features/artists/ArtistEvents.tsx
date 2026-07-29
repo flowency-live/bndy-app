@@ -7,6 +7,7 @@ import { distanceMiles, formatDistance } from "@/domain/geo";
 import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
 import { GigSheet } from "@/features/gigs/GigSheet";
+import { TicketStub } from "@/components/TicketStub";
 import { MiniMap } from "./MiniMap";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
@@ -150,6 +151,7 @@ function EventRow({ g, dist, today, onClick }: { g: Gig; dist: number; today: st
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-[15px] font-extrabold">{g.venueName}</span>
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
+          {g.ticketed && <TicketStub />}
         </div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-dim">
           <MapPin size={12} className="opacity-60" />

@@ -7,6 +7,7 @@ import { todayISO, formatTime } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
 import { Avatar } from "@/components/ui/Avatar";
 import { GigSheet } from "@/features/gigs/GigSheet";
+import { TicketStub } from "@/components/TicketStub";
 import type { Gig } from "@/domain/types";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -51,6 +52,7 @@ export function VenueEvents({ venueId }: { venueId: string }) {
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="truncate text-[15px] font-extrabold">{g.artistName || g.title}</span>
                   <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
+                  {g.ticketed && <TicketStub />}
                 </div>
                 {g.startTime && <div className="mt-0.5 text-[12.5px] font-semibold text-dim">{formatTime(g.startTime)}</div>}
               </div>

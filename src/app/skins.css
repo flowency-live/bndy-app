@@ -27,6 +27,7 @@ html[data-theme="print"] {
   --ui: var(--font-archivo), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-instrument), serif;
   --tick-bg: #181309; --tick-fg: #F5EFE2; --tick-hl: #FFC61A;
   --dayhead-bg: #181309; --dayhead-fg: #F5EFE2; --dayhead-hot-bg: #C42A12; --dayhead-hot-fg: #FDFBF5;
+  --stub-bg: #2A46E8; --stub-fg: #FDFBF5;
   --m-bg: #EFE7D4; --m-block: #E6DCC5; --m-road1: #C9BC9E; --m-road2: #D6CBAF;
   --m-river: #BCD2E4; --m-park: #CBDDBC; --m-lab: #A79B7E;
   --pin-bd: var(--line); --pin-sh: var(--sh); --pin2-sh: var(--sh); --pin-stem: var(--line);
@@ -45,6 +46,7 @@ html[data-theme="bndy-light"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #0F172A; --tick-fg: #CBD5E1; --tick-hl: #F97316;
   --dayhead-bg: #0F172A; --dayhead-fg: #CBD5E1; --dayhead-hot-bg: #F97316; --dayhead-hot-fg: #0F172A;
+  --stub-bg: #0891B2; --stub-fg: #0F172A;
   --m-bg: #E8EDF3; --m-block: #F3F6FA; --m-road1: #C9D4E0; --m-road2: #D8E0EA;
   --m-river: #BBD7E8; --m-park: #C8E3CF; --m-lab: #9AA9BC;
   --pin-bd: #fff; --pin-sh: 0 3px 10px rgba(15, 23, 42, .3); --pin2-sh: 0 3px 10px rgba(15, 23, 42, .3); --pin-stem: #0F172A;
@@ -63,6 +65,7 @@ html[data-theme="bndy-dark"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #1C2637; --tick-fg: #94A3B8; --tick-hl: #F97316;
   --dayhead-bg: #1C2637; --dayhead-fg: #94A3B8; --dayhead-hot-bg: #F97316; --dayhead-hot-fg: #0F172A;
+  --stub-bg: #06B6D4; --stub-fg: #07222B;
   --m-bg: #0B1220; --m-block: #131E30; --m-road1: #223046; --m-road2: #1B2739;
   --m-river: #0F2A3D; --m-park: #12291E; --m-lab: #3D4F68;
   --pin-bd: rgba(255, 255, 255, .85); --pin-sh: 0 0 10px rgba(249, 115, 22, .85), 0 0 26px rgba(249, 115, 22, .4);
@@ -82,6 +85,7 @@ html[data-theme="openair"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #113B33; --tick-fg: #A9CFC3; --tick-hl: #FFD166;
   --dayhead-bg: #113B33; --dayhead-fg: #A9CFC3; --dayhead-hot-bg: #0B7A67; --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #FF6B9D; --stub-fg: #113B33;
   --m-bg: #E7F3EC; --m-block: #F4FAF6; --m-road1: #C5DACE; --m-road2: #D6E7DC;
   --m-river: #B5D8EA; --m-park: #BFE6C4; --m-lab: #93B3A6;
   --pin-bd: #fff; --pin-sh: 0 3px 10px rgba(17, 59, 51, .28); --pin2-sh: 0 3px 10px rgba(17, 59, 51, .28); --pin-stem: #113B33;
@@ -100,6 +104,7 @@ html[data-theme="goldenhour"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #42291C; --tick-fg: #D9B99B; --tick-hl: #FFB020;
   --dayhead-bg: #42291C; --dayhead-fg: #D9B99B; --dayhead-hot-bg: #B93F20; --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #8E4EC6; --stub-fg: #FFFFFF;
   --m-bg: #F2E2CE; --m-block: #F9EEDF; --m-road1: #D9C0A0; --m-road2: #E5D2B9;
   --m-river: #BCCFE0; --m-park: #C9D9AE; --m-lab: #B39877;
   --pin-bd: #fff; --pin-sh: 0 3px 10px rgba(66, 41, 28, .3); --pin2-sh: 0 3px 10px rgba(66, 41, 28, .3); --pin-stem: #42291C;
@@ -118,6 +123,7 @@ html[data-theme="solar"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #073642; --tick-fg: #93A1A1; --tick-hl: #B58900;
   --dayhead-bg: #073642; --dayhead-fg: #93A1A1; --dayhead-hot-bg: #CB4B16; --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #1F7A73; --stub-fg: #FDF6E3; /* acc2 #2AA198 fails AA w/ any fg (max 4.1) — darkened teal variant */
   --m-bg: #F3ECD9; --m-block: #FAF3E0; --m-road1: #D8CFB6; --m-road2: #E5DCC6;
   --m-river: #BFD8D8; --m-park: #CCDCB8; --m-lab: #A8A083;
   --pin-bd: #FDF6E3; --pin-sh: 0 3px 10px rgba(7, 54, 66, .28); --pin2-sh: 0 3px 10px rgba(7, 54, 66, .28); --pin-stem: #073642;
@@ -136,6 +142,7 @@ html[data-theme="synthwave"] {
   --ui: var(--font-grotesk), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-grotesk), sans-serif;
   --tick-bg: #2A2139; --tick-fg: #AF9BD3; --tick-hl: #FF7EDB;
   --dayhead-bg: #2A2139; --dayhead-fg: #AF9BD3; --dayhead-hot-bg: #FF7EDB; --dayhead-hot-fg: #2B0A22;
+  --stub-bg: #36F9F6; --stub-fg: #062B2B;
   --m-bg: #1D1529; --m-block: #271E37; --m-road1: #3A2C55; --m-road2: #302442;
   --m-river: #1F2E50; --m-park: #223428; --m-lab: #5C4A80;
   --pin-bd: rgba(242, 233, 255, .9); --pin-sh: 0 0 12px rgba(255, 126, 219, .95), 0 0 30px rgba(255, 126, 219, .5);
@@ -155,6 +162,7 @@ html[data-theme="blackout"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #FFFFFF; --tick-fg: #000; --tick-hl: #4D7CFE;
   --dayhead-bg: #FFFFFF; --dayhead-fg: #000000; --dayhead-hot-bg: #4D7CFE; --dayhead-hot-fg: #000000;
+  --stub-bg: #4D7CFE; --stub-fg: #000000;
   --m-bg: #050505; --m-block: #101010; --m-road1: #242424; --m-road2: #1A1A1A;
   --m-river: #10141C; --m-park: #0F140F; --m-lab: #3A3A3A;
   --pin-bd: #000; --pin-sh: 0 0 0 1.5px #fff, 0 4px 14px rgba(0, 0, 0, .8);
@@ -174,6 +182,7 @@ html[data-theme="hyper"] {
   --ui: var(--font-grotesk), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-grotesk), sans-serif;
   --tick-bg: linear-gradient(90deg, #4B2EFF, #FF2ED2, #22E4FF); --tick-fg: #fff; --tick-hl: #10131C;
   --dayhead-bg: #10131C; --dayhead-fg: #FFFFFF; --dayhead-hot-bg: linear-gradient(90deg, #4B2EFF, #B5108A); --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #FF2ED2; --stub-fg: #10131C;
   --m-bg: #E3E9F3; --m-block: #EFF3FA; --m-road1: #C6D0E2; --m-road2: #D5DDEB;
   --m-river: #B8D3F2; --m-park: #C6E7CD; --m-lab: #9AA6BE;
   --pin-bd: #fff; --pin-sh: 0 4px 14px rgba(75, 46, 255, .35); --pin2-sh: 0 4px 14px rgba(75, 46, 255, .35); --pin-stem: #10131C;
@@ -205,6 +214,17 @@ html[data-theme] .glass-hi { background: var(--glass-hi); }
 .bndy-splash-stamp{font-family:var(--ital);font-style:italic;font-size:21px;color:var(--acc);border:2.5px solid var(--acc);border-radius:10px;padding:8px 18px;transform:rotate(-3deg);animation:bndy-stampin .5s .6s cubic-bezier(.34,1.56,.64,1) both}
 html[data-family="soft"] .bndy-splash-stamp,html[data-family="mono"] .bndy-splash-stamp{font-style:normal;font-weight:700;transform:none}
 .bndy-splash-stamp b{color:var(--acc2)}
+/* ---- ticket stub: shown ONLY on ticketed gigs (free = clean default, never badged).
+   --stub-bg/--stub-fg are per-skin AA-verified pairs (worst = openair 4.6:1); solar uses a
+   darkened acc2 variant because raw #2AA198 cannot reach 4.5 with any text colour. ---- */
+.bndy-stub{position:relative;display:inline-flex;align-items:center;padding:3px 11px;border-radius:5px;background:var(--stub-bg);color:var(--stub-fg);font-size:10px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;line-height:1.3}
+.bndy-stub::before,.bndy-stub::after{content:"";position:absolute;top:50%;width:7px;height:7px;border-radius:50%;background:var(--stub-notch,var(--surface));transform:translateY(-50%)}
+.bndy-stub::before{left:-3.5px}
+.bndy-stub::after{right:-3.5px}
+a.bndy-stub:hover{filter:brightness(1.12)}
+.bndy-stub-px{border-left:1.5px dashed color-mix(in srgb,var(--stub-fg) 45%,transparent);margin-left:8px;padding-left:8px}
+.bndy-stub-oncard{--stub-notch:var(--card)}
+
 .bndy-ticker{position:fixed;top:0;left:0;right:0;z-index:35;overflow:hidden;background:var(--tick-bg);padding-top:env(safe-area-inset-top,5px);padding-bottom:5px;pointer-events:none}
 @media(min-width:1024px){.bndy-ticker{left:15rem}}
 .bndy-ticker-in{display:inline-flex;white-space:nowrap;animation:bndy-tick 28s linear infinite;font-family:var(--meta);font-size:9.5px;letter-spacing:3px;color:var(--tick-fg);text-transform:uppercase}

@@ -45,8 +45,35 @@ function hexToRgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
+/* ---- WCAG contrast picker (used for the £ glyph on gig pins) ---- */
+function relLum(hex: string): number | null {
+  const h = hex.replace("#", "");
+  const f = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  if (f.length !== 6 || Number.isNaN(parseInt(f, 16))) return null;
+  const ch = [0, 2, 4].map((i) => {
+    const c = parseInt(f.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+function contrast(a: string, b: string): number {
+  const la = relLum(a), lb = relLum(b);
+  if (la === null || lb === null) return 0;
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+/** Highest-contrast candidate against bg — correctness by construction, works for future skins too. */
+function bestOn(bg: string, candidates: string[]): string {
+  let best = candidates[0], bestCr = 0;
+  for (const c of candidates) {
+    const cr = contrast(bg, c);
+    if (cr > bestCr) { bestCr = cr; best = c; }
+  }
+  return best;
+}
+
 export function readSkinColors(): SkinColors {
   const v = readVars(["--acc", "--on-acc", "--acc2", "--on-acc2", "--card", "--dim2", "--surface", "--pin-bd", "--txt"]);
+  const txt = v["--txt"] || "#F1F5F9";
   const acc = v["--acc"] || "#ff7a1a";
   const onAcc = v["--on-acc"] || "#ffffff";
   const acc2 = v["--acc2"] || "#19d3f5";
@@ -57,7 +84,9 @@ export function readSkinColors(): SkinColors {
   const pinBd = v["--pin-bd"] || "#ffffff";
   return {
     gigGlow: acc,
-    gigCore: onAcc,
+    // gigCore = the £ glyph on ticketed pins: best WCAG contrast against the accent fill,
+    // picked at runtime (on-acc fails on 6/9 skins, e.g. white on #F97316 = 2.8:1)
+    gigCore: bestOn(acc, [onAcc, txt, surface, "#000000", "#ffffff"]),
     gigStroke: pinBd,
     venLive: acc2,
     venIdle: idle,
@@ -68,7 +97,7 @@ export function readSkinColors(): SkinColors {
     // venue name pills: the skin's standard card/txt pairing.
     // WCAG AA verified across all 9 skins (worst = solar 10.6:1; bndy-dark 13.9, synthwave 13.1, light skins >13).
     pillBg: card,
-    pillTxt: v["--txt"] || "#F1F5F9",
+    pillTxt: txt,
   };
 }
 

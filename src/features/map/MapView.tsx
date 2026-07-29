@@ -56,6 +56,7 @@ export function MapView() {
   const [mode, setMode] = useState<Mode>("events");
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
   const [selected, setSelected] = useState<Gig | null>(null);
+  const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [loadingGig, setLoadingGig] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,6 +118,14 @@ export function MapView() {
     return gigs.filter((g) => g.venueId === selectedVenue.id).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`));
   }, [selectedVenue, gigs]);
 
+  // ticketed lookup: fallback join for geo-endpoint events until the GSI projects `ticketed`
+  // (TASK 7) — remove with the whole-window path when it retires.
+  const tikById = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const g of gigs) if (g.ticketed) m.set(g.id, true);
+    return m;
+  }, [gigs]);
+
   // gigGeo: build from lightEvents (geo endpoint), filtered by date and search
   const gigGeo = useMemo<FeatureCollection<Point>>(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
@@ -126,10 +135,26 @@ export function MapView() {
       features: filtered.map((e) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [e.geoLng, e.geoLat] },
-        properties: { id: e.id, tonight: e.date === today ? 1 : 0 },
+        properties: { id: e.id, tonight: e.date === today ? 1 : 0, ticketed: (e.ticketed ?? tikById.get(e.id)) ? 1 : 0 },
       })),
     };
-  }, [lightEvents, sel, today, matchingEventIds]);
+  }, [lightEvents, sel, today, matchingEventIds, tikById]);
+  // Same-venue stack: gig pins at one venue overlap at identical coordinates, so a tap on
+  // "a pin" must surface ALL that venue's gigs within the active date filter + search —
+  // otherwise only the top-of-stack feature is reachable. Ref pattern (like gigByIdRef)
+  // because the click handler lives in a closure created once per style build.
+  const stackForRef = useRef<(id: string) => string[]>(() => []);
+  stackForRef.current = (id: string) => {
+    let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
+    if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
+    const me = filtered.find((e) => e.id === id);
+    if (!me || !me.venueId) return [id];
+    return filtered
+      .filter((e) => e.venueId === me.venueId)
+      .sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`))
+      .map((e) => e.id);
+  };
+
   const venGeo = useMemo<FeatureCollection<Point>>(() => {
     let filtered = venues;
     if (matchingVenueIds) filtered = venues.filter((v) => matchingVenueIds.has(v.id));
@@ -176,10 +201,15 @@ export function MapView() {
       const f = e.features?.[0];
       if (!f || f.properties?.point_count) return;
       const id = (f.properties as { id: string }).id;
-      // Fetch full gig via batch endpoint
+      // Whole same-venue stack (soonest first) via batch endpoint — order is preserved server-side
+      const ids = stackForRef.current(id);
       setLoadingGig(true);
-      fetchEventsBatch([id])
-        .then((gigs) => { if (gigs[0]) setSelected(gigs[0]); })
+      fetchEventsBatch(ids.length ? ids : [id])
+        .then((gigs) => {
+          if (!gigs.length) return;
+          setSelectedStack(gigs.length > 1 ? gigs : null);
+          setSelected(gigs[0]);
+        })
         .catch(() => {})
         .finally(() => setLoadingGig(false));
     };
@@ -341,7 +371,13 @@ export function MapView() {
         </button>
       </div>
 
-      <GigSheet gig={selected} distance={selected ? distanceMiles(location, selected.location) : undefined} onClose={() => setSelected(null)} />
+      <GigSheet
+        gig={selected}
+        stack={selectedStack}
+        distance={selected ? distanceMiles(location, selected.location) : undefined}
+        distanceOf={(g) => distanceMiles(location, g.location)}
+        onClose={() => { setSelected(null); setSelectedStack(null); }}
+      />
       <VenueSheet venue={selectedVenue} gigs={venueGigs} live={!!selectedVenue && venueIdsLive.has(selectedVenue.id)} onClose={() => setSelectedVenue(null)} onGigClick={(g) => { setSelectedVenue(null); setSelected(g); }} />
     </div>
   );
