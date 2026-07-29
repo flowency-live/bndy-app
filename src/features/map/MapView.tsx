@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Search, Sun, X } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
 import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
 import { fetchEventsBatch, type BBox } from "@/lib/api";
@@ -58,6 +58,7 @@ export function MapView() {
   const [selected, setSelected] = useState<Gig | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [loadingGig, setLoadingGig] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const modeRef = useRef(mode); modeRef.current = mode;
   // When flag off: use full gigs. When flag on: gigById only used for venue sheet fallback.
   const gigById = useMemo(() => { const m: Record<string, Gig> = {}; gigs.forEach((g) => (m[g.id] = g)); return m; }, [gigs]);
@@ -66,20 +67,60 @@ export function MapView() {
   const venueByIdRef = useRef(venueById); venueByIdRef.current = venueById;
   // venueIdsLive needs full gigs for venue mode (geo endpoint is for gig pins only)
   const venueIdsLive = useMemo(() => new Set(gigs.map((g) => g.venueId)), [gigs]);
-  // shownCount: count lightEvents in viewport matching date filter
-  const shownCount = useMemo(
-    () => lightEvents.filter((e) => matchesMapDate(e.date, sel, today)).length,
-    [lightEvents, sel, today],
-  );
+  // Search: build indices from full data for name lookups
+  const gigSearchIndex = useMemo(() => {
+    const index: Record<string, { artistName?: string; venueName?: string; lat: number; lng: number }> = {};
+    for (const g of gigs) {
+      index[g.id] = { artistName: g.artistName, venueName: g.venueName, lat: g.location.lat, lng: g.location.lng };
+    }
+    return index;
+  }, [gigs]);
+  const venueSearchIndex = useMemo(() => {
+    const index: Record<string, { name: string; lat: number; lng: number }> = {};
+    for (const v of venues) {
+      index[v.id] = { name: v.name, lat: v.location.lat, lng: v.location.lng };
+    }
+    return index;
+  }, [venues]);
+
+  // Filter logic for search
+  const sq = searchQuery.trim().toLowerCase();
+  const matchingEventIds = useMemo(() => {
+    if (!sq) return null; // null = no filter
+    const ids = new Set<string>();
+    for (const e of lightEvents) {
+      const info = gigSearchIndex[e.id];
+      if (info && ((info.artistName?.toLowerCase().includes(sq)) || (info.venueName?.toLowerCase().includes(sq)))) {
+        ids.add(e.id);
+      }
+    }
+    return ids;
+  }, [sq, lightEvents, gigSearchIndex]);
+  const matchingVenueIds = useMemo(() => {
+    if (!sq) return null;
+    const ids = new Set<string>();
+    for (const v of venues) {
+      if (v.name.toLowerCase().includes(sq)) ids.add(v.id);
+    }
+    return ids;
+  }, [sq, venues]);
+
+  // shownCount: count lightEvents in viewport matching date filter AND search
+  const shownCount = useMemo(() => {
+    let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
+    if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
+    return filtered.length;
+  }, [lightEvents, sel, today, matchingEventIds]);
 
   const venueGigs = useMemo(() => {
     if (!selectedVenue) return [];
     return gigs.filter((g) => g.venueId === selectedVenue.id).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`));
   }, [selectedVenue, gigs]);
 
-  // gigGeo: build from lightEvents (geo endpoint)
+  // gigGeo: build from lightEvents (geo endpoint), filtered by date and search
   const gigGeo = useMemo<FeatureCollection<Point>>(() => {
-    const filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
+    let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
+    if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     return {
       type: "FeatureCollection",
       features: filtered.map((e) => ({
@@ -88,11 +129,19 @@ export function MapView() {
         properties: { id: e.id, tonight: e.date === today ? 1 : 0 },
       })),
     };
-  }, [lightEvents, sel, today]);
-  const venGeo = useMemo<FeatureCollection<Point>>(
-    () => ({ type: "FeatureCollection", features: venues.map((v) => ({ type: "Feature", geometry: { type: "Point", coordinates: [v.location.lng, v.location.lat] }, properties: { id: v.id, live: venueIdsLive.has(v.id) ? 1 : 0 } })) }),
-    [venues, venueIdsLive],
-  );
+  }, [lightEvents, sel, today, matchingEventIds]);
+  const venGeo = useMemo<FeatureCollection<Point>>(() => {
+    let filtered = venues;
+    if (matchingVenueIds) filtered = venues.filter((v) => matchingVenueIds.has(v.id));
+    return {
+      type: "FeatureCollection",
+      features: filtered.map((v) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [v.location.lng, v.location.lat] },
+        properties: { id: v.id, live: venueIdsLive.has(v.id) ? 1 : 0 },
+      })),
+    };
+  }, [venues, venueIdsLive, matchingVenueIds]);
   const gigGeoRef = useRef(gigGeo); gigGeoRef.current = gigGeo;
   const venGeoRef = useRef(venGeo); venGeoRef.current = venGeo;
 
@@ -199,6 +248,21 @@ export function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gigGeo, venGeo]);
   useEffect(() => { const m = mapRef.current; if (m && readyRef.current) applyMode(m); }, [mode]);
+
+  // Fly to single match when search yields exactly one result
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m || !readyRef.current || !sq) return;
+    if (mode === "events" && matchingEventIds?.size === 1) {
+      const id = [...matchingEventIds][0];
+      const info = gigSearchIndex[id];
+      if (info) m.flyTo({ center: [info.lng, info.lat], zoom: 14, duration: 800 });
+    } else if (mode === "venues" && matchingVenueIds?.size === 1) {
+      const id = [...matchingVenueIds][0];
+      const info = venueSearchIndex[id];
+      if (info) m.flyTo({ center: [info.lng, info.lat], zoom: 14, duration: 800 });
+    }
+  }, [sq, mode, matchingEventIds, matchingVenueIds, gigSearchIndex, venueSearchIndex]);
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
     // Increment epoch to invalidate stale closures from rapid skin cycling
@@ -236,14 +300,28 @@ export function MapView() {
     <div className="relative h-[100dvh] w-full overflow-hidden" style={{ marginTop: `calc(-1.5rem - env(safe-area-inset-top, 0px))` }}>
       <div ref={containerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
 
-      <div className="absolute left-3 top-8 z-20 flex items-center gap-2 pt-[env(safe-area-inset-top,0px)] lg:left-4 lg:top-9">
+      <div className="absolute left-3 right-3 top-8 z-20 flex items-center gap-2 pt-[env(safe-area-inset-top,0px)] lg:left-4 lg:right-auto lg:top-9">
         <div className="flex rounded-2xl border border-line glass p-1">
           {(["events", "venues"] as Mode[]).map((m) => (
-            <button key={m} onClick={() => setMode(m)} className={cn("rounded-xl px-3.5 py-2 text-[12.5px] font-extrabold capitalize", mode === m ? "bg-white/10 text-txt" : "text-dim")}>{m === "events" ? "Gigs" : "Venues"}</button>
+            <button key={m} onClick={() => { setMode(m); setSearchQuery(""); }} className={cn("rounded-xl px-3.5 py-2 text-[12.5px] font-extrabold capitalize", mode === m ? "bg-white/10 text-txt" : "text-dim")}>{m === "events" ? "Gigs" : "Venues"}</button>
           ))}
         </div>
+        <div className="relative flex-1 lg:w-52 lg:flex-none">
+          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={mode === "events" ? "Artist or venue…" : "Venue name…"}
+            className="w-full rounded-2xl border border-line glass py-2.5 pl-9 pr-8 text-[13px] font-semibold outline-none placeholder:text-dim focus:border-acc/50"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-dim hover:text-txt">
+              <X size={14} />
+            </button>
+          )}
+        </div>
         {mode === "events" && (
-          <div className="flex items-center gap-1.5 rounded-2xl border border-line glass px-3 py-2.5 text-[13px] font-black">
+          <div className="hidden items-center gap-1.5 rounded-2xl border border-line glass px-3 py-2.5 text-[13px] font-black lg:flex">
             <span className="h-2 w-2 rounded-full bg-acc shadow-[0_0_8px_var(--acc)]" />{shownCount}
             <span className="text-[10px] font-extrabold uppercase tracking-wide text-dim">{sel.kind === "today" ? "tonight" : "gigs"}</span>
           </div>
