@@ -1,12 +1,17 @@
+"use client";
+
+import { useState } from "react";
 import { MapPin, Music2 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { avatarGradient } from "@/domain/avatar";
 import { HeroBack, HeroSocials } from "./HeroControls";
 import { ArtistEvents } from "./ArtistEvents";
+import { ArtistAvailability } from "./ArtistAvailability";
 import { cn } from "@/lib/cn";
-import type { Artist, Gig } from "@/domain/types";
+import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
 
-export function ArtistProfile({ id, artist, gigs }: { id: string; artist: Artist | null; gigs: Gig[] }) {
+export function ArtistProfile({ id, artist, gigs, availability }: { id: string; artist: Artist | null; gigs: Gig[]; availability: AvailabilityDate[] }) {
+  const [activeTab, setActiveTab] = useState<'events' | 'availability'>('events');
   const name = artist?.name || gigs[0]?.artistName || "Artist";
   const img = artist?.profileImageUrl || undefined;
   const type = artist?.artistType;
@@ -57,7 +62,47 @@ export function ArtistProfile({ id, artist, gigs }: { id: string; artist: Artist
           </div>
         )}
         {artist?.bio && <p className="mt-4 max-w-2xl text-[14.5px] leading-relaxed text-dim">{artist.bio}</p>}
-        <ArtistEvents gigs={gigs} />
+
+        {/* ---- tabs (only show if availability is published) ---- */}
+        {artist?.publishAvailability && (
+          <div className="mt-6 flex gap-1 border-b border-line">
+            <button
+              onClick={() => setActiveTab('events')}
+              className={cn(
+                "px-4 py-2.5 text-[14px] font-bold transition-colors",
+                activeTab === 'events'
+                  ? "border-b-2 border-[var(--acc)] text-[var(--acc)]"
+                  : "text-dim hover:text-fg"
+              )}
+            >
+              Events
+            </button>
+            <button
+              onClick={() => setActiveTab('availability')}
+              className={cn(
+                "px-4 py-2.5 text-[14px] font-bold transition-colors",
+                activeTab === 'availability'
+                  ? "border-b-2 border-[var(--acc)] text-[var(--acc)]"
+                  : "text-dim hover:text-fg"
+              )}
+            >
+              Availability
+            </button>
+          </div>
+        )}
+
+        {/* ---- content area ---- */}
+        {artist?.publishAvailability ? (
+          <>
+            {activeTab === 'events' ? (
+              <ArtistEvents gigs={gigs} />
+            ) : (
+              <ArtistAvailability artist={artist} availability={availability} />
+            )}
+          </>
+        ) : (
+          <ArtistEvents gigs={gigs} />
+        )}
       </div>
     </div>
   );

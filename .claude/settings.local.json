@@ -8,7 +8,20 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(aws dynamodb update-table:*)",
+      "Bash(aws dynamodb describe-table:*)",
+      "Bash(aws dynamodb scan:*)",
+      "Bash(curl:*)",
+      "Bash(npx jest:*)",
+      "Bash(node:*)",
+      "Bash(sam build:*)",
+      "Bash(sam deploy:*)",
+      "Bash(echo:*)",
+      "Bash(aws dynamodb get-item:*)",
+      "Bash(npx tsc:*)",
+      "Bash(GIT_CURL_VERBOSE=1 git push:*)",
+      "Bash(git fetch:*)"
     ]
   }
 }

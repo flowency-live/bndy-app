@@ -35,6 +35,20 @@ export interface Artist {
   profileImageUrl?: string | null;
   bio?: string;
   socials?: SocialLink[];
+  publishAvailability?: boolean;
+  availabilityMode?: 'selected_dates_only' | 'free_weekends';
+  contactMethod?: 'phone' | 'whatsapp';
+  phoneNumber?: string | null;
+  whatsappNumber?: string | null;
+}
+
+/** An artist's available date for booking. */
+export interface AvailabilityDate {
+  id: string;
+  artistId: string;
+  date: string; // YYYY-MM-DD
+  type: 'available' | 'free_weekend';
+  notes?: string;
 }
 
 /** A place that hosts gigs. */

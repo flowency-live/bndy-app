@@ -1,6 +1,6 @@
 // bndy API client + DTO→domain transforms. All I/O lives here.
 
-import type { Artist, Gig, SocialLink, SocialPlatform, Venue } from "@/domain/types";
+import type { Artist, AvailabilityDate, Gig, SocialLink, SocialPlatform, Venue } from "@/domain/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
 
@@ -163,6 +163,14 @@ export async function fetchArtistGigs(id: string, startDate: string): Promise<Gi
   const data = await get<{ events?: GigDTO[] }>(`/api/artists/${id}/public-events?startDate=${startDate}`);
   return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
 }
+
+export async function fetchArtistAvailability(id: string, startDate: string, endDate?: string): Promise<AvailabilityDate[]> {
+  const params = new URLSearchParams({ startDate });
+  if (endDate) params.append('endDate', endDate);
+  const data = await get<{ availability?: AvailabilityDate[] }>(`/api/artists/${id}/public-availability?${params}`);
+  return data.availability || [];
+}
+
 export async function fetchVenueGigs(id: string, startDate: string): Promise<Gig[]> {
   const data = await get<{ events?: GigDTO[] }>(`/api/venues/${id}/events?startDate=${startDate}`);
   return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
