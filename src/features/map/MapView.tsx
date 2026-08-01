@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import maplibregl from "maplibre-gl";
-import { Moon, Search, Sun, X } from "lucide-react";
-import { SkinControl } from "@/components/SkinPicker";
+import { Search, X } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
 import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
 import { fetchEventsBatch, type BBox } from "@/lib/api";
@@ -32,7 +31,7 @@ export function MapView() {
   const prevBasemapRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const epochRef = useRef(0); // incremented on each skin change to kill stale closures
-  const { mode: theme, toggle, appSkin } = useTheme();
+  const { appSkin } = useTheme();
   const { location } = useGeolocation();
 
   const today = todayISO();
@@ -373,12 +372,6 @@ export function MapView() {
         </div>
       )}
 
-      <div className="absolute bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-3 z-20 flex items-center gap-2 lg:bottom-4 lg:left-4">
-        <SkinControl variant="map" />
-        <button onClick={toggle} aria-label="Toggle light/dark" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-line glass text-txt">
-          {theme === "dark" ? <Moon size={17} /> : <Sun size={17} />}
-        </button>
-      </div>
 
       <GigSheet
         gig={selected}
