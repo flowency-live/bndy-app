@@ -32,7 +32,7 @@ export function Splash() {
         <span>b</span><span>n</span><span>d</span><span>y</span><span>.</span>
       </div>
       <div className="bndy-splash-stamp">
-        Keeping <b>LIVE</b> music alive!
+        Keeping <b>LIVE</b> music <b>ALIVE</b>!
       </div>
     </div>
   );

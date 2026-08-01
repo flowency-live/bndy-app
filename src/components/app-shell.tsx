@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music, Map as MapIcon, Users, Moon, Sun } from "lucide-react";
-import { useTheme } from "@/lib/theme";
+import { Music, Map as MapIcon, MapPin, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
@@ -13,6 +12,7 @@ import type { ReactNode } from "react";
 
 const NAV = [
   { key: "map", label: "Map", href: "/map", icon: MapIcon },
+  { key: "venues", label: "Venues", href: "/map?mode=venues", icon: MapPin },
   { key: "gigs", label: "Gigs", href: "/gigs", icon: Music },
   { key: "artists", label: "Artists", href: "/artists", icon: Users },
 ] as const;
@@ -26,7 +26,6 @@ function activeKey(path: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const active = activeKey(path);
-  const { mode, toggle } = useTheme();
 
   return (
     <div className="min-h-[100dvh]">
@@ -54,13 +53,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <SkinControl variant="sidebar" />
-        <button
-          onClick={toggle}
-          className="mt-2 flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-[14px] font-bold text-dim transition-colors hover:text-txt"
-        >
-          {mode === "dark" ? <Moon size={18} /> : <Sun size={18} />}
-          {mode === "dark" ? "Dark" : "Light"} mode
-        </button>
       </aside>
 
       {/* ---- content ---- */}

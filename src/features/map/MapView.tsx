@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { Moon, Search, Sun, X } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
@@ -54,7 +55,8 @@ export function MapView() {
   const lightEvents = geoData?.events ?? [];
 
   const { data: venues = [] } = useVenues();
-  const [mode, setMode] = useState<Mode>("events");
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<Mode>(() => (searchParams.get("mode") === "venues" ? "venues" : "events"));
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
   const [selected, setSelected] = useState<Gig | null>(null);
   const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
