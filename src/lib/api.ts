@@ -1,6 +1,6 @@
 // bndy API client + DTO→domain transforms. All I/O lives here.
 
-import type { Artist, AvailabilityDate, Gig, SocialLink, SocialPlatform, Venue } from "@/domain/types";
+import type { Artist, AvailabilityDate, Gig, ResolvedTicketing, SocialLink, SocialPlatform, Venue } from "@/domain/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
 
@@ -34,14 +34,32 @@ function toSocials(dto: Record<string, unknown>): SocialLink[] {
   return out;
 }
 
+interface TicketingDTO {
+  isTicketed: boolean;
+  source: 'event' | 'venue' | 'none';
+  price?: string;
+  ticketUrl?: string;
+  ticketInformation?: string;
+}
 interface GigDTO {
   id: string; title?: string; name?: string; date: string; startTime?: string; endTime?: string;
   venueId: string; venueName?: string; venueCity?: string; venue?: { city?: string };
   artistId?: string; artistName?: string; geoLat?: number; geoLng?: number;
-  ticketed?: boolean; ticketUrl?: string; isOpenMic?: boolean;
+  ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean;
 }
 export function toGig(e: GigDTO): Gig | null {
   if (typeof e.geoLat !== "number" || typeof e.geoLng !== "number") return null;
+  // Use resolved ticketing if available, fall back to legacy fields
+  const ticketing = e.ticketing;
+  const isTicketed = ticketing?.isTicketed ?? !!e.ticketed;
+  const ticketUrl = ticketing?.ticketUrl ?? e.ticketUrl;
+  const resolved: ResolvedTicketing | undefined = ticketing ? {
+    isTicketed: ticketing.isTicketed,
+    source: ticketing.source,
+    price: ticketing.price,
+    ticketUrl: ticketing.ticketUrl,
+    ticketInformation: ticketing.ticketInformation,
+  } : undefined;
   return {
     id: e.id,
     title: e.title || e.name || e.artistName || "Live music",
@@ -54,8 +72,9 @@ export function toGig(e: GigDTO): Gig | null {
     startTime: e.startTime,
     endTime: e.endTime,
     location: { lat: e.geoLat, lng: e.geoLng },
-    ticketed: !!e.ticketed,
-    ticketUrl: e.ticketUrl,
+    ticketed: isTicketed,
+    ticketUrl,
+    ticketing: resolved,
     isOpenMic: e.isOpenMic,
   };
 }
@@ -65,6 +84,7 @@ interface VenueDTO {
   location_object?: { lat: number; lng: number }; latitude?: number; longitude?: number;
   website?: string; profileImageUrl?: string | null;
   socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string;
+  standardTicketed?: boolean; standardTicketUrl?: string; standardTicketInformation?: string;
 }
 export function toVenue(v: VenueDTO): Venue | null {
   const loc = v.location_object ?? (typeof v.latitude === "number" && typeof v.longitude === "number" ? { lat: v.latitude, lng: v.longitude } : null);
@@ -73,6 +93,9 @@ export function toVenue(v: VenueDTO): Venue | null {
     id: v.id, name: v.name, address: v.address, city: v.city ?? undefined, postcode: v.postcode,
     location: loc, website: v.website, profileImageUrl: v.profileImageUrl,
     socials: toSocials(v as unknown as Record<string, unknown>),
+    standardTicketed: v.standardTicketed,
+    standardTicketUrl: v.standardTicketUrl,
+    standardTicketInformation: v.standardTicketInformation,
   };
 }
 

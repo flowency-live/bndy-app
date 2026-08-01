@@ -26,7 +26,7 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           <Pill tone={tonight ? "ton" : "date"}>{prettyDate(gig.date)}{gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""}</Pill>
           {distance !== undefined && isFinite(distance) && <Pill tone="dist">{formatDistance(distance)}</Pill>}
-          {gig.ticketed && <TicketStub onCard />}
+          {gig.ticketed && <TicketStub onCard price={gig.ticketing?.price} />}
         </div>
       </div>
       <ChevronRight size={18} className="shrink-0 text-dim2" />

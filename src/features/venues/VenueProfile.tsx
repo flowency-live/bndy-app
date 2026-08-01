@@ -3,6 +3,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { avatarGradient } from "@/domain/avatar";
 import { HeroBack, HeroSocials } from "@/features/artists/HeroControls";
 import { VenueEvents } from "./VenueEvents";
+import { VenueTicketingBanner } from "./VenueTicketingBanner";
 import type { Gig, Venue } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
@@ -67,6 +68,7 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
             <MapPin size={15} className="shrink-0 opacity-60" /> {venue.address}
           </div>
         )}
+        <VenueTicketingBanner venue={venue} />
         <VenueEvents venueId={id} />
       </div>
     </div>

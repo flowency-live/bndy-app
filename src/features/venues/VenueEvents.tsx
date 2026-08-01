@@ -118,7 +118,7 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-[15px] font-extrabold">{g.artistName || g.title}</span>
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
-          {g.ticketed && <TicketStub />}
+          {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>
         {g.startTime && <div className="mt-0.5 text-[12.5px] font-semibold text-dim">{formatTime(g.startTime)}</div>}
       </div>

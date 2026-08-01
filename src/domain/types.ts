@@ -6,6 +6,15 @@ export interface LatLng {
   lng: number;
 }
 
+/** Resolved ticketing info from backend (server-side resolution). */
+export interface ResolvedTicketing {
+  isTicketed: boolean;
+  source: 'event' | 'venue' | 'none';
+  price?: string;
+  ticketUrl?: string;
+  ticketInformation?: string;
+}
+
 /** A live music event at a venue. */
 export interface Gig {
   id: string;
@@ -19,8 +28,12 @@ export interface Gig {
   startTime?: string; // HH:MM
   endTime?: string;
   location: LatLng;
+  /** @deprecated Use ticketing.isTicketed instead */
   ticketed: boolean;
+  /** @deprecated Use ticketing.ticketUrl instead */
   ticketUrl?: string;
+  /** Resolved ticketing from backend (includes venue inheritance) */
+  ticketing?: ResolvedTicketing;
   isOpenMic?: boolean;
 }
 
@@ -64,6 +77,12 @@ export interface Venue {
   socials?: SocialLink[];
   /** derived: has at least one upcoming gig */
   hasUpcoming?: boolean;
+  /** venue-level ticketing: true if most gigs require tickets */
+  standardTicketed?: boolean;
+  /** venue's standard ticket page URL */
+  standardTicketUrl?: string;
+  /** venue's standard ticket info text */
+  standardTicketInformation?: string;
 }
 
 export type SocialPlatform = "facebook" | "instagram" | "website" | "spotify" | "youtube" | "x" | "other";

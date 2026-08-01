@@ -152,11 +152,11 @@ function Body({ gig, distance, src, onClose }: { gig: Gig; distance?: number; sr
         {distance !== undefined && isFinite(distance) && (
           <span className="rounded-lg bg-card2 px-2.5 py-1.5 text-dim">{formatDistance(distance)} away</span>
         )}
-        {gig.ticketed && <TicketStub onCard className="self-center" />}
+        {gig.ticketed && <TicketStub onCard price={gig.ticketing?.price} className="self-center" />}
       </div>
 
       {gig.ticketed && gig.ticketUrl && (
-        <a href={gig.ticketUrl} target="_blank" rel="noopener"
+        <a href={gig.ticketUrl} target="_blank" rel="noopener noreferrer"
           className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
           <Ticket size={16} /> Get tickets
         </a>
