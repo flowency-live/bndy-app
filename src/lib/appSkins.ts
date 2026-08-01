@@ -1,4 +1,4 @@
-// App-level skin registry — 11 user-selectable skins.
+// App-level skin registry — 12 user-selectable skins.
 // Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md · visual truth: bndy-skins-v4.html
 // A skin = token block in src/app/skins.css + one entry here. Nothing else.
 
@@ -7,7 +7,7 @@ export type SkinMode = "light" | "mid" | "dark";
 
 export type AppSkinId =
   | "print" | "bndy-light" | "bndy-dark" | "openair" | "goldenhour"
-  | "solar" | "lemonrock" | "synthwave" | "blackout" | "onthecase" | "hyper";
+  | "solar" | "lemonrock" | "synthwave" | "blackout" | "onthecase" | "poole" | "hyper";
 
 export interface AppSkin {
   key: AppSkinId;
@@ -72,6 +72,11 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     dots: ["#8DC63F", "#F2F7EC", "#0C0F0A"],
     pal: [["#8DC63F", "#4A7115"], ["#A4D65E", "#2E4A0E"], ["#5E8C24", "#8DC63F"], ["#F2F7EC", "#4A7115"], ["#3E5C14", "#8DC63F"]],
   },
+  poole: {
+    key: "poole", name: "Poole Position", desc: "KLMA Stoke homage · red & gold", family: "soft", mode: "dark",
+    dots: ["#D9201A", "#F5D327", "#0B0908"],
+    pal: [["#D9201A", "#8F1511"], ["#F5D327", "#B89A0E"], ["#D9201A", "#F5D327"], ["#F5F2EA", "#8F1511"], ["#B23A1E", "#D9201A"]],
+  },
   hyper: {
     key: "hyper", name: "Hyperwave", desc: "Future chrome · iridescent", family: "hyper", mode: "light",
     dots: ["#4B2EFF", "#FF2ED2", "#22E4FF"],
@@ -81,7 +86,7 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
 
 /** Picker order (product decision: 6 light/mid before 3 dark alternates). */
 export const SKIN_ORDER: AppSkinId[] = [
-  "print", "bndy-light", "bndy-dark", "openair", "goldenhour", "solar", "lemonrock", "synthwave", "blackout", "onthecase", "hyper",
+  "print", "bndy-light", "bndy-dark", "openair", "goldenhour", "solar", "lemonrock", "synthwave", "blackout", "onthecase", "poole", "hyper",
 ];
 
 export const DEFAULT_SKIN: AppSkinId = "print";

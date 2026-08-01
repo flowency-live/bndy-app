@@ -25,6 +25,7 @@ const BASEMAP_BY_SKIN: Record<AppSkinId, BasemapKey> = {
   synthwave: "dark",
   blackout: "dark",
   onthecase: "dark",
+  poole: "dark",
   hyper: "light",
 };
 export function basemapFor(skin: AppSkinId): string {

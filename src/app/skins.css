@@ -1,5 +1,5 @@
 /* ============================================================
-   bndy — SKINS TOKEN CONTRACT (11 user-selectable skins)
+   bndy — SKINS TOKEN CONTRACT (12 user-selectable skins)
    Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md
    Visual source of truth: Projects/bndy/bndy-skins-v4.html
    ------------------------------------------------------------
@@ -205,6 +205,26 @@ html[data-theme="onthecase"] {
   --m-bg: #0A0D08; --m-block: #10140C; --m-road1: #232B1B; --m-road2: #191F13;
   --m-river: #10231C; --m-park: #12240F; --m-lab: #4A5840;
   --pin-bd: #F2F7EC; --pin-sh: 3px 3px 0 rgba(8, 10, 6, .7); --pin2-sh: 3px 3px 0 rgba(8, 10, 6, .7); --pin-stem: #F2F7EC;
+}
+/* ---------------- POOLE POSITION (KLMA Stoke homage · soft · .dark) ---------------- */
+html[data-theme="poole"] {
+  --ink-rgb: 11 9 8;
+  --surface: #0B0908; --card: #161210; --card2: #211B17;
+  --txt: #F5F2EA; --dim: #B5AFA0; --dim2: #746E5E;
+  --line: #2E2823; --line-hi: #453D35; --bw: 1px; --rad: 12px; --rad-lg: 16px;
+  --glass: rgba(11, 9, 8, 0.78); --glass-hi: rgba(22, 18, 16, 0.94);
+  --sh: 0 6px 18px rgba(0, 0, 0, .5); --sh-lg: 0 12px 32px rgba(0, 0, 0, .6); --sh-hover: 0 12px 28px rgba(217, 32, 26, .3);
+  --shadow: var(--sh);
+  --acc: #D9201A; --on-acc: #fff; --acc2: #F5D327; --on-acc2: #2B2300; --hl: #F5D327; --on-hl: #2B2300;
+  --disp: var(--font-inter), sans-serif; --disp-wt: 900; --disp-case: none;
+  --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-instrument), serif;
+  --tick-bg: #070605; --tick-fg: #F5D327; --tick-hl: #D9201A;
+  --dayhead-bg: #161210; --dayhead-fg: #B5AFA0; --dayhead-hot-bg: #D9201A; --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #F5D327; --stub-fg: #2B2300;
+  --m-bg: #080706; --m-block: #0F0D0B; --m-road1: #262019; --m-road2: #1A1512;
+  --m-river: #12202A; --m-park: #12200F; --m-lab: #6B655A;
+  --pin-bd: rgba(255, 255, 255, .9); --pin-sh: 0 0 10px rgba(217, 32, 26, .85), 0 0 26px rgba(217, 32, 26, .4);
+  --pin2-sh: 0 0 10px rgba(245, 211, 39, .75), 0 0 24px rgba(245, 211, 39, .35); --pin-stem: rgba(255, 255, 255, .5);
 }
 /* ---------------- HYPERWAVE (iridescent chrome · hyper) ---------------- */
 html[data-theme="hyper"] {
