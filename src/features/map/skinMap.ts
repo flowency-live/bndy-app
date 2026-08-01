@@ -21,8 +21,10 @@ const BASEMAP_BY_SKIN: Record<AppSkinId, BasemapKey> = {
   openair: "light",
   goldenhour: "voyager",
   solar: "voyager",
+  lemonrock: "voyager",
   synthwave: "dark",
   blackout: "dark",
+  onthecase: "dark",
   hyper: "light",
 };
 export function basemapFor(skin: AppSkinId): string {
