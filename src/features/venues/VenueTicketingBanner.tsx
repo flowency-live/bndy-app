@@ -29,17 +29,24 @@ export function VenueTicketingBanner({ venue }: { venue: Venue | null }) {
   }
 
   return (
-    <a
-      href={venue.standardTicketUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-4 flex items-center gap-2.5 rounded-xl border border-cyan/30 bg-cyan/10 px-4 py-3 transition-colors hover:bg-cyan/15"
-    >
-      <Ticket size={18} className="shrink-0 text-cyan" />
-      <span className="min-w-0 text-[13.5px] font-semibold">
-        Tickets at{" "}
-        <span className="font-bold text-cyan">{domain}</span>
-      </span>
-    </a>
+    <div className="mt-4 rounded-xl border border-cyan/30 bg-cyan/10">
+      <a
+        href={venue.standardTicketUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2.5 px-4 py-3 transition-colors hover:bg-cyan/5"
+      >
+        <Ticket size={18} className="shrink-0 text-cyan" />
+        <span className="min-w-0 text-[13.5px] font-semibold">
+          Tickets at{" "}
+          <span className="font-bold text-cyan">{domain}</span>
+        </span>
+      </a>
+      {venue.standardTicketInformation && (
+        <div className="border-t border-cyan/20 px-4 py-2.5 text-[12.5px] text-dim">
+          {venue.standardTicketInformation}
+        </div>
+      )}
+    </div>
   );
 }
