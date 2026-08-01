@@ -56,7 +56,12 @@ export function MapView() {
 
   const { data: venues = [] } = useVenues();
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<Mode>(() => (searchParams.get("mode") === "venues" ? "venues" : "events"));
+  const [mode, setMode] = useState<Mode>("events");
+  // Sync mode from URL param on mount/change
+  useEffect(() => {
+    const m = searchParams.get("mode");
+    if (m === "venues") setMode("venues");
+  }, [searchParams]);
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
   const [selected, setSelected] = useState<Gig | null>(null);
   const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
