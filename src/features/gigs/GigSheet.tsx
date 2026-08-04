@@ -2,17 +2,25 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Clock, MapPin, Navigation, Ticket, User } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
-import { Avatar } from "@/components/ui/Avatar";
-import { useArtistImageMap } from "@/lib/hooks";
+import { useArtistImageMap, useArtists } from "@/lib/hooks";
+import { avatarGradient, initials } from "@/domain/avatar";
 import { prettyDate, formatTime } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
+
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function dateParts(iso: string): { dow: string; label: string } {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return { dow: DOW[dow], label: `${d} ${MON[m - 1]}` };
+}
 
 /**
  * Gig detail sheet. Optional `stack`: same-venue gigs within the active filter —
@@ -28,6 +36,10 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   distanceOf?: (g: Gig) => number | undefined;
 }) {
   const imgMap = useArtistImageMap();
+  // events sometimes lack artistName — resolve from the cached artists list
+  const { data: artists = [] } = useArtists();
+  const nameOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || g.title;
+
   const [idx, setIdx] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const multi = !!gig && !!stack && stack.length > 1;
@@ -62,7 +74,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   return (
     <Sheet open={!!gig} onClose={onClose}>
       {gig && !multi && (
-        <Body gig={gig} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
+        <Body gig={gig} name={nameOf(gig)} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
       )}
       {gig && multi && (
         <>
@@ -88,7 +100,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
                   className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
                   style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
                 >
-                  <Body gig={g} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
+                  <Body gig={g} name={nameOf(g)} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
                 </div>
               ))}
             </div>
@@ -127,36 +139,76 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   );
 }
 
-function Body({ gig, distance, src, onClose }: { gig: Gig; distance?: number; src?: string; onClose: () => void }) {
+/** Slab: the framed date/time blocks (accent keyline on top, like a ticket edge). */
+function Slab({ label, value, hot }: { label: string; value: string; hot?: boolean }) {
+  return (
+    <div
+      className={cn("min-w-[86px] flex-1 rounded-xl px-3 py-2 text-center sm:flex-none", hot ? "bg-acc text-on-acc" : "bg-card2")}
+      style={hot ? undefined : { boxShadow: "inset 0 2.5px 0 var(--acc)" }}
+    >
+      <div className={cn("text-[9.5px] font-extrabold uppercase tracking-[1.2px]", hot ? "opacity-85" : "text-dim")}>{label}</div>
+      <div className="tnum mt-0.5 text-[15px] font-black leading-tight">{value}</div>
+    </div>
+  );
+}
+
+function Body({ gig, name, distance, src, onClose }: { gig: Gig; name: string; distance?: number; src?: string; onClose: () => void }) {
   const tonight = prettyDate(gig.date) === "Tonight";
+  const { dow, label } = dateParts(gig.date);
+  const [copied, setCopied] = useState(false);
+
+  const share = async () => {
+    const path = gig.artistId ? `/artists/${gig.artistId}` : `/venues/${gig.venueId}`;
+    const url = `${window.location.origin}${path}`;
+    const text = `${name}${gig.venueName ? ` at ${gig.venueName}` : ""}${gig.venueCity ? `, ${gig.venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} — found on bndy`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${name} — live on bndy`, text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+      }
+    } catch { /* user dismissed the share sheet */ }
+  };
+
   return (
     <>
-      <div className="mb-3.5 flex items-center gap-3.5">
-        <Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={src} size={60} radius={15} />
-        <div className="min-w-0">
-          <div className="text-[21px] font-black leading-tight tracking-tight">{gig.artistName || gig.title}</div>
-          <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">
-            <MapPin size={13} className="opacity-70" />
-            <span className="truncate">{gig.venueName}{gig.venueCity ? ` · ${gig.venueCity}` : ""}</span>
+      {/* hero: big artist image (falls back to the palette gradient + initials) */}
+      <div className="relative mb-3.5 h-44 overflow-hidden rounded-2xl border border-line">
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
+            <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
           </div>
-        </div>
-      </div>
-
-      <div className="mb-3.5 flex flex-wrap gap-2 text-[12px] font-extrabold">
-        <span className={`rounded-lg px-2.5 py-1.5 ${tonight ? "bg-acc text-on-acc" : "bg-card2"}`}>{prettyDate(gig.date)}</span>
-        {gig.startTime && (
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-card2 px-2.5 py-1.5">
-            <Clock size={12} /> {formatTime(gig.startTime)}{gig.endTime ? ` – ${formatTime(gig.endTime)}` : ""}
+        )}
+        {tonight && (
+          <span className="absolute left-3 top-3 rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
+            Tonight
           </span>
         )}
-        {distance !== undefined && isFinite(distance) && (
-          <span className="rounded-lg bg-card2 px-2.5 py-1.5 text-dim">{formatDistance(distance)} away</span>
-        )}
-        {gig.ticketed && <TicketStub onCard price={gig.ticketing?.price} className="self-center" />}
+        {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
+      </div>
+
+      <div className="text-[22px] font-black leading-tight tracking-tight">{name}</div>
+      <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">
+        <MapPin size={13} className="shrink-0 opacity-70" />
+        <span className="truncate">
+          {gig.venueName ? <>at <span className="font-extrabold text-txt">{gig.venueName}</span></> : "Venue TBC"}
+          {gig.venueCity ? ` · ${gig.venueCity}` : ""}
+        </span>
+      </div>
+
+      <div className="mb-4 mt-3.5 flex flex-wrap gap-2">
+        <Slab label={tonight ? "Tonight" : dow} value={label} hot={tonight} />
+        {gig.startTime && <Slab label={gig.endTime ? "Time" : "From"} value={`${formatTime(gig.startTime)}${gig.endTime ? ` – ${formatTime(gig.endTime)}` : ""}`} />}
+        {distance !== undefined && isFinite(distance) && <Slab label="Away" value={formatDistance(distance)} />}
       </div>
 
       {gig.ticketed && gig.ticketUrl && (
-        <a href={gig.ticketUrl} target="_blank" rel="noopener noreferrer"
+        <a href={gig.ticketUrl} target="_blank" rel="noopener"
           className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
           <Ticket size={16} /> Get tickets
         </a>
@@ -174,6 +226,13 @@ function Body({ gig, distance, src, onClose }: { gig: Gig; distance?: number; sr
         <Link href={`/venues/${gig.venueId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
           <MapPin size={16} /> Venue
         </Link>
+        <button
+          onClick={share}
+          aria-label={copied ? "Link copied" : "Share this gig"}
+          className="bndy-btn2 flex w-[54px] shrink-0 items-center justify-center py-3.5 transition-transform active:scale-[.97]"
+        >
+          {copied ? <Check size={16} /> : <Share2 size={16} />}
+        </button>
       </div>
     </>
   );
