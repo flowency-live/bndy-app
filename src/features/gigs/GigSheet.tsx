@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
-import { useArtistImageMap, useArtists } from "@/lib/hooks";
+import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { prettyDate, formatTime } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
@@ -36,9 +36,17 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   distanceOf?: (g: Gig) => number | undefined;
 }) {
   const imgMap = useArtistImageMap();
-  // events sometimes lack artistName — resolve from the cached artists list
+  // Batch-loaded map events can omit denormalised names — resolve from cached entity lists.
   const { data: artists = [] } = useArtists();
+  const { data: venues = [] } = useVenues();
   const nameOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || g.title;
+  const venueOf = (g: Gig) => {
+    const venue = venues.find((v) => v.id === g.venueId);
+    return {
+      name: g.venueName || venue?.name || "",
+      city: g.venueCity || venue?.city,
+    };
+  };
 
   const [idx, setIdx] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -71,16 +79,19 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [multi, idx, stackKey]);
 
+  const selectedVenue = gig ? venueOf(gig) : { name: "", city: undefined };
+  const stackVenue = multi ? venueOf(stack![0]) : { name: "", city: undefined };
+
   return (
     <Sheet open={!!gig} onClose={onClose}>
       {gig && !multi && (
-        <Body gig={gig} name={nameOf(gig)} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
+        <Body gig={gig} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
       )}
       {gig && multi && (
         <>
           <div className="mb-2.5 flex items-center justify-between">
             <span className="truncate text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">
-              {stack!.length} gigs {stack![0].venueName ? `at ${stack![0].venueName}` : "at this venue"}
+              {stack!.length} gigs {stackVenue.name ? `at ${stackVenue.name}` : "at this venue"}
             </span>
             <span className="tnum shrink-0 pl-3 text-[11px] font-bold text-dim2">{idx + 1} / {stack!.length}</span>
           </div>
@@ -94,15 +105,18 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
               }}
               className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5"
             >
-              {stack!.map((g) => (
-                <div
-                  key={g.id}
-                  className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
-                  style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
-                >
-                  <Body gig={g} name={nameOf(g)} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
-                </div>
-              ))}
+              {stack!.map((g) => {
+                const venue = venueOf(g);
+                return (
+                  <div
+                    key={g.id}
+                    className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
+                    style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
+                  >
+                    <Body gig={g} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
+                  </div>
+                );
+              })}
             </div>
             {/* desktop chevrons — mouse users have no horizontal scroll; touch swipes */}
             <button
@@ -152,7 +166,7 @@ function Slab({ label, value, hot }: { label: string; value: string; hot?: boole
   );
 }
 
-function Body({ gig, name, distance, src, onClose }: { gig: Gig; name: string; distance?: number; src?: string; onClose: () => void }) {
+function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig: Gig; name: string; venueName: string; venueCity?: string; distance?: number; src?: string; onClose: () => void }) {
   const tonight = prettyDate(gig.date) === "Tonight";
   const { dow, label } = dateParts(gig.date);
   const [copied, setCopied] = useState(false);
@@ -160,7 +174,7 @@ function Body({ gig, name, distance, src, onClose }: { gig: Gig; name: string; d
   const share = async () => {
     const path = gig.artistId ? `/artists/${gig.artistId}` : `/venues/${gig.venueId}`;
     const url = `${window.location.origin}${path}`;
-    const text = `${name}${gig.venueName ? ` at ${gig.venueName}` : ""}${gig.venueCity ? `, ${gig.venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} — found on bndy`;
+    const text = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} — found on bndy`;
     try {
       if (navigator.share) {
         await navigator.share({ title: `${name} — live on bndy`, text, url });
@@ -196,8 +210,8 @@ function Body({ gig, name, distance, src, onClose }: { gig: Gig; name: string; d
       <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">
         <MapPin size={13} className="shrink-0 opacity-70" />
         <span className="truncate">
-          {gig.venueName ? <>at <span className="font-extrabold text-txt">{gig.venueName}</span></> : "Venue TBC"}
-          {gig.venueCity ? ` · ${gig.venueCity}` : ""}
+          {venueName ? <>at <span className="font-extrabold text-txt">{venueName}</span></> : "Venue TBC"}
+          {venueCity ? ` · ${venueCity}` : ""}
         </span>
       </div>
 
