@@ -96,7 +96,7 @@ export function WizardShell() {
       let artistName = draft.artistName;
       if (!artistId && draft.newArtist) {
         setPhase("artist");
-        const r = await resolveArtist(
+        let r = await resolveArtist(
           {
             name: draft.newArtist.name,
             location: draft.newArtist.location,
@@ -107,6 +107,16 @@ export function WizardShell() {
           },
           { confirmNew: draft.newArtist.confirmNew },
         );
+        if (!((r.action === "matched" || r.action === "created") && r.artistId) && r.action !== "review") {
+          // Self-heal (bug observed 2026-08-07): the create can land server-side even when
+          // the response is an error (422 seen AFTER the artist record existed). Re-check
+          // read-only; if the artist is there now, carry on to the event instead of stranding.
+          const recheck = await resolveArtist(
+            { name: draft.newArtist.name, location: draft.newArtist.location, facebookUrl: draft.newArtist.facebookUrl },
+            { dryRun: true },
+          );
+          if (recheck.action === "matched" && recheck.artistId) r = recheck;
+        }
         if ((r.action === "matched" || r.action === "created") && r.artistId) {
           artistId = r.artistId;
           artistName = r.artistName ?? draft.newArtist.name;
@@ -118,7 +128,7 @@ export function WizardShell() {
           return;
         } else {
           setPhase("idle");
-          setError(r.message ?? "Couldn't add that artist. Check the details.");
+          setError(`${r.message ?? "Couldn't add that artist. Check the details."}${r.code ? ` (${r.code})` : ""}`);
           return;
         }
       }
