@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music, Map as MapIcon, MapPin, Users } from "lucide-react";
+import { Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
@@ -15,17 +15,37 @@ const NAV = [
   { key: "venues", label: "Venues", href: "/map?mode=venues", icon: MapPin },
   { key: "gigs", label: "Gigs", href: "/gigs", icon: Music },
   { key: "artists", label: "Artists", href: "/artists", icon: Users },
+  { key: "add", label: "Add", href: "/add", icon: Plus },
 ] as const;
 
 function activeKey(path: string): string {
   if (path.startsWith("/artists")) return "artists";
   if (path.startsWith("/gigs")) return "gigs";
+  if (path.startsWith("/add")) return "add";
   return "map";
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const active = activeKey(path);
+
+  // Standalone branded webform — no app chrome, shareable straight into FB groups etc.
+  if (path.startsWith("/list-a-gig")) {
+    return (
+      <div className="min-h-[100dvh]">
+        <header className="mx-auto flex max-w-5xl items-center justify-between px-4 pb-1 lg:px-8" style={{ paddingTop: `calc(1.25rem + env(safe-area-inset-top, 0px))` }}>
+          <span className="text-2xl font-black tracking-tight">
+            <span className="text-[var(--acc)] brand-glow">bndy</span>
+            <span className="text-txt">.live</span>
+          </span>
+          <Link href="/gigs" className="text-[12.5px] font-extrabold text-dim transition-colors hover:text-txt">Browse gigs →</Link>
+        </header>
+        <p className="mx-auto max-w-5xl px-4 pb-4 text-[12px] font-bold uppercase tracking-[1.5px] text-dim2 lg:px-8">Keeping live music alive</p>
+        <main>{children}</main>
+        <SkinControl variant="fab" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh]">

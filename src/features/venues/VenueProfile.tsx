@@ -1,4 +1,5 @@
-import { MapPin, Navigation, Globe, Building2 } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Navigation, Globe, Building2, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { avatarGradient } from "@/domain/avatar";
 import { HeroBack, HeroSocials } from "@/features/artists/HeroControls";
@@ -62,6 +63,10 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
               <Globe size={16} /> Website
             </a>
           )}
+          <Link href={`/add?venueId=${id}`}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-white/5 py-3 text-[13.5px] font-extrabold transition-transform active:scale-[.97]">
+            <Plus size={16} className="text-[var(--acc)]" /> Add a gig
+          </Link>
         </div>
         {venue?.address && (
           <div className="mt-3 flex items-center gap-2 text-[13.5px] font-medium text-dim">

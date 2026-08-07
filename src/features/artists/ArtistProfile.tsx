@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { MapPin, Music2 } from "lucide-react";
+import { MapPin, Music2, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { avatarGradient } from "@/domain/avatar";
 import { HeroBack, HeroSocials } from "./HeroControls";
@@ -62,6 +63,11 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
           </div>
         )}
         {artist?.bio && <p className="mt-4 max-w-2xl text-[14.5px] leading-relaxed text-dim">{artist.bio}</p>}
+
+        <Link href={`/add?artistId=${id}`}
+          className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-line bg-white/5 px-4 py-2.5 text-[13px] font-extrabold transition-transform active:scale-[.97]">
+          <Plus size={15} className="text-[var(--acc)]" /> Add a gig
+        </Link>
 
         {/* ---- tabs (only show if availability is published) ---- */}
         {artist?.publishAvailability && (
