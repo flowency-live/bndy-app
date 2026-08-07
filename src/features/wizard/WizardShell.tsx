@@ -31,6 +31,7 @@ export function WizardShell() {
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [error, setError] = useState<string | null>(null);
   const hydrated = useRef(false);
+  const startedAt = useRef(Date.now()); // bot time-trap: server rejects publishes <3s after open
 
   // hydrate from sessionStorage once, then apply URL prefills when caches land
   useEffect(() => {
@@ -127,6 +128,8 @@ export function WizardShell() {
         ticketInformation: draft.ticketInfo,
         imageUrl: draft.posterUrl,
         description: draft.info,
+        hp: "",
+        startedAt: startedAt.current,
       });
       setPhase("idle");
       if (res.ok) { setOutcome({ kind: "published", eventId: res.eventId }); clearDraft(); }

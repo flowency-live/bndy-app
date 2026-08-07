@@ -40,7 +40,7 @@ export interface VenueResult {
   error?: string;
 }
 export async function findOrCreateVenue(input: { name: string; address?: string; city?: string; googlePlaceId?: string; latitude?: number; longitude?: number }): Promise<VenueResult> {
-  const { status, body } = await call<Record<string, unknown>>("POST", "/api/venues/find-or-create", { ...input, source: "community_wizard" });
+  const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/venues/find-or-create", { ...input, source: "community_wizard" });
   const v = (body.venue ?? body) as Record<string, unknown>;
   const id = (v.id ?? body.venueId ?? body.existingId) as string | undefined;
   if ((status === 200 || status === 201) && id) {
@@ -68,7 +68,7 @@ export async function resolveArtist(
   input: { name: string; location: string; facebookUrl?: string; genres?: string[]; artistType?: string; actType?: string[] },
   opts?: { dryRun?: boolean; confirmNew?: boolean; resolveTo?: string },
 ): Promise<ArtistResolution> {
-  const { status, body } = await call<Record<string, unknown>>("POST", "/api/artists/find-or-create", {
+  const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/artists/find-or-create", {
     ...input,
     source: "community_wizard",
     ...(opts?.dryRun ? { dryRun: true } : {}),
@@ -114,8 +114,11 @@ export async function createCommunityEvent(payload: {
   ticketInformation?: string;
   imageUrl?: string;
   description?: string;
+  /** bot traps (Addendum E): hp must arrive EMPTY (honeypot); startedAt = wizard mount epoch ms — server rejects submits <3s after open */
+  hp?: string;
+  startedAt?: number;
 }): Promise<EventResult> {
-  const { status, body } = await call<Record<string, unknown>>("POST", "/api/events/community", { ...payload, source: "community_wizard" });
+  const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/events", { ...payload, source: "community_wizard" });
   const eventId = (body.eventId ?? (body.event as Record<string, unknown> | undefined)?.id ?? body.id) as string | undefined;
   if (status === 200 || status === 201) return { ok: true, eventId };
   if (status === 409) return { ok: false, existingEventId: (body.existingEventId ?? body.existingId) as string | undefined, error: "duplicate" };
