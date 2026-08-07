@@ -33,9 +33,20 @@ export function WizardShell() {
   const hydrated = useRef(false);
   const startedAt = useRef(Date.now()); // bot time-trap: server rejects publishes <3s after open
 
-  // hydrate from sessionStorage once, then apply URL prefills when caches land
+  // hydrate from sessionStorage once, then apply URL prefills when caches land.
+  // A prefilled entry point that does NOT match the stored draft is a NEW gig intent:
+  // start clean (only the prefill anchor gets applied) instead of resuming an old
+  // half-finished draft and skipping straight to review.
   useEffect(() => {
-    if (!hydrated.current) { hydrated.current = true; setDraft(loadDraft()); }
+    if (!hydrated.current) {
+      hydrated.current = true;
+      let d = loadDraft();
+      const venueMismatch = prefillVenueId && d.venueId !== prefillVenueId;
+      const artistMismatch = prefillArtistId && d.artistId !== prefillArtistId;
+      if (venueMismatch || artistMismatch) d = { ...EMPTY_DRAFT };
+      setDraft(d);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const artistPrefillDone = useRef(false);
   const venuePrefillDone = useRef(false);

@@ -128,17 +128,25 @@ export interface Draft {
 export const EMPTY_DRAFT: Draft = { ticketed: false, titleTouched: false };
 
 const KEY = "bndy-gig-wizard";
+/** Drafts older than this are discarded on load: resume should survive a refresh,
+ *  not resurrect a half-finished gig from days ago. */
+const DRAFT_TTL_MS = 6 * 60 * 60 * 1000;
+
 export function loadDraft(): Draft {
   if (typeof window === "undefined") return EMPTY_DRAFT;
   try {
     const raw = sessionStorage.getItem(KEY);
-    return raw ? { ...EMPTY_DRAFT, ...(JSON.parse(raw) as Draft) } : EMPTY_DRAFT;
+    if (!raw) return EMPTY_DRAFT;
+    const parsed = JSON.parse(raw) as Draft & { savedAt?: number };
+    if (parsed.savedAt && Date.now() - parsed.savedAt > DRAFT_TTL_MS) return EMPTY_DRAFT;
+    delete parsed.savedAt;
+    return { ...EMPTY_DRAFT, ...parsed };
   } catch {
     return EMPTY_DRAFT;
   }
 }
 export function saveDraft(d: Draft): void {
-  try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch { /* private mode */ }
+  try { sessionStorage.setItem(KEY, JSON.stringify({ ...d, savedAt: Date.now() })); } catch { /* private mode */ }
 }
 export function clearDraft(): void {
   try { sessionStorage.removeItem(KEY); } catch { /* noop */ }
