@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ venueId: 
   const { venueId } = await params;
   try {
     const v = await fetchVenue(venueId);
-    return { title: `${v?.name ?? "Venue"} · bndy`, description: v ? `What's on at ${v.name} — upcoming gigs on bndy.` : undefined };
+    return { title: `${v?.name ?? "Venue"} · bndy`, description: v ? `What's on at ${v.name}: upcoming gigs on bndy.` : undefined };
   } catch {
     return { title: "Venue · bndy" };
   }

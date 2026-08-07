@@ -95,11 +95,11 @@ export function WizardShell() {
         } else if (r.action === "review") {
           setPhase("idle");
           setStep("artist");
-          setError("We need another look at that artist — check the suggestions.");
+          setError("We need another look at that artist. Check the suggestions.");
           return;
         } else {
           setPhase("idle");
-          setError(r.message ?? "Couldn't add that artist — check the details.");
+          setError(r.message ?? "Couldn't add that artist. Check the details.");
           return;
         }
       }
@@ -124,15 +124,15 @@ export function WizardShell() {
       setPhase("idle");
       if (res.ok) { setOutcome({ kind: "published", eventId: res.eventId }); clearDraft(); }
       else if (res.existingEventId || res.error === "duplicate") { setOutcome({ kind: "duplicate" }); clearDraft(); }
-      else setError(res.error ?? "Publishing failed — nothing was lost, try again.");
+      else setError(res.error ?? "Publishing failed. Nothing was lost, try again.");
     } catch {
       setPhase("idle");
-      setError("Network hiccup — nothing was lost, try again.");
+      setError("Network hiccup. Nothing was lost, try again.");
     }
   };
 
   const shareGig = async () => {
-    const text = `${draft.title || `${draft.artistName} @ ${draft.venueName}`}${draft.venueCity ? `, ${draft.venueCity}` : ""} · ${draft.date}${draft.startTime ? ` · ${formatTime(draft.startTime)}` : ""} — on bndy`;
+    const text = `${draft.title || `${draft.artistName} @ ${draft.venueName}`}${draft.venueCity ? `, ${draft.venueCity}` : ""} · ${draft.date}${draft.startTime ? ` · ${formatTime(draft.startTime)}` : ""} · on bndy`;
     const url = `${window.location.origin}/gigs`;
     try {
       if (navigator.share) await navigator.share({ title: "bndy gig", text, url });
@@ -162,7 +162,7 @@ export function WizardShell() {
         </div>
         <h1 className="mt-4 text-[24px] font-black tracking-tight">{dup ? "Already listed!" : "Your gig is live!"}</h1>
         <p className="mt-1.5 text-[14px] font-semibold text-dim">
-          {dup ? "Good news — this gig is already on bndy, so there's nothing to do." : "It's on the map and in the gig list right now."}
+          {dup ? "Good news: this gig is already on bndy, so there's nothing to do." : "It's on the map and in the gig list right now."}
         </p>
         <div className="mt-5 text-left"><PreviewCard draft={draft.title ? draft : { ...draft }} /></div>
         <div className="mt-5 flex flex-col gap-2.5">
@@ -179,7 +179,7 @@ export function WizardShell() {
           <div className="mt-2.5 flex flex-col gap-2">
             {draft.artistId && draft.venueId && (
               <button onClick={() => again("both")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">
-                {draft.artistName} at {draft.venueName} — another date
+                {draft.artistName} at {draft.venueName}, another date
               </button>
             )}
             {draft.artistId && (
@@ -231,6 +231,8 @@ export function WizardShell() {
           {step === "venue" && <StepVenue onPick={(v) => { patch({ venueId: v.id, venueName: v.name, venueCity: v.city }); setStep("artist"); }} />}
           {step === "artist" && (
             <StepArtist
+              venueId={draft.venueId}
+              venueCity={draft.venueCity}
               onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined }); setStep("when"); }}
               onPickNew={(na) => { patch({ newArtist: na, artistId: undefined, artistName: undefined }); setStep("when"); }}
             />

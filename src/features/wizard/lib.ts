@@ -32,13 +32,21 @@ export function normKey(s: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
-export interface RankedArtist { artist: Artist; score: number }
+export interface RankedArtist { artist: Artist; score: number; dist?: number }
+
+/** Optional proximity context: when the venue is already chosen, same-named artists
+ *  nearest the venue rank first (the "three Not Guiltys, Switfys is in Stoke" case).
+ *  `distById` = artistId → miles from venue to the artist's NEAREST gig (their footprint;
+ *  artists carry no coordinates of their own). Built ONCE per venue by the caller,
+ *  O(1) lookups here: no per-keystroke geometry. */
+export interface RankContext { venueCity?: string; distById?: Map<string, number> }
 
 /** Client-side fuzzy rank over the cached artists list. The Ant Hill Mob defence:
  *  callers must always render candidate LOCATION alongside the name. */
-export function rankArtists(query: string, artists: Artist[], limit = 8): RankedArtist[] {
+export function rankArtists(query: string, artists: Artist[], limit = 8, ctx?: RankContext): RankedArtist[] {
   const q = normKey(query);
   if (q.length < 2) return [];
+  const venueCityKey = ctx?.venueCity ? normKey(ctx.venueCity) : null;
   const out: RankedArtist[] = [];
   for (const artist of artists) {
     const k = normKey(artist.name);
@@ -51,9 +59,16 @@ export function rankArtists(query: string, artists: Artist[], limit = 8): Ranked
       const raw = artist.name.toLowerCase();
       if (raw.includes(query.trim().toLowerCase())) score = 60;
     }
-    if (score > 0) out.push({ artist, score });
+    if (score > 0) {
+      const dist = ctx?.distById?.get(artist.id);
+      if (venueCityKey && artist.location && normKey(artist.location).includes(venueCityKey)) score += 12;
+      else if (dist !== undefined) score += dist < 30 ? 8 : dist < 60 ? 4 : 0;
+      out.push({ artist, score, dist });
+    }
   }
-  return out.sort((a, b) => b.score - a.score || a.artist.name.localeCompare(b.artist.name)).slice(0, limit);
+  return out
+    .sort((a, b) => b.score - a.score || (a.dist ?? Infinity) - (b.dist ?? Infinity) || a.artist.name.localeCompare(b.artist.name))
+    .slice(0, limit);
 }
 
 /** Runbook §5.6 smart default start times: Fri/Sat 21:00 · Sun 19:00 · weekdays 20:00. */

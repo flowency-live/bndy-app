@@ -18,7 +18,7 @@ const FONT_VARS = `${inter.variable} ${archivoBlack.variable} ${archivo.variable
 
 export const metadata: Metadata = {
   title: "bndy · live music near you",
-  description: "Find live music — gigs, artists and venues near you.",
+  description: "Find live music: gigs, artists and venues near you.",
   metadataBase: new URL("https://bndy.co.uk"),
 };
 

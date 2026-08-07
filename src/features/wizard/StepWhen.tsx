@@ -33,7 +33,7 @@ function TimeSelect({ value, onChange, allowNone, label }: { value?: string; onC
         onChange={(e) => onChange(e.target.value || undefined)}
         className="w-full appearance-none rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-orange/55"
       >
-        {allowNone && <option value="">—</option>}
+        {allowNone && <option value="">None</option>}
         {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
       <ChevronDown size={15} className="pointer-events-none absolute bottom-3.5 right-3.5 text-dim" />
@@ -72,7 +72,7 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
       const c = gigs.find((g) => g.artistId === draft.artistId && g.date === date);
       if (c) {
         out.push(c.venueId === draft.venueId
-          ? { hard: true, text: `${artistName} is already listed at ${draft.venueName} that night — this gig may already be on bndy.` }
+          ? { hard: true, text: `${artistName} is already listed at ${draft.venueName} that night. This gig may already be on bndy.` }
           : { hard: false, text: `${artistName} already has a gig that night at ${c.venueName}. Double-check your date.` });
       }
     }
@@ -123,7 +123,7 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
         <TimeSelect label="Ends (optional)" value={endTime} onChange={setEndTime} allowNone />
       </div>
       {date && !timeTouched && (
-        <p className="mt-1.5 text-[11.5px] font-semibold text-dim2">We&apos;ve guessed a typical start time for a {new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" })} — change it if you know better.</p>
+        <p className="mt-1.5 text-[11.5px] font-semibold text-dim2">We&apos;ve guessed a typical start time for a {new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" })}. Change it if you know better.</p>
       )}
 
       <button onClick={() => setTicketed((v) => !v)} aria-pressed={ticketed}
@@ -138,7 +138,7 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
         <div className="mt-2.5 space-y-2.5">
           <input value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} placeholder="Ticket link (https://…)" inputMode="url"
             className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55" />
-          <input value={ticketInfo} onChange={(e) => setTicketInfo(e.target.value)} placeholder="Ticket info — e.g. £8 adv / £10 door"
+          <input value={ticketInfo} onChange={(e) => setTicketInfo(e.target.value)} placeholder="Ticket info, e.g. £8 adv / £10 door"
             className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55" />
         </div>
       )}

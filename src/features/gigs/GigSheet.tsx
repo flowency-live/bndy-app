@@ -174,10 +174,10 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
   const share = async () => {
     const path = gig.artistId ? `/artists/${gig.artistId}` : `/venues/${gig.venueId}`;
     const url = `${window.location.origin}${path}`;
-    const text = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} — found on bndy`;
+    const text = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} · found on bndy`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${name} — live on bndy`, text, url });
+        await navigator.share({ title: `${name} · live on bndy`, text, url });
       } else {
         await navigator.clipboard.writeText(`${text}\n${url}`);
         setCopied(true);

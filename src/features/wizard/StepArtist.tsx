@@ -2,30 +2,51 @@
 
 import { useMemo, useState } from "react";
 import { Check, Loader2, Music, Plus, Search } from "lucide-react";
-import { useArtists, useUpcomingGigs } from "@/lib/hooks";
+import { useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
 import { Avatar } from "@/components/ui/Avatar";
+import { distanceMiles } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import { ACT_TYPES, GENRES, rankArtists, type NewArtistDraft } from "./lib";
 import { resolveArtist, type ArtistCandidate } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
  *  acts are distinguishable by place, and same-region duplicates are impossible
- *  (not offered here, rejected server-side regardless). */
-export function StepArtist({ onPickExisting, onPickNew }: {
+ *  (not offered here, rejected server-side regardless). When the venue is already
+ *  chosen, same-named acts nearest the venue rank first (gig-footprint proximity). */
+export function StepArtist({ venueId, venueCity, onPickExisting, onPickNew }: {
+  venueId?: string;
+  venueCity?: string;
   onPickExisting: (a: { id: string; name: string }) => void;
   onPickNew: (draft: NewArtistDraft) => void;
 }) {
   const { data: artists = [] } = useArtists();
   const { data: gigs = [] } = useUpcomingGigs();
+  const { data: venues = [] } = useVenues();
   const gigCounts = useMemo(() => {
     const m = new Map<string, number>();
     for (const g of gigs) if (g.artistId) m.set(g.artistId, (m.get(g.artistId) ?? 0) + 1);
     return m;
   }, [gigs]);
 
+  // Footprint proximity: one pass over the cached gigs when the venue changes,
+  // artistId → miles to their nearest gig. Never recomputed per keystroke.
+  const venueLoc = useMemo(() => venues.find((v) => v.id === venueId)?.location, [venues, venueId]);
+  const distById = useMemo(() => {
+    if (!venueLoc) return undefined;
+    const m = new Map<string, number>();
+    for (const g of gigs) {
+      if (!g.artistId) continue;
+      const d = distanceMiles(venueLoc, g.location);
+      if (!isFinite(d)) continue;
+      const prev = m.get(g.artistId);
+      if (prev === undefined || d < prev) m.set(g.artistId, d);
+    }
+    return m;
+  }, [gigs, venueLoc]);
+
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
-  const ranked = useMemo(() => rankArtists(q, artists), [q, artists]);
+  const ranked = useMemo(() => rankArtists(q, artists, 8, { venueCity, distById }), [q, artists, venueCity, distById]);
 
   if (adding) {
     return <NewArtistForm initialName={q.trim()} onBack={() => setAdding(false)} onPickExisting={onPickExisting} onDone={onPickNew} />;
@@ -68,7 +89,7 @@ export function StepArtist({ onPickExisting, onPickNew }: {
       {q.trim().length >= 2 && (
         <button onClick={() => setAdding(true)}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line-hi py-3 text-[13px] font-extrabold text-dim transition-colors hover:text-txt">
-          <Plus size={15} /> {ranked.length ? `None of these — add “${q.trim()}”` : `Add “${q.trim()}” to bndy`}
+          <Plus size={15} /> {ranked.length ? `None of these? Add “${q.trim()}”` : `Add “${q.trim()}” to bndy`}
         </button>
       )}
     </div>
@@ -112,9 +133,9 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     } else if (r.action === "review" && r.candidates.length) {
       setCandidates(r.candidates);
     } else if (r.action === "error" && r.code === "DATA_QUALITY") {
-      setError(r.message ?? "That doesn't look like a single artist name — use the act's own name, no line-ups or 'TBC'.");
+      setError(r.message ?? "That doesn't look like a single artist name. Use the act's own name, no line-ups or 'TBC'.");
     } else if (r.action === "error" && r.code === "LOCATION_UNRESOLVABLE") {
-      setError("We couldn't place that location — use a UK town or city, e.g. 'Stoke-on-Trent'.");
+      setError("We couldn't place that location. Use a UK town or city, e.g. 'Stoke-on-Trent'.");
     } else {
       onDone(draft(false)); // clear to create at publish time
     }
@@ -124,7 +145,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     return (
       <div>
         <h2 className="text-[19px] font-black tracking-tight">Did you mean…?</h2>
-        <p className="mt-1.5 text-[13px] font-semibold text-dim">These acts are already on bndy — check the location.</p>
+        <p className="mt-1.5 text-[13px] font-semibold text-dim">These acts are already on bndy. Check the location.</p>
         <div className="mt-3 space-y-1.5">
           {candidates.map((c) => (
             <button key={c.id} onClick={() => onPickExisting({ id: c.id, name: c.name })}
@@ -140,7 +161,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
         </div>
         <button onClick={() => onDone(draft(true))}
           className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl border border-line-hi py-3 text-[13px] font-extrabold text-dim transition-colors hover:text-txt">
-          No — mine is a different act (based in {location.trim() || "another town"})
+          No, mine is a different act (based in {location.trim() || "another town"})
         </button>
         <p className="mt-2 text-[11.5px] font-semibold text-dim2">Same name AND same area = same act on bndy, so this only works if yours is somewhere else.</p>
       </div>
@@ -159,7 +180,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
           <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Home town</span>
           <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Stoke-on-Trent"
             className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55" />
-          <span className="mt-1 block text-[11.5px] font-semibold text-dim2">This is how we tell same-named acts apart — it matters.</span>
+          <span className="mt-1 block text-[11.5px] font-semibold text-dim2">This is how we tell same-named acts apart. It matters.</span>
         </label>
         <label className="block">
           <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Facebook page <span className="text-dim2">(optional, helps massively)</span></span>

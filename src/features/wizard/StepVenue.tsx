@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Check, Globe, Loader2, MapPin, Search } from "lucide-react";
 import { useVenues } from "@/lib/hooks";
+import { useGeolocation } from "@/lib/useGeolocation";
+import { distanceMiles, formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import { normKey } from "./lib";
 import { findOrCreateVenue, placesDetails, placesSuggest, type PlaceDetails, type PlaceSuggestion } from "./wizardApi";
@@ -18,13 +20,28 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Matches ranked name-startsWith > name-contains > town-contains, then nearest-first
+  // when we have the user's location. Distance is computed only for the MATCHED subset
+  // (tens of rows, not the whole list): no per-keystroke cost beyond the string filter.
+  const { location: userLoc, located } = useGeolocation();
   const local = useMemo(() => {
     const key = normKey(q);
     if (key.length < 2) return [];
-    return venues
-      .filter((v) => normKey(v.name).includes(key) || (v.city && normKey(v.city).includes(key)))
-      .slice(0, 8);
-  }, [q, venues]);
+    const matched: { v: (typeof venues)[number]; s: number; d: number }[] = [];
+    for (const v of venues) {
+      const nk = normKey(v.name);
+      let s = 0;
+      if (nk.startsWith(key)) s = 3;
+      else if (nk.includes(key)) s = 2;
+      else if (v.city && normKey(v.city).includes(key)) s = 1;
+      if (s) {
+        const d = located ? distanceMiles(userLoc, v.location) : Infinity;
+        matched.push({ v, s, d: isFinite(d) ? d : Infinity });
+      }
+    }
+    matched.sort((a, b) => b.s - a.s || a.d - b.d || a.v.name.localeCompare(b.v.name));
+    return matched.slice(0, 8);
+  }, [q, venues, located, userLoc]);
 
   const searchPlaces = async () => {
     setSearchingPlaces(true);
@@ -32,7 +49,7 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
     try {
       setPlacesResults(await placesSuggest(q));
     } catch {
-      setError("Search isn't available right now — try again in a minute.");
+      setError("Search isn't available right now. Try again in a minute.");
     } finally {
       setSearchingPlaces(false);
     }
@@ -41,7 +58,7 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
   const pickPlace = async (p: PlaceSuggestion) => {
     setError(null);
     const d = await placesDetails(p.placeId);
-    if (!d) { setError("Couldn't load that venue's details — try another result."); return; }
+    if (!d) { setError("Couldn't load that venue's details. Try another result."); return; }
     setConfirming(d);
   };
 
@@ -79,7 +96,7 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
             {confirming.address}
           </div>
         </div>
-        <p className="mt-2.5 text-[12.5px] font-semibold text-dim">This is what we found — make sure it&apos;s the right place, not a same-named venue in another town.</p>
+        <p className="mt-2.5 text-[12.5px] font-semibold text-dim">This is what we found. Make sure it&apos;s the right place, not a same-named venue in another town.</p>
         <div className="mt-3.5 flex gap-2.5">
           <button onClick={confirmPlace} disabled={creating} className="bndy-btn flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px]">
             {creating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Yes, that&apos;s it
@@ -109,13 +126,17 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
 
       {local.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          {local.map((v) => (
+          {local.map(({ v, d }) => (
             <button key={v.id} onClick={() => onPick({ id: v.id, name: v.name, city: v.city })}
               className="flex w-full items-center gap-3 rounded-xl border border-line bg-card px-3.5 py-3 text-left transition-colors hover:border-line-hi">
               <MapPin size={15} className="shrink-0 text-[var(--acc2)]" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14.5px] font-extrabold">{v.name}</span>
-                {v.city && <span className="block text-[12px] font-semibold text-dim">{v.city}</span>}
+                {(v.city || isFinite(d)) && (
+                  <span className="block text-[12px] font-semibold text-dim">
+                    {v.city}{v.city && isFinite(d) ? " · " : ""}{isFinite(d) ? formatDistance(d) : ""}
+                  </span>
+                )}
               </span>
               <span className="rounded-md bg-card2 px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-dim">on bndy ✓</span>
             </button>
@@ -147,7 +168,7 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
             </div>
           ) : (
             <p className="rounded-xl bg-card2 px-3.5 py-3 text-[13px] font-semibold text-dim">
-              Nothing found for &ldquo;{q}&rdquo;. Check the spelling, or add the town — e.g. &ldquo;The Swan, Stone&rdquo;.
+              Nothing found for &ldquo;{q}&rdquo;. Check the spelling, or add the town, e.g. &ldquo;The Swan, Stone&rdquo;.
             </p>
           )}
         </div>
