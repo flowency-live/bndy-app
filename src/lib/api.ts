@@ -43,7 +43,7 @@ interface TicketingDTO {
 }
 interface GigDTO {
   id: string; title?: string; name?: string; date: string; startTime?: string; endTime?: string;
-  venueId: string; venueName?: string; venueCity?: string; venue?: { city?: string };
+  venueId: string; venueName?: string; venueCity?: string; venue?: { name?: string; city?: string };
   artistId?: string; artistName?: string; geoLat?: number; geoLng?: number;
   ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean;
 }
@@ -66,7 +66,11 @@ export function toGig(e: GigDTO): Gig | null {
     artistId: e.artistId,
     artistName: e.artistName,
     venueId: e.venueId,
-    venueName: e.venueName || "",
+    // POST /api/events/batch (the map's tap handler) returns a NESTED `venue` object and
+    // no flat `venueName`. `venueCity` already had this fallback; `venueName` did not, so
+    // every map card rendered "Venue TBC" while the city beside it was correct. Venue and
+    // artist pages were unaffected because they use endpoints that do denormalise the name.
+    venueName: e.venueName || e.venue?.name || "",
     venueCity: e.venueCity || e.venue?.city,
     date: e.date,
     startTime: e.startTime,

@@ -14,11 +14,13 @@ export const GENRES = [
   "Other",
 ] as const;
 
-/** Act type options. NEVER silently defaulted (runbook §0.18/§2A.2: blank beats wrong). */
-export const ACT_TYPES: { label: string; value: string[] }[] = [
-  { label: "Covers", value: ["covers"] },
-  { label: "Originals", value: ["originals"] },
-  { label: "Both", value: ["covers", "originals"] },
+/** Act type options — MUST mirror the godmode edit screen (multi-select, all that apply).
+ *  NEVER silently defaulted (runbook §0.18/§2A.2: blank beats wrong). */
+export const ACT_TYPES: { label: string; value: string }[] = [
+  { label: "Originals", value: "originals" },
+  { label: "Covers", value: "covers" },
+  { label: "Tribute act", value: "tribute" },
+  { label: "Acoustic", value: "acoustic" },
 ];
 
 /** Artist type options, mirroring the godmode edit screen's enum. Optional in the wizard. */

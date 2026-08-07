@@ -272,6 +272,10 @@ html[data-theme] .glass-hi { background: var(--glass-hi); }
 .bndy-splash-stamp{font-family:var(--ital);font-style:italic;font-size:21px;color:var(--acc);border:2.5px solid var(--acc);border-radius:10px;padding:8px 18px;transform:rotate(-3deg);animation:bndy-stampin .5s .6s cubic-bezier(.34,1.56,.64,1) both}
 html[data-family="soft"] .bndy-splash-stamp,html[data-family="mono"] .bndy-splash-stamp{font-style:normal;font-weight:700;transform:none}
 .bndy-splash-stamp b{color:var(--acc2)}
+/* Reserve the scrollbar gutter: step/page height changes no longer nudge the layout
+   sideways when the scrollbar appears or disappears (desktop). */
+html { scrollbar-gutter: stable; }
+
 /* ---- ticket stub: shown ONLY on ticketed gigs (free = clean default, never badged).
    --stub-bg/--stub-fg are per-skin AA-verified pairs (worst = openair 4.6:1); solar uses a
    darkened acc2 variant because raw #2AA198 cannot reach 4.5 with any text colour. ---- */

@@ -237,11 +237,15 @@ export function WizardShell() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-28 pt-2 lg:px-8">
       <div className="mb-5 flex items-center gap-3">
-        {stepIndex > 0 && !steps[stepIndex - 1].locked && (
-          <button onClick={() => setStep(steps[stepIndex - 1].key)} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-full border border-line glass">
-            <ArrowLeft size={16} />
-          </button>
-        )}
+        {/* slot always rendered: appearing/disappearing shifted the heading by a few px between steps */}
+        <button
+          onClick={() => setStep(steps[stepIndex - 1].key)}
+          aria-label="Back"
+          disabled={stepIndex === 0 || steps[stepIndex - 1].locked}
+          className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-line glass transition-opacity", (stepIndex === 0 || steps[stepIndex - 1].locked) && "pointer-events-none opacity-0")}
+        >
+          <ArrowLeft size={16} />
+        </button>
         <h1 className="text-[22px] font-black tracking-tight">Add a gig</h1>
         <div className="ml-auto flex items-center gap-1.5">
           {steps.map((s, i) => (

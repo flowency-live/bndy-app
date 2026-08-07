@@ -18,8 +18,8 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
 
 /* ---------------- Google Places (via NEW backend proxy, workorder B1) ---------------- */
 export interface PlaceSuggestion { placeId: string; name: string; address: string }
-export async function placesSuggest(q: string): Promise<PlaceSuggestion[]> {
-  const { status, body } = await call<{ suggestions?: PlaceSuggestion[] }>("GET", `/api/places/suggest?q=${encodeURIComponent(q)}`);
+export async function placesSuggest(q: string, kind: "venue" | "town" = "venue"): Promise<PlaceSuggestion[]> {
+  const { status, body } = await call<{ suggestions?: PlaceSuggestion[] }>("GET", `/api/places/suggest?q=${encodeURIComponent(q)}${kind === "town" ? "&kind=town" : ""}`);
   if (status !== 200) return [];
   return body.suggestions ?? [];
 }

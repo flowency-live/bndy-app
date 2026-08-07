@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Loader2, MapPin, Music, Plus, Search } from "lucide-react";
 import { useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
-import { usePlaces, type PlacePrediction } from "@/lib/usePlaces";
 import { Avatar } from "@/components/ui/Avatar";
 import { distanceMiles } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import { ACT_TYPES, ARTIST_TYPES, GENRES, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
-import { resolveArtist, type ArtistCandidate } from "./wizardApi";
+import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
  *  acts are distinguishable by place, and same-region duplicates are impossible
@@ -128,30 +127,30 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   const [locMode, setLocMode] = useState<"town" | "region">("town");
   const [townQ, setTownQ] = useState("");
   const [townPicked, setTownPicked] = useState<string | null>(null);
-  const [preds, setPreds] = useState<PlacePrediction[]>([]);
+  const [preds, setPreds] = useState<PlaceSuggestion[]>([]);
   const [region, setRegion] = useState("");
+  const [artistType, setArtistType] = useState("");
   const [facebookUrl, setFacebookUrl] = useState("");
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
-  const [artistType, setArtistType] = useState("");
-  const [actType, setActType] = useState<string[] | undefined>(undefined);
+  const [actType, setActType] = useState<string[]>([]);
   const [checking, setChecking] = useState(false);
   const [candidates, setCandidates] = useState<ArtistCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Google Places town autocomplete (same key/loader as the gigs-list location filter).
-  // `ready` is a dependency: if the script finishes loading AFTER the user typed,
-  // the search re-runs — without this the dropdown silently never appears.
-  const { available: placesAvailable, ready: placesReady, search } = usePlaces();
+  // Town autocomplete via OUR Places proxy (kind=town) — no client-side Google key needed,
+  // works regardless of build-env configuration, key stays server-side.
   const deb = useRef<number | undefined>(undefined);
   useEffect(() => {
     window.clearTimeout(deb.current);
-    if (locMode !== "town" || !placesReady || townQ.trim().length < 2 || townPicked === townQ) { setPreds([]); return; }
-    deb.current = window.setTimeout(async () => setPreds(await search(townQ)), 220);
+    if (locMode !== "town" || townQ.trim().length < 2 || townPicked === townQ) { setPreds([]); return; }
+    deb.current = window.setTimeout(async () => {
+      try { setPreds(await placesSuggest(townQ, "town")); } catch { setPreds([]); }
+    }, 220);
     return () => window.clearTimeout(deb.current);
-  }, [townQ, townPicked, locMode, placesReady, search]);
-  const pickTown = (p: PlacePrediction) => {
-    const clean = cleanTown(p.label);
+  }, [townQ, townPicked, locMode]);
+  const pickTown = (p: PlaceSuggestion) => {
+    const clean = cleanTown(p.name);
     setTownQ(clean);
     setTownPicked(clean);
     setPreds([]);
@@ -160,11 +159,11 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   const location = locMode === "town" ? (townPicked ?? townQ.trim()) : region;
 
   const toggleGenre = (g: string) => setGenres((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : prev.length < 3 ? [...prev, g] : prev);
+  const toggleAct = (v: string) => setActType((prev) => prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]);
 
   const extrasSummary = [
     genres.length ? genres.join(", ") : null,
-    artistType || null,
-    actType ? ACT_TYPES.find((t) => t.value.join() === actType.join())?.label : null,
+    actType.length ? actType.map((v) => ACT_TYPES.find((t) => t.value === v)?.label ?? v).join(", ") : null,
   ].filter(Boolean).join(" · ");
 
   const draft = (confirmNew: boolean): NewArtistDraft => ({
@@ -172,13 +171,16 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     location,
     facebookUrl: facebookUrl.trim() || undefined,
     genres,
-    actType,
+    actType: actType.length ? actType : undefined,
     artistType: artistType || undefined,
     confirmNew: confirmNew || undefined,
   });
 
+  const canSubmit = !!name.trim() && !!location && !!artistType;
+
   const check = async () => {
     if (!name.trim() || !location) { setError(locMode === "town" ? "Name and home town are both needed." : "Name and a region are both needed."); return; }
+    if (!artistType) { setError("Tell us what they are (band, duo, solo act...)."); return; }
     setChecking(true);
     setError(null);
     const r = await resolveArtist({ name: name.trim(), location, facebookUrl: facebookUrl.trim() || undefined }, { dryRun: true });
@@ -249,9 +251,10 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
                 {preds.length > 0 && (
                   <div className="absolute inset-x-0 top-[calc(100%+4px)] z-20 overflow-hidden rounded-xl border border-line-hi glass-hi shadow-lg">
                     {preds.slice(0, 5).map((p) => (
-                      <button key={p.id} onClick={() => pickTown(p)}
+                      <button key={p.placeId} onClick={() => pickTown(p)}
                         className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13.5px] font-semibold transition-colors hover:bg-white/5">
-                        <MapPin size={13} className="shrink-0 text-dim" /> {p.label}
+                        <MapPin size={13} className="shrink-0 text-dim" />
+                        <span className="min-w-0 truncate">{p.name}<span className="text-dim"> · {cleanTown(p.address) || "UK"}</span></span>
                       </button>
                     ))}
                   </div>
@@ -277,16 +280,26 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
           </div>
         </Field>
 
+        <Field label="They are">
+          <div className="relative">
+            <select value={artistType} onChange={(e) => setArtistType(e.target.value)} className={selectCls}>
+              <option value="">Choose one…</option>
+              {ARTIST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
+          </div>
+        </Field>
+
         <Field label="Facebook page" optional hint="We'll pull their photo and details from it.">
           <input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="facebook.com/…" inputMode="url" className={inputCls} />
         </Field>
 
-        {/* Everything else lives behind one calm accordion */}
+        {/* Genres + act style live behind one calm accordion */}
         <div className="overflow-hidden rounded-2xl border border-line">
           <button onClick={() => setExtrasOpen((v) => !v)} aria-expanded={extrasOpen}
             className="flex w-full items-center justify-between px-4 py-3 text-left">
-            <span className="text-[13px] font-extrabold">
-              Genres &amp; type
+            <span className="min-w-0 truncate text-[13px] font-extrabold">
+              Genres &amp; style
               <span className="ml-2 font-semibold text-dim2">{extrasSummary || "optional"}</span>
             </span>
             <ChevronDown size={16} className={cn("shrink-0 text-dim transition-transform", extrasOpen && "rotate-180")} />
@@ -303,20 +316,11 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
                   ))}
                 </div>
               </Field>
-              <Field label="They are" optional>
-                <div className="relative">
-                  <select value={artistType} onChange={(e) => setArtistType(e.target.value)} className={selectCls}>
-                    <option value="">Not sure</option>
-                    {ARTIST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
-                </div>
-              </Field>
-              <Field label="They play" optional>
-                <div className="flex gap-1.5">
+              <Field label="They play" optional hint="Pick all that apply.">
+                <div className="flex flex-wrap gap-1.5">
                   {ACT_TYPES.map((t) => (
-                    <button key={t.label} onClick={() => setActType(actType?.join() === t.value.join() ? undefined : t.value)}
-                      className={cn("rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors", actType?.join() === t.value.join() ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
+                    <button key={t.value} onClick={() => toggleAct(t.value)}
+                      className={cn("rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors", actType.includes(t.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
                       {t.label}
                     </button>
                   ))}
@@ -329,7 +333,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
 
       {error && <p className="mt-3 rounded-xl bg-card2 px-3.5 py-3 text-[13px] font-bold text-[var(--acc)]">{error}</p>}
       <div className="mt-4 flex gap-2.5">
-        <button onClick={check} disabled={checking || !name.trim() || !location}
+        <button onClick={check} disabled={checking || !canSubmit}
           className="bndy-btn flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] disabled:opacity-40">
           {checking ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Looks good
         </button>
