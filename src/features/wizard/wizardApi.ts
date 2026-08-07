@@ -23,7 +23,16 @@ export async function placesSuggest(q: string): Promise<PlaceSuggestion[]> {
   if (status !== 200) return [];
   return body.suggestions ?? [];
 }
-export interface PlaceDetails { placeId: string; name: string; address: string; city?: string; lat: number; lng: number }
+export interface PlaceDetails {
+  placeId: string;
+  name: string;
+  address: string;
+  city?: string;
+  lat: number;
+  lng: number;
+  /** set by the proxy when Google's types look unlike a gig venue (e.g. "school") — confirm card shows a caution */
+  typeWarning?: string;
+}
 export async function placesDetails(placeId: string): Promise<PlaceDetails | null> {
   const { status, body } = await call<{ place?: PlaceDetails }>("GET", `/api/places/details?placeId=${encodeURIComponent(placeId)}`);
   if (status !== 200) return null;

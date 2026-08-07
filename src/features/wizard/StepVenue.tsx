@@ -96,6 +96,11 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
             {confirming.address}
           </div>
         </div>
+        {confirming.typeWarning && (
+          <p className="mt-2.5 rounded-xl bg-card2 px-3.5 py-3 text-[13px] font-bold text-txt">
+            Heads up: this looks like {confirming.typeWarning}. bndy lists places that host live music, so double-check it&apos;s the right spot.
+          </p>
+        )}
         <p className="mt-2.5 text-[12.5px] font-semibold text-dim">This is what we found. Make sure it&apos;s the right place, not a same-named venue in another town.</p>
         <div className="mt-3.5 flex gap-2.5">
           <button onClick={confirmPlace} disabled={creating} className="bndy-btn flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px]">
