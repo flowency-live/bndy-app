@@ -21,6 +21,18 @@ export const ACT_TYPES: { label: string; value: string[] }[] = [
   { label: "Both", value: ["covers", "originals"] },
 ];
 
+/** Artist type options, mirroring the godmode edit screen's enum. Optional in the wizard. */
+export const ARTIST_TYPES = ["Band", "Solo Act", "Duo", "Trio", "Group", "DJ", "Collective"] as const;
+
+/** The 13 canonical bndy regions (runbook §1A.1) for acts based across a wide area.
+ *  A town is always preferred; regions are for genuinely regional/national acts. */
+export const REGIONS = [
+  "North East", "North West", "Yorkshire and the Humber",
+  "East Midlands", "West Midlands", "East of England",
+  "London", "South East", "South West",
+  "Wales", "Scotland", "Northern Ireland", "England",
+] as const;
+
 /** Mirror of the backend normaliseKey: lowercase, &↔and, strip leading article,
  *  strip trailing act qualifier, strip all non-alphanumerics. */
 export function normKey(s: string): string {
@@ -91,6 +103,7 @@ export interface NewArtistDraft {
   facebookUrl?: string;
   genres: string[];
   actType?: string[];
+  artistType?: string;
   /** user explicitly confirmed "mine is a different act" after seeing candidates */
   confirmNew?: boolean;
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Check, Loader2, Music, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Loader2, MapPin, Music, Plus, Search } from "lucide-react";
 import { useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
+import { usePlaces, type PlacePrediction } from "@/lib/usePlaces";
 import { Avatar } from "@/components/ui/Avatar";
 import { distanceMiles } from "@/domain/geo";
 import { cn } from "@/lib/cn";
-import { ACT_TYPES, GENRES, rankArtists, type NewArtistDraft } from "./lib";
+import { ACT_TYPES, ARTIST_TYPES, GENRES, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
 import { resolveArtist, type ArtistCandidate } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
@@ -96,6 +97,11 @@ export function StepArtist({ venueId, venueCity, onPickExisting, onPickNew }: {
   );
 }
 
+/** Strip Google's ", UK" suffix for storage: bndy locations are "Stoke-on-Trent", not "Stoke-on-Trent, UK". */
+function cleanTown(label: string): string {
+  return label.replace(/,\s*UK$/i, "").trim();
+}
+
 function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   initialName: string;
   onBack: () => void;
@@ -103,30 +109,54 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   onDone: (draft: NewArtistDraft) => void;
 }) {
   const [name, setName] = useState(initialName);
-  const [location, setLocation] = useState("");
+  const [locMode, setLocMode] = useState<"town" | "region">("town");
+  const [townQ, setTownQ] = useState("");
+  const [townPicked, setTownPicked] = useState<string | null>(null);
+  const [preds, setPreds] = useState<PlacePrediction[]>([]);
+  const [region, setRegion] = useState<string | null>(null);
   const [facebookUrl, setFacebookUrl] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [actType, setActType] = useState<string[] | undefined>(undefined);
+  const [artistType, setArtistType] = useState<string | undefined>(undefined);
   const [checking, setChecking] = useState(false);
   const [candidates, setCandidates] = useState<ArtistCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Google Places town autocomplete (same key/loader as the gigs-list location filter)
+  const { available: placesAvailable, search } = usePlaces();
+  const deb = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    window.clearTimeout(deb.current);
+    if (locMode !== "town" || !townQ.trim() || townPicked === townQ) { setPreds([]); return; }
+    deb.current = window.setTimeout(async () => setPreds(await search(townQ)), 220);
+    return () => window.clearTimeout(deb.current);
+  }, [townQ, townPicked, locMode, search]);
+  const pickTown = (p: PlacePrediction) => {
+    const clean = cleanTown(p.label);
+    setTownQ(clean);
+    setTownPicked(clean);
+    setPreds([]);
+  };
+
+  const location = locMode === "town" ? (townPicked ?? townQ.trim()) : (region ?? "");
 
   const toggleGenre = (g: string) => setGenres((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : prev.length < 3 ? [...prev, g] : prev);
 
   const draft = (confirmNew: boolean): NewArtistDraft => ({
     name: name.trim(),
-    location: location.trim(),
+    location,
     facebookUrl: facebookUrl.trim() || undefined,
     genres,
     actType,
+    artistType,
     confirmNew: confirmNew || undefined,
   });
 
   const check = async () => {
-    if (!name.trim() || !location.trim()) { setError("Name and home town are both needed."); return; }
+    if (!name.trim() || !location) { setError(locMode === "town" ? "Name and home town are both needed." : "Name and a region are both needed."); return; }
     setChecking(true);
     setError(null);
-    const r = await resolveArtist({ name: name.trim(), location: location.trim(), facebookUrl: facebookUrl.trim() || undefined }, { dryRun: true });
+    const r = await resolveArtist({ name: name.trim(), location, facebookUrl: facebookUrl.trim() || undefined }, { dryRun: true });
     setChecking(false);
     if (r.action === "matched" && r.artistId) {
       onPickExisting({ id: r.artistId, name: r.artistName ?? name.trim() });
@@ -161,7 +191,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
         </div>
         <button onClick={() => onDone(draft(true))}
           className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl border border-line-hi py-3 text-[13px] font-extrabold text-dim transition-colors hover:text-txt">
-          No, mine is a different act (based in {location.trim() || "another town"})
+          No, mine is a different act (based in {location || "another town"})
         </button>
         <p className="mt-2 text-[11.5px] font-semibold text-dim2">Same name AND same area = same act on bndy, so this only works if yours is somewhere else.</p>
       </div>
@@ -176,12 +206,53 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
           <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-orange/55" />
         </label>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Home town</span>
-          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Stoke-on-Trent"
-            className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55" />
-          <span className="mt-1 block text-[11.5px] font-semibold text-dim2">This is how we tell same-named acts apart. It matters.</span>
-        </label>
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Based in</span>
+            <div className="flex gap-1 rounded-full border border-line p-0.5">
+              {(["town", "region"] as const).map((m) => (
+                <button key={m} onClick={() => setLocMode(m)}
+                  className={cn("rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide transition-colors", locMode === m ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
+                  {m === "town" ? "Town" : "Region"}
+                </button>
+              ))}
+            </div>
+          </div>
+          {locMode === "town" ? (
+            <div className="relative">
+              <MapPin size={15} className="absolute left-3.5 top-[15px] text-dim" />
+              <input
+                value={townQ}
+                onChange={(e) => { setTownQ(e.target.value); setTownPicked(null); }}
+                placeholder={placesAvailable ? "Start typing their home town…" : "e.g. Stoke-on-Trent"}
+                className="w-full rounded-2xl border border-line glass py-3 pl-9 pr-4 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
+              />
+              {townPicked && <Check size={15} className="absolute right-3.5 top-[15px] text-[var(--acc)]" />}
+              {preds.length > 0 && (
+                <div className="absolute inset-x-0 top-[calc(100%+4px)] z-20 overflow-hidden rounded-xl border border-line-hi glass-hi shadow-lg">
+                  {preds.slice(0, 5).map((p) => (
+                    <button key={p.id} onClick={() => pickTown(p)}
+                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13.5px] font-semibold transition-colors hover:bg-white/5">
+                      <MapPin size={13} className="shrink-0 text-dim" /> {p.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {REGIONS.map((r) => (
+                <button key={r} onClick={() => setRegion(region === r ? null : r)}
+                  className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", region === r ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
+          <span className="mt-1 block text-[11.5px] font-semibold text-dim2">
+            {locMode === "town" ? "This is how we tell same-named acts apart. It matters." : "For acts that gig across a whole region. A town is better if they have one."}
+          </span>
+        </div>
         <label className="block">
           <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Facebook page <span className="text-dim2">(optional, helps massively)</span></span>
           <input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="facebook.com/…" inputMode="url"
@@ -194,6 +265,17 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
               <button key={g} onClick={() => toggleGenre(g)}
                 className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", genres.includes(g) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
                 {g}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">They are <span className="text-dim2">(skip if unsure)</span></span>
+          <div className="flex flex-wrap gap-1.5">
+            {ARTIST_TYPES.map((t) => (
+              <button key={t} onClick={() => setArtistType(artistType === t ? undefined : t)}
+                className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", artistType === t ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
+                {t}
               </button>
             ))}
           </div>

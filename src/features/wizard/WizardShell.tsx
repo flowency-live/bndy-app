@@ -85,7 +85,14 @@ export function WizardShell() {
       if (!artistId && draft.newArtist) {
         setPhase("artist");
         const r = await resolveArtist(
-          { name: draft.newArtist.name, location: draft.newArtist.location, facebookUrl: draft.newArtist.facebookUrl, genres: draft.newArtist.genres },
+          {
+            name: draft.newArtist.name,
+            location: draft.newArtist.location,
+            facebookUrl: draft.newArtist.facebookUrl,
+            genres: draft.newArtist.genres,
+            artistType: draft.newArtist.artistType,
+            actType: draft.newArtist.actType,
+          },
           { confirmNew: draft.newArtist.confirmNew },
         );
         if ((r.action === "matched" || r.action === "created") && r.artistId) {
