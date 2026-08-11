@@ -6,6 +6,8 @@
 
 import { useState } from "react";
 import { Loader2, Mail, Phone } from "lucide-react";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
@@ -190,16 +192,15 @@ export function LoginPanel({ nextPath = "/", title = "Login or Register" }: { ne
             sendOtp();
           }}
         >
-          <input
-            type="tel"
-            required
+          <PhoneInput
+            international
+            defaultCountry="GB"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+44 7700 900000"
-            className={field}
-            autoComplete="tel"
+            onChange={(value) => setPhone(value || "")}
+            placeholder="7700 900000"
+            className="phone-input-dark"
           />
-          <button type="submit" disabled={busy || !phone.trim()} className={primaryBtn}>
+          <button type="submit" disabled={busy || !phone} className={primaryBtn}>
             {busy ? <Loader2 size={18} className="mx-auto animate-spin" /> : (
               <span className="inline-flex items-center justify-center gap-2"><Phone size={16} /> Send code</span>
             )}
