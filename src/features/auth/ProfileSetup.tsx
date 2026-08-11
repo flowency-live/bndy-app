@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { updateProfile } from "@/lib/auth/authApi";
+import { PlaceInput } from "@/features/shared/PlaceInput";
 
 const field =
   "w-full rounded-xl border border-line bg-white/5 px-4 py-3 text-[15px] font-semibold text-txt outline-none placeholder:text-dim2 focus:border-[var(--acc)]";
@@ -97,9 +98,9 @@ export function ProfileSetup({ onComplete, mode = "setup", initialData }: Profil
           placeholder="Display name (shown publicly)"
           className={field}
         />
-        <input
+        <PlaceInput
           value={hometown}
-          onChange={(e) => setHometown(e.target.value)}
+          onChange={setHometown}
           placeholder="Hometown (optional)"
           className={field}
           autoComplete="address-level2"

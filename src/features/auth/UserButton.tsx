@@ -14,7 +14,7 @@ function displayName(name?: string | null, email?: string | null, username?: str
 }
 
 export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top" }) {
-  const { user, isAuthenticated, isLoading, signOut, role } = useAuth();
+  const { user, isAuthenticated, isLoading, signOut, role, isCurator } = useAuth();
   const [open, setOpen] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
 
@@ -69,14 +69,16 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
             <Settings size={16} />
             Edit Profile
           </button>
-          <Link
-            href="/activity"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"
-          >
-            <History size={16} />
-            My activity
-          </Link>
+          {isCurator && (
+            <Link
+              href="/activity"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"
+            >
+              <History size={16} />
+              My activity
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => {

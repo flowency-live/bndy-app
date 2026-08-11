@@ -30,7 +30,7 @@ function entityHref(e: ActivityEntry): string | null {
 }
 
 export function ActivityClient() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, isCurator } = useAuth();
   const { data, isLoading: entriesLoading } = useMyActivity();
 
   if (isLoading) {
@@ -45,6 +45,19 @@ export function ActivityClient() {
     return (
       <div className="px-4 py-8">
         <LoginPanel nextPath="/activity" title="Sign in to see your activity" />
+      </div>
+    );
+  }
+
+  // Curators and staff only. A base user who deep-links here gets a plain explanation.
+  if (!isCurator) {
+    return (
+      <div className="mx-auto max-w-content px-4 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pt-8">
+        <h1 className="text-[26px] font-black tracking-tight lg:text-4xl">My activity</h1>
+        <p className="mt-4 max-w-md font-semibold text-dim">
+          This page is for bndy builders. Builders help keep listings correct.
+          Applications open soon.
+        </p>
       </div>
     );
   }
