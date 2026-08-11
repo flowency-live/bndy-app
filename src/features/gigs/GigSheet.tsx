@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
+import { CuratorBar } from "@/features/curator/CuratorBar";
 import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
@@ -207,6 +208,9 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         )}
         {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
+
+      {/* Feature 4: curators edit or hide the gig in place; hide closes the sheet */}
+      <CuratorBar target={{ kind: "gig", gig }} className="mb-3" onHidden={onClose} />
 
       <div className="text-[22px] font-black leading-tight tracking-tight">{name}</div>
       <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">

@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { LogOut, Settings, UserRound, X } from "lucide-react";
+import { History, LogOut, Settings, UserRound, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/cn";
 import { ProfileSetup } from "./ProfileSetup";
@@ -69,6 +69,14 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
             <Settings size={16} />
             Edit Profile
           </button>
+          <Link
+            href="/activity"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"
+          >
+            <History size={16} />
+            My activity
+          </Link>
           <button
             type="button"
             onClick={() => {
