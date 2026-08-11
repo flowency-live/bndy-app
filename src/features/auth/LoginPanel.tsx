@@ -198,7 +198,7 @@ export function LoginPanel({ nextPath = "/", title = "Login or Register" }: { ne
             value={phone}
             onChange={(value) => setPhone(value || "")}
             placeholder="7700 900000"
-            className="phone-input-dark"
+            className="phone-input-bndy"
           />
           <button type="submit" disabled={busy || !phone} className={primaryBtn}>
             {busy ? <Loader2 size={18} className="mx-auto animate-spin" /> : (
