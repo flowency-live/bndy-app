@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, MapPin, Music, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, MapPin, Mic, Music, Plus, Search } from "lucide-react";
 import { useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
 import { Avatar } from "@/components/ui/Avatar";
 import { distanceMiles } from "@/domain/geo";
@@ -13,11 +13,13 @@ import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestio
  *  acts are distinguishable by place, and same-region duplicates are impossible
  *  (not offered here, rejected server-side regardless). When the venue is already
  *  chosen, same-named acts nearest the venue rank first (gig-footprint proximity). */
-export function StepArtist({ venueId, venueCity, onPickExisting, onPickNew }: {
+export function StepArtist({ venueId, venueCity, onPickExisting, onPickNew, onPickOpenMic }: {
   venueId?: string;
   venueCity?: string;
   onPickExisting: (a: { id: string; name: string }) => void;
   onPickNew: (draft: NewArtistDraft) => void;
+  /** item 13: open mic night — no headline act; optional host already on bndy */
+  onPickOpenMic: (host?: { id: string; name: string }) => void;
 }) {
   const { data: artists = [] } = useArtists();
   const { data: gigs = [] } = useUpcomingGigs();
@@ -46,10 +48,58 @@ export function StepArtist({ venueId, venueCity, onPickExisting, onPickNew }: {
 
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
+  const [openMic, setOpenMic] = useState(false);
+  const [hostQ, setHostQ] = useState("");
   const ranked = useMemo(() => rankArtists(q, artists, 8, { venueCity, distById }), [q, artists, venueCity, distById]);
+  const hostRanked = useMemo(() => rankArtists(hostQ, artists, 6, { venueCity, distById }), [hostQ, artists, venueCity, distById]);
 
   if (adding) {
     return <NewArtistForm initialName={q.trim()} onBack={() => setAdding(false)} onPickExisting={onPickExisting} onDone={onPickNew} />;
+  }
+
+  // Open mic sub-step: optional host, or straight through with none.
+  if (openMic) {
+    return (
+      <div>
+        <h2 className="text-[19px] font-black tracking-tight">Open mic night</h2>
+        <p className="mt-1.5 text-[13px] font-semibold text-dim">Does someone host it? Optional. Search the host act, or carry on without one.</p>
+        <div className="relative mt-3">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
+          <input
+            value={hostQ}
+            onChange={(e) => setHostQ(e.target.value)}
+            placeholder="Host act on bndy…"
+            aria-label="Search for the host act"
+            autoFocus
+            className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
+          />
+        </div>
+        {hostRanked.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {hostRanked.map(({ artist: a }) => (
+              <button key={a.id} onClick={() => onPickOpenMic({ id: a.id, name: a.name })}
+                className="flex w-full items-center gap-3 rounded-xl border border-line bg-card px-3.5 py-2.5 text-left transition-colors hover:border-line-hi">
+                <Avatar id={a.id} name={a.name} src={a.profileImageUrl ?? undefined} size={38} radius={10} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14.5px] font-extrabold">{a.name}</span>
+                  <span className="block truncate text-[12px] font-semibold text-dim">{a.location || "Location unknown"}</span>
+                </span>
+                <Check size={16} className="text-dim2" />
+              </button>
+            ))}
+          </div>
+        )}
+        {hostQ.trim().length >= 2 && hostRanked.length === 0 && (
+          <p className="mt-3 text-[12.5px] font-semibold text-dim2">Not on bndy yet. Carry on without a host; a curator can add one later.</p>
+        )}
+        <div className="mt-4 flex gap-2.5">
+          <button onClick={() => onPickOpenMic(undefined)} className="bndy-btn flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px]">
+            <Mic size={16} /> No host, continue
+          </button>
+          <button onClick={() => { setOpenMic(false); setHostQ(""); }} className="bndy-btn2 flex-1 py-3.5 text-[14px]">Back</button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -92,6 +142,18 @@ export function StepArtist({ venueId, venueCity, onPickExisting, onPickNew }: {
           <Plus size={15} /> {ranked.length ? `None of these? Add “${q.trim()}”` : `Add “${q.trim()}” to bndy`}
         </button>
       )}
+
+      {/* item 13: the third path — no headline act at all */}
+      <button onClick={() => setOpenMic(true)}
+        className="mt-4 flex w-full items-center gap-3 rounded-xl border border-line bg-card px-3.5 py-3 text-left transition-colors hover:border-line-hi">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "color-mix(in srgb, var(--acc2) 18%, transparent)" }}>
+          <Mic size={17} className="text-[var(--acc2)]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14.5px] font-extrabold">It&apos;s an open mic night</span>
+          <span className="block text-[12px] font-semibold text-dim">No headline act. Host optional. Can repeat weekly or monthly.</span>
+        </span>
+      </button>
     </div>
   );
 }

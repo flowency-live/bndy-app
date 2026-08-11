@@ -4,9 +4,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { MapPin, Navigation, Share2, User } from "lucide-react";
+import { MapPin, Mic, Navigation, Share2, User } from "lucide-react";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { prettyDate, formatTime, isTonight, setTimeLabel } from "@/domain/dates";
+import { gigDisplayName } from "@/domain/gigName";
 import { AddToCalendarButton } from "@/features/gigs/AddToCalendarButton";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
@@ -20,7 +21,7 @@ function gmaps(lat: number, lng: number) {
 
 export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }) {
   const [sharing, setSharing] = useState(false);
-  const name = gig.artistName || gig.title;
+  const name = gigDisplayName(gig);
   const tonight = isTonight(gig.date, gig.startTime);
   const time = setTimeLabel(gig.startTime, gig.endTime);
 
@@ -39,16 +40,23 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
             <span className="text-[52px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
           </div>
         )}
-        {gig.cancelled && (
-          <span className="absolute left-3 top-3 rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
-            Cancelled
-          </span>
-        )}
-        {tonight && !gig.cancelled && (
-          <span className="absolute left-3 top-3 rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
-            Tonight
-          </span>
-        )}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+          {gig.cancelled && (
+            <span className="rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
+              Cancelled
+            </span>
+          )}
+          {tonight && !gig.cancelled && (
+            <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
+              Tonight
+            </span>
+          )}
+          {gig.isOpenMic && (
+            <span className="flex items-center gap-1 rounded-lg bg-acc2 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc2 shadow-lg">
+              <Mic size={11} strokeWidth={2.75} /> Open mic
+            </span>
+          )}
+        </div>
         {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 

@@ -46,6 +46,8 @@ interface GigDTO {
   venueId: string; venueName?: string; venueCity?: string; venue?: { name?: string; city?: string };
   artistId?: string; artistName?: string; geoLat?: number; geoLng?: number;
   ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean; cancelled?: boolean;
+  /** community-created open mics carry type 'open-mic' rather than an isOpenMic attribute */
+  type?: string;
 }
 export function toGig(e: GigDTO): Gig | null {
   if (typeof e.geoLat !== "number" || typeof e.geoLng !== "number") return null;
@@ -79,7 +81,7 @@ export function toGig(e: GigDTO): Gig | null {
     ticketed: isTicketed,
     ticketUrl,
     ticketing: resolved,
-    isOpenMic: e.isOpenMic,
+    isOpenMic: e.isOpenMic || e.type === "open-mic" || undefined,
     cancelled: !!e.cancelled,
   };
 }

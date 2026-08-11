@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket, User } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, Mic, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
 import { CuratorBar } from "@/features/curator/CuratorBar";
@@ -43,7 +43,11 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   // Batch-loaded map events can omit denormalised names — resolve from cached entity lists.
   const { data: artists = [] } = useArtists();
   const { data: venues = [] } = useVenues();
-  const nameOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || g.title;
+  const hostOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || undefined;
+  const nameOf = (g: Gig) => {
+    if (g.isOpenMic) { const h = hostOf(g); return h ? `Open mic with ${h}` : "Open mic"; }
+    return hostOf(g) || g.title;
+  };
   const venueOf = (g: Gig) => {
     const venue = venues.find((v) => v.id === g.venueId);
     return {
@@ -193,16 +197,23 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
             <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
           </div>
         )}
-        {gig.cancelled && (
-          <span className="absolute left-3 top-3 rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
-            Cancelled
-          </span>
-        )}
-        {tonight && !gig.cancelled && (
-          <span className="absolute left-3 top-3 rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
-            Tonight
-          </span>
-        )}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+          {gig.cancelled && (
+            <span className="rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
+              Cancelled
+            </span>
+          )}
+          {tonight && !gig.cancelled && (
+            <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
+              Tonight
+            </span>
+          )}
+          {gig.isOpenMic && (
+            <span className="flex items-center gap-1 rounded-lg bg-acc2 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc2 shadow-lg">
+              <Mic size={11} strokeWidth={2.75} /> Open mic
+            </span>
+          )}
+        </div>
         {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 

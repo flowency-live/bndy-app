@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { MapPin, Mic } from "lucide-react";
 import { TicketStub } from "@/components/TicketStub";
 import { useArtistImageMap } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
@@ -40,17 +40,21 @@ export function PreviewCard({ draft, compact }: { draft: Draft; compact?: boolea
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt={artistName ?? ""} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center" style={{ background: artistName ? avatarGradient(seed) : "var(--card2)" }}>
-              <span className={cn("text-[30px] font-black drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]", artistName ? "text-white/95" : "text-dim2")}>
-                {artistName ? initials(artistName) : "?"}
-              </span>
+            <div className="flex h-full w-full items-center justify-center" style={{ background: artistName || draft.isOpenMic ? avatarGradient(seed) : "var(--card2)" }}>
+              {draft.isOpenMic && !artistName ? (
+                <Mic size={30} className="text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]" />
+              ) : (
+                <span className={cn("text-[30px] font-black drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]", artistName ? "text-white/95" : "text-dim2")}>
+                  {artistName ? initials(artistName) : "?"}
+                </span>
+              )}
             </div>
           )}
           {draft.ticketed && <TicketStub onCard className="absolute right-2.5 top-2.5" />}
         </div>
       )}
       <div className="p-3.5">
-        <div className={cn("text-[17px] font-black leading-tight tracking-tight", !artistName && "text-dim2")}>
+        <div className={cn("text-[17px] font-black leading-tight tracking-tight", !artistName && !draft.isOpenMic && "text-dim2")}>
           {draft.title || artistName || "Who's playing?"}
         </div>
         <div className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-dim">

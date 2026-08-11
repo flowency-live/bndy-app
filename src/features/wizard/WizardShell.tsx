@@ -7,6 +7,7 @@ import { ArrowLeft, Check, Loader2, PartyPopper, Share2 } from "lucide-react";
 import { useArtists, useVenues } from "@/lib/hooks";
 import { formatTime } from "@/domain/dates";
 import { cn } from "@/lib/cn";
+import { seriesDates } from "@/domain/recurrence";
 import { clearDraft, EMPTY_DRAFT, inferTitle, loadDraft, saveDraft, type Draft } from "./lib";
 import { createCommunityEvent, resolveArtist } from "./wizardApi";
 import { PreviewCard } from "./PreviewCard";
@@ -16,7 +17,7 @@ import { StepWhen } from "./StepWhen";
 
 type StepKey = "venue" | "artist" | "when" | "review";
 type Phase = "idle" | "artist" | "event";
-type Outcome = { kind: "published"; eventId?: string } | { kind: "duplicate" } | null;
+type Outcome = { kind: "published"; eventId?: string; count?: number; dups?: number } | { kind: "duplicate" } | null;
 
 export function WizardShell() {
   const params = useSearchParams();
@@ -66,12 +67,12 @@ export function WizardShell() {
 
   const patch = (p: Partial<Draft>) => setDraft((d) => {
     const next = { ...d, ...p };
-    if (!next.titleTouched) next.title = inferTitle(next.artistName ?? next.newArtist?.name, next.venueName);
+    if (!next.titleTouched) next.title = inferTitle(next.artistName ?? next.newArtist?.name, next.venueName, next.isOpenMic);
     return next;
   });
 
   const venueDone = !!draft.venueId;
-  const artistDone = !!draft.artistId || !!draft.newArtist;
+  const artistDone = !!draft.artistId || !!draft.newArtist || !!draft.isOpenMic;
   const whenDone = !!draft.date && !!draft.startTime;
 
   // auto-advance to the first incomplete step on load/prefill
@@ -91,10 +92,11 @@ export function WizardShell() {
     if (!draft.venueId || !draft.date || !draft.startTime) return;
     setError(null);
     try {
-      // 1) resolve/create the artist if new
+      // 1) resolve/create the artist if new (open mics skip this: host is optional
+      //    and always an EXISTING act — StepArtist never offers new-artist creation there)
       let artistId = draft.artistId;
       let artistName = draft.artistName;
-      if (!artistId && draft.newArtist) {
+      if (!artistId && !draft.isOpenMic && draft.newArtist) {
         setPhase("artist");
         let r = await resolveArtist(
           {
@@ -132,30 +134,43 @@ export function WizardShell() {
           return;
         }
       }
-      if (!artistId) { setStep("artist"); return; }
+      if (!artistId && !draft.isOpenMic) { setStep("artist"); return; }
 
-      // 2) create the gig
+      // 2) create the gig — or the whole series for a repeating open mic (item 13):
+      //    each date is its own event; the server dedup gate absorbs re-runs.
       setPhase("event");
-      const title = draft.titleTouched && draft.title ? draft.title : inferTitle(artistName, draft.venueName);
-      const res = await createCommunityEvent({
-        artistId,
-        venueId: draft.venueId,
-        date: draft.date,
-        startTime: draft.startTime,
-        endTime: draft.endTime,
-        title: title || undefined,
-        ticketed: draft.ticketed || undefined,
-        ticketUrl: draft.ticketUrl,
-        ticketInformation: draft.ticketInfo,
-        imageUrl: draft.posterUrl,
-        description: draft.info,
-        hp: "",
-        startedAt: startedAt.current,
-      });
+      const title = draft.titleTouched && draft.title ? draft.title : inferTitle(artistName, draft.venueName, draft.isOpenMic);
+      const dates = draft.isOpenMic && draft.repeat
+        ? seriesDates(draft.date, draft.repeat.pattern, draft.repeat.until)
+        : [draft.date];
+      let ok = 0, dups = 0;
+      let firstEventId: string | undefined;
+      let lastError: string | undefined;
+      for (const date of dates) {
+        const res = await createCommunityEvent({
+          artistId,
+          isOpenMic: draft.isOpenMic || undefined,
+          venueId: draft.venueId,
+          date,
+          startTime: draft.startTime,
+          endTime: draft.endTime,
+          title: title || undefined,
+          ticketed: draft.ticketed || undefined,
+          ticketUrl: draft.ticketUrl,
+          ticketInformation: draft.ticketInfo,
+          imageUrl: draft.posterUrl,
+          description: draft.info,
+          hp: "",
+          startedAt: startedAt.current,
+        });
+        if (res.ok) { ok += 1; if (!firstEventId) firstEventId = res.eventId; }
+        else if (res.existingEventId || res.error === "duplicate") dups += 1;
+        else { lastError = res.error; break; }
+      }
       setPhase("idle");
-      if (res.ok) { setOutcome({ kind: "published", eventId: res.eventId }); clearDraft(); }
-      else if (res.existingEventId || res.error === "duplicate") { setOutcome({ kind: "duplicate" }); clearDraft(); }
-      else setError(res.error ?? "Publishing failed. Nothing was lost, try again.");
+      if (ok > 0) { setOutcome({ kind: "published", eventId: firstEventId, count: ok, dups }); clearDraft(); }
+      else if (dups > 0) { setOutcome({ kind: "duplicate" }); clearDraft(); }
+      else setError(lastError ?? "Publishing failed. Nothing was lost, try again.");
     } catch {
       setPhase("idle");
       setError("Network hiccup. Nothing was lost, try again.");
@@ -186,14 +201,21 @@ export function WizardShell() {
   /* ---------------- outcome screens ---------------- */
   if (outcome) {
     const dup = outcome.kind === "duplicate";
+    const many = outcome.kind === "published" && (outcome.count ?? 1) > 1;
     return (
       <div className="mx-auto max-w-md px-4 pb-24 pt-6 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-acc text-on-acc">
           {dup ? <Check size={26} strokeWidth={3} /> : <PartyPopper size={26} />}
         </div>
-        <h1 className="mt-4 text-[24px] font-black tracking-tight">{dup ? "Already listed!" : "Your gig is live!"}</h1>
+        <h1 className="mt-4 text-[24px] font-black tracking-tight">
+          {dup ? "Already listed!" : many ? `${outcome.count} nights are live!` : "Your gig is live!"}
+        </h1>
         <p className="mt-1.5 text-[14px] font-semibold text-dim">
-          {dup ? "Good news: this gig is already on bndy, so there's nothing to do." : "It's on the map and in the gig list right now."}
+          {dup
+            ? "Good news: this gig is already on bndy, so there's nothing to do."
+            : many
+              ? `The whole series is on the map and in the gig list right now.${outcome.kind === "published" && outcome.dups ? ` ${outcome.dups} of the dates were already listed.` : ""}`
+              : "It's on the map and in the gig list right now."}
         </p>
         <div className="mt-5 text-left"><PreviewCard draft={draft.title ? draft : { ...draft }} /></div>
         <div className="mt-5 flex flex-col gap-2.5">
@@ -268,8 +290,9 @@ export function WizardShell() {
             <StepArtist
               venueId={draft.venueId}
               venueCity={draft.venueCity}
-              onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined }); setStep("when"); }}
-              onPickNew={(na) => { patch({ newArtist: na, artistId: undefined, artistName: undefined }); setStep("when"); }}
+              onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined, isOpenMic: undefined, repeat: undefined }); setStep("when"); }}
+              onPickNew={(na) => { patch({ newArtist: na, artistId: undefined, artistName: undefined, isOpenMic: undefined, repeat: undefined }); setStep("when"); }}
+              onPickOpenMic={(host) => { patch({ isOpenMic: true, artistId: host?.id, artistName: host?.name, newArtist: undefined }); setStep("when"); }}
             />
           )}
           {step === "when" && <StepWhen draft={draft} onDone={(p) => { patch(p); setStep("review"); }} />}

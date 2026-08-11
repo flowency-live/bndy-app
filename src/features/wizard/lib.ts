@@ -1,5 +1,6 @@
 // Gig wizard domain helpers — spec: Projects/bndy/GIG-WIZARD-SPEC.md
 import type { Artist } from "@/domain/types";
+import type { RepeatPattern } from "@/domain/recurrence";
 
 /** Canonical genre enum — MUST mirror bndy-serverless-api/artists-lambda/lib/genres.js
  *  (free-text genres are rejected server-side with 400 INVALID_GENRES). */
@@ -93,7 +94,8 @@ export function defaultStartTime(dateISO: string): string {
   return "20:00";
 }
 
-export function inferTitle(artistName?: string, venueName?: string): string {
+export function inferTitle(artistName?: string, venueName?: string, isOpenMic?: boolean): string {
+  if (isOpenMic) return venueName ? `Open Mic @ ${venueName}` : "Open Mic";
   if (artistName && venueName) return `${artistName} @ ${venueName}`;
   return "";
 }
@@ -109,6 +111,11 @@ export interface NewArtistDraft {
   /** user explicitly confirmed "mine is a different act" after seeing candidates */
   confirmNew?: boolean;
 }
+/** Open mic repeat rule (item 13): expanded client-side via domain/recurrence. */
+export interface RepeatRule {
+  pattern: RepeatPattern;
+  until: string;
+}
 export interface Draft {
   venueId?: string;
   venueName?: string;
@@ -116,6 +123,9 @@ export interface Draft {
   artistId?: string;
   artistName?: string;
   newArtist?: NewArtistDraft;
+  /** open mic night — artist optional (the host), repeats allowed */
+  isOpenMic?: boolean;
+  repeat?: RepeatRule;
   date?: string;
   startTime?: string;
   endTime?: string;

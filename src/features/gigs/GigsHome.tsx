@@ -1,10 +1,11 @@
 "use client";
 
 import { useDeferredValue, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, Check, Heart } from "lucide-react";
+import { Search, ChevronDown, Check, Heart, Mic, MicOff } from "lucide-react";
 import { useUpcomingGigs, useArtistImageMap } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
+import { useOpenMicPref } from "@/lib/openMicPref";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles } from "@/domain/geo";
 import { inWhenRange, isTonight, todayISO, type WhenRange } from "@/domain/dates";
@@ -41,6 +42,8 @@ export function GigsHome() {
   const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
   const [favOnly, setFavOnly] = useState(false);
   const favActive = favOnly && isAuthenticated;
+  // Open mics (item 13): shown by default, one tap hides them, remembered per device.
+  const { showOpenMics, toggleOpenMics } = useOpenMicPref();
   const [selected, setSelected] = useState<Gig | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(["later"]));
 
@@ -59,10 +62,11 @@ export function GigsHome() {
     const query = dq.trim().toLowerCase();
     let out = gigs.filter((g) => g.date >= today);
     if (!showTicketed) out = out.filter((g) => !g.ticketed);
+    if (!showOpenMics) out = out.filter((g) => !g.isOpenMic);
     if (favActive) out = out.filter((g) => (g.artistId && favArtists.has(g.artistId)) || favVenues.has(g.venueId));
     if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title}`.toLowerCase().includes(query));
     return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= dRadius);
-  }, [gigs, showTicketed, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
+  }, [gigs, showTicketed, showOpenMics, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
 
   const dayCounts = useMemo(() => { const m = new Map<string, number>(); for (const x of eligible) m.set(x.gig.date, (m.get(x.gig.date) ?? 0) + 1); return m; }, [eligible]);
 
@@ -121,6 +125,17 @@ export function GigsHome() {
               Favourites
             </button>
           )}
+          <button
+            onClick={toggleOpenMics}
+            aria-pressed={showOpenMics}
+            style={showOpenMics ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
+            className={cn("flex shrink-0 items-center gap-2 rounded-2xl border border-line glass px-3.5 py-2 text-[12.5px] font-extrabold transition-colors", showOpenMics ? "text-white" : "text-dim")}
+          >
+            {showOpenMics
+              ? <Mic size={14} strokeWidth={2.5} className="text-[var(--acc2)]" />
+              : <MicOff size={14} strokeWidth={2.5} />}
+            Open mics
+          </button>
           <button
             onClick={() => setShowTicketed((v) => !v)}
             aria-pressed={showTicketed}

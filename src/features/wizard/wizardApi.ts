@@ -112,7 +112,9 @@ export interface EventResult {
   error?: string;
 }
 export async function createCommunityEvent(payload: {
-  artistId: string;
+  /** optional for open mics (artist-less events; the backend requires isOpenMic instead) */
+  artistId?: string;
+  isOpenMic?: boolean;
   venueId: string;
   date: string;
   startTime: string;

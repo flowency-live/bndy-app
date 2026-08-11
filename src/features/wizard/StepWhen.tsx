@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, ChevronDown } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Repeat } from "lucide-react";
 import { useUpcomingGigs } from "@/lib/hooks";
 import { todayISO, addDaysISO } from "@/domain/dates";
+import { describeRepeat, maxUntilIso, seriesDates, type RepeatPattern } from "@/domain/recurrence";
 import { cn } from "@/lib/cn";
-import { defaultStartTime, type Draft } from "./lib";
+import { defaultStartTime, type Draft, type RepeatRule } from "./lib";
 import { WizardCalendar } from "./WizardCalendar";
 
 /** Quick date chips: tonight / tomorrow / next Fri / next Sat. */
@@ -54,6 +55,24 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
   const [more, setMore] = useState(!!(draft.info || draft.posterUrl));
   const [info, setInfo] = useState(draft.info ?? "");
   const [posterUrl, setPosterUrl] = useState(draft.posterUrl ?? "");
+  // item 13: repeats, open mic nights only
+  const [repeatOn, setRepeatOn] = useState(!!draft.repeat);
+  const [pattern, setPattern] = useState<RepeatPattern>(draft.repeat?.pattern ?? "weekly");
+  const [until, setUntil] = useState(draft.repeat?.until ?? "");
+
+  const repeat: RepeatRule | undefined =
+    draft.isOpenMic && repeatOn && date && until ? { pattern, until } : undefined;
+  const seriesCount = repeat ? seriesDates(date, repeat.pattern, repeat.until).length : 0;
+
+  const enableRepeat = () => {
+    setRepeatOn(true);
+    // sensible default horizon: 12 weeks out, clamped to the 6-month cap
+    if (!until && date) {
+      const twelveWeeks = addDaysISO(date, 84);
+      const cap = maxUntilIso(date);
+      setUntil(twelveWeeks < cap ? twelveWeeks : cap);
+    }
+  };
 
   /** busy-night dots on the calendar: dates where this venue already has a gig */
   const venueBusy = useMemo(() => {
@@ -126,6 +145,49 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
         <p className="mt-1.5 text-[11.5px] font-semibold text-dim2">We&apos;ve guessed a typical start time for a {new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" })}. Change it if you know better.</p>
       )}
 
+      {/* item 13: open mic nights can repeat */}
+      {draft.isOpenMic && (
+        <>
+          <button onClick={() => (repeatOn ? setRepeatOn(false) : enableRepeat())} aria-pressed={repeatOn} disabled={!date}
+            className="mt-4 flex w-full items-center gap-2.5 rounded-2xl border border-line glass px-4 py-3 text-left text-[14px] font-extrabold disabled:opacity-50">
+            <span className={cn("flex h-[18px] w-[18px] items-center justify-center rounded-md border", repeatOn ? "border-transparent bg-acc2 text-on-acc2" : "border-line-hi")}>
+              {repeatOn && <Check size={12} strokeWidth={3.5} />}
+            </span>
+            It repeats
+            <Repeat size={14} className="text-[var(--acc2)]" />
+            <span className="ml-auto text-[11.5px] font-semibold text-dim2">weekly or monthly</span>
+          </button>
+          {repeatOn && date && (
+            <div className="mt-2.5 space-y-2.5">
+              <div className="flex flex-wrap gap-1.5">
+                {(["weekly", "fortnightly", "monthly"] as RepeatPattern[]).map((p) => (
+                  <button key={p} onClick={() => setPattern(p)}
+                    className={cn("rounded-full border px-3 py-1.5 text-[12.5px] font-bold capitalize transition-colors", pattern === p ? "border-transparent bg-acc2 text-on-acc2" : "border-line text-dim hover:text-txt")}>
+                    {p === "fortnightly" ? "Every 2 weeks" : p}
+                  </button>
+                ))}
+              </div>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Until</span>
+                <input
+                  type="date"
+                  value={until}
+                  min={date}
+                  max={maxUntilIso(date)}
+                  onChange={(e) => setUntil(e.target.value)}
+                  className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-orange/55"
+                />
+              </label>
+              {seriesCount > 0 && (
+                <p className="text-[12.5px] font-bold text-dim">
+                  Runs {describeRepeat(date, pattern)}. This creates {seriesCount} event{seriesCount === 1 ? "" : "s"}.
+                </p>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
       <button onClick={() => setTicketed((v) => !v)} aria-pressed={ticketed}
         className="mt-4 flex w-full items-center gap-2.5 rounded-2xl border border-line glass px-4 py-3 text-left text-[14px] font-extrabold">
         <span className={cn("flex h-[18px] w-[18px] items-center justify-center rounded-md border", ticketed ? "border-transparent bg-acc2 text-on-acc2" : "border-line-hi")}>
@@ -155,7 +217,7 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
       )}
 
       <button
-        onClick={() => onDone({ date, startTime, endTime, ticketed, ticketUrl: ticketUrl.trim() || undefined, ticketInfo: ticketInfo.trim() || undefined, info: info.trim() || undefined, posterUrl: posterUrl.trim() || undefined })}
+        onClick={() => onDone({ date, startTime, endTime, ticketed, repeat, ticketUrl: ticketUrl.trim() || undefined, ticketInfo: ticketInfo.trim() || undefined, info: info.trim() || undefined, posterUrl: posterUrl.trim() || undefined })}
         disabled={!date || !startTime}
         className="bndy-btn mt-5 flex w-full items-center justify-center gap-2 py-3.5 text-[14px] disabled:opacity-40"
       >

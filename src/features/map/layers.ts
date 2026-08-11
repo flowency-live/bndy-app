@@ -1,6 +1,6 @@
 // GPU layer specs — validated against @maplibre/maplibre-gl-style-spec (0 errors).
 import type { Skin } from "./skins";
-import { PILL_IDLE, PILL_LIVE } from "./skinMap";
+import { MIC_ICON, PILL_IDLE, PILL_LIVE } from "./skinMap";
 
 /** Venue name pills appear from this zoom (clusters dominate below it anyway). */
 export const VENUE_LABEL_MINZOOM = 11;
@@ -10,7 +10,7 @@ const GIG = "gigs", VEN = "vens";
 const isCl = ["has", "point_count"];
 const notCl = ["!", ["has", "point_count"]];
 
-export const GIG_LAYERS = ["g-heat", "g-cl-bloom", "g-cl-core", "g-cl-count", "g-hit", "g-ping", "g-bloom", "g-core", "g-tik"];
+export const GIG_LAYERS = ["g-heat", "g-cl-bloom", "g-cl-core", "g-cl-count", "g-hit", "g-ping", "g-bloom", "g-core", "g-tik", "g-mic"];
 export const VEN_LAYERS = ["v-cl-bloom", "v-cl-core", "v-cl-count", "v-hit", "v-bloom", "v-core", "v-label"];
 export const ALL_LAYERS = [...GIG_LAYERS, ...VEN_LAYERS];
 
@@ -36,6 +36,10 @@ export function buildGigLayers(skin: Skin): LayerSpec[] {
   // below that the pin is too small to read a glyph; the gig sheet reveals ticketing on tap.
   // Glyph colour = c.gigCore, runtime-picked for best WCAG contrast against the accent fill.
   layers.push({ id: "g-tik", type: "symbol", source: GIG, filter: ["all", notCl, ["==", ["get", "ticketed"], 1]], minzoom: 12, layout: { "text-field": "£", "text-font": ["Open Sans Bold"], "text-size": ["interpolate", ["linear"], ["zoom"], 12, 9.5, 16, 13], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": c.gigCore } });
+  // g-mic: mic glyph inside open-mic pins (item 13). Same z-gate as g-tik — below
+  // z12 the pin is too small to read a glyph; the gig sheet says OPEN MIC on tap.
+  // Icon registered by skinMap.registerMic in the pin's contrast colour.
+  layers.push({ id: "g-mic", type: "symbol", source: GIG, filter: ["all", notCl, ["==", ["get", "openmic"], 1], ["!=", ["get", "ticketed"], 1]], minzoom: 12, layout: { "icon-image": MIC_ICON, "icon-size": ["interpolate", ["linear"], ["zoom"], 12, 0.42, 16, 0.62], "icon-allow-overlap": true, "icon-ignore-placement": true } });
   return layers;
 }
 

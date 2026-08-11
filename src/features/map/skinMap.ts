@@ -146,6 +146,49 @@ export const DIA_LIVE = "bndy-dia-live";
 export const DIA_IDLE = "bndy-dia-idle";
 export const PILL_LIVE = "bndy-pill-live";
 export const PILL_IDLE = "bndy-pill-idle";
+export const MIC_ICON = "bndy-mic";
+
+/* ---------------- mic glyph for open mic gig pins (item 13) ---------------- */
+/** Small microphone drawn in the pin's contrast colour: capsule head, arc cradle,
+ *  stand. Sits inside the accent-filled gig pin, same slot as the £ glyph. */
+function micImage(color: string, sizePx = 18): ImageData {
+  const px = sizePx * 2;
+  const cv = document.createElement("canvas");
+  cv.width = px; cv.height = px;
+  const ctx = cv.getContext("2d")!;
+  const cx = px / 2;
+  const u = px / 36; // unit scale
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineCap = "round";
+  ctx.lineWidth = 3.4 * u;
+  // capsule head
+  const capW = 9 * u, capH = 15 * u, capTop = 3 * u, r = capW / 2;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") ctx.roundRect(cx - r, capTop, capW, capH, r);
+  else ctx.rect(cx - r, capTop, capW, capH);
+  ctx.fill();
+  // cradle arc
+  ctx.beginPath();
+  ctx.arc(cx, capTop + capH - 3 * u, 8.5 * u, Math.PI * 0.05, Math.PI * 0.95);
+  ctx.stroke();
+  // stand
+  ctx.beginPath();
+  ctx.moveTo(cx, capTop + capH + 5.5 * u);
+  ctx.lineTo(cx, px - 4 * u);
+  ctx.stroke();
+  return ctx.getImageData(0, 0, px, px);
+}
+
+/** (Re)register the open-mic glyph for the current skin. Call with registerDiamonds. */
+export function registerMic(map: maplibregl.Map, colors: SkinColors): void {
+  try {
+    if (map.hasImage(MIC_ICON)) map.removeImage(MIC_ICON);
+    map.addImage(MIC_ICON, micImage(colors.gigCore), { pixelRatio: 2 });
+  } catch (err) {
+    console.error("[bndy-map] mic icon registration failed:", err);
+  }
+}
 
 /* ---------------- venue name pill (stretchable nine-patch) ---------------- */
 /** Rounded-rect background for venue name labels. Used with icon-text-fit so the

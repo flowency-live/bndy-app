@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import maplibregl from "maplibre-gl";
-import { Heart, Search, X } from "lucide-react";
+import { Heart, Mic, MicOff, Search, X } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
 import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
 import { fetchEventsBatch, type BBox } from "@/lib/api";
@@ -18,8 +18,9 @@ import { MapDateControl } from "./MapDateControl";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
+import { useOpenMicPref } from "@/lib/openMicPref";
 import type { Gig, Venue } from "@/domain/types";
-import { basemapFor, registerDiamonds, registerPills, tokenSkin } from "./skinMap";
+import { basemapFor, registerDiamonds, registerMic, registerPills, tokenSkin } from "./skinMap";
 import { ALL_LAYERS, GIG_LAYERS, VEN_LAYERS, buildGigLayers, buildVenueLayers } from "./layers";
 
 type Mode = "events" | "venues";
@@ -69,6 +70,8 @@ export function MapView() {
   const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
   const [favOnly, setFavOnly] = useState(false);
   const favActive = favOnly && isAuthenticated;
+  // Open mics (item 13): shown by default, mic button hides them, remembered per device.
+  const { showOpenMics, toggleOpenMics } = useOpenMicPref();
   const [selected, setSelected] = useState<Gig | null>(null);
   const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
@@ -128,14 +131,23 @@ export function MapView() {
     return m;
   }, [gigs]);
 
+  // Item 13: the geo shape carries no open-mic flag — join the full gigs cache,
+  // same fallback pattern as tikById/cancById.
+  const micById = useMemo(() => {
+    const m = new Set<string>();
+    for (const g of gigs) if (g.isOpenMic) m.add(g.id);
+    return m;
+  }, [gigs]);
+
   // shownCount: count lightEvents in viewport matching date filter AND search
   const shownCount = useMemo(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
     filtered = filtered.filter((e) => !(e.cancelled ?? cancById.has(e.id)));
+    if (!showOpenMics) filtered = filtered.filter((e) => !micById.has(e.id));
     return filtered.length;
-  }, [lightEvents, sel, today, matchingEventIds, favActive, favArtists, favVenues, cancById]);
+  }, [lightEvents, sel, today, matchingEventIds, favActive, favArtists, favVenues, cancById, showOpenMics, micById]);
 
   const venueGigs = useMemo(() => {
     if (!selectedVenue) return [];
@@ -156,15 +168,16 @@ export function MapView() {
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
     filtered = filtered.filter((e) => !(e.cancelled ?? cancById.has(e.id)));
+    if (!showOpenMics) filtered = filtered.filter((e) => !micById.has(e.id));
     return {
       type: "FeatureCollection",
       features: filtered.map((e) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [e.geoLng, e.geoLat] },
-        properties: { id: e.id, tonight: e.date === today ? 1 : 0, ticketed: (e.ticketed ?? tikById.get(e.id)) ? 1 : 0 },
+        properties: { id: e.id, tonight: e.date === today ? 1 : 0, ticketed: (e.ticketed ?? tikById.get(e.id)) ? 1 : 0, openmic: micById.has(e.id) ? 1 : 0 },
       })),
     };
-  }, [lightEvents, sel, today, matchingEventIds, tikById, favActive, favArtists, favVenues, cancById]);
+  }, [lightEvents, sel, today, matchingEventIds, tikById, favActive, favArtists, favVenues, cancById, showOpenMics, micById]);
   // Same-venue stack: gig pins at one venue overlap at identical coordinates, so a tap on
   // "a pin" must surface ALL that venue's gigs within the active date filter + search —
   // otherwise only the top-of-stack feature is reachable. Ref pattern (like gigByIdRef)
@@ -175,6 +188,7 @@ export function MapView() {
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
     filtered = filtered.filter((e) => !(e.cancelled ?? cancById.has(e.id)));
+    if (!showOpenMics) filtered = filtered.filter((e) => !micById.has(e.id));
     const me = filtered.find((e) => e.id === id);
     if (!me || !me.venueId) return [id];
     return filtered
@@ -207,6 +221,7 @@ export function MapView() {
       const s = tokenSkin();
       registerDiamonds(map, s.colors);
       registerPills(map, s.colors);
+      registerMic(map, s.colors);
       [...buildGigLayers(s), ...buildVenueLayers(s, modeRef.current === "venues")].forEach((spec) => map.addLayer(spec as unknown as maplibregl.AddLayerObject));
       applyMode(map);
     } catch (err) {
@@ -389,6 +404,17 @@ export function MapView() {
             className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-colors", favOnly ? "text-[var(--acc)]" : "text-dim")}
           >
             <Heart size={16} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />
+          </button>
+        )}
+        {mode === "events" && (
+          <button
+            onClick={toggleOpenMics}
+            aria-pressed={showOpenMics}
+            aria-label={showOpenMics ? "Hide open mics" : "Show open mics"}
+            style={showOpenMics ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
+            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-colors", showOpenMics ? "text-[var(--acc2)]" : "text-dim")}
+          >
+            {showOpenMics ? <Mic size={16} strokeWidth={2.5} /> : <MicOff size={16} strokeWidth={2.5} />}
           </button>
         )}
         {mode === "events" && (

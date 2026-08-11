@@ -2,6 +2,7 @@
 // no backend: a .ics blob covers Apple/Outlook/everything, a template link
 // covers Google. Times are UK-local with an explicit Europe/London TZID.
 
+import { gigDisplayName } from "./gigName";
 import type { Gig } from "./types";
 
 const TZ = "Europe/London";
@@ -31,7 +32,7 @@ function resolveEnd(gig: Gig): { date: string; time: string } | null {
 }
 
 function summaryOf(gig: Gig): string {
-  return `${gig.artistName || gig.title} at ${gig.venueName}`;
+  return `${gigDisplayName(gig)} at ${gig.venueName}`;
 }
 
 function locationOf(gig: Gig): string {
@@ -87,7 +88,7 @@ export function googleCalendarUrl(gig: Gig): string {
 }
 
 export function icsFilename(gig: Gig): string {
-  const slug = (gig.artistName || gig.title)
+  const slug = gigDisplayName(gig)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");

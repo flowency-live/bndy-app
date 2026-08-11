@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchArtist, fetchEventsBatch } from "@/lib/api";
 import { prettyDate } from "@/domain/dates";
+import { gigDisplayName } from "@/domain/gigName";
 import { GigPageClient } from "./GigPageClient";
 
 export const revalidate = 300;
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ gigId: st
   const gig = await loadGig(gigId);
   if (!gig) return { title: "Gig · bndy" };
 
-  const title = `${gig.artistName || gig.title} at ${gig.venueName} · bndy`;
+  const title = `${gigDisplayName(gig)} at ${gig.venueName} · bndy`;
   const description = `${prettyDate(gig.date, gig.startTime)}${gig.venueCity ? ` · ${gig.venueCity}` : ""} · found on bndy. Keeping live music alive.`;
   const image = gig.artistId
     ? await fetchArtist(gig.artistId).then((a) => a.profileImageUrl || null).catch(() => null)
