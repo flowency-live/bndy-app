@@ -14,6 +14,7 @@ export interface AuthUser {
   lastName?: string | null;
   displayName?: string | null;
   avatarUrl?: string | null;
+  hometown?: string | null;
   profileCompleted: boolean;
   createdAt: string;
   role: UserRole;
@@ -129,4 +130,29 @@ export async function verifyPhoneAndOnboard(
     "/auth/phone/verify-and-onboard",
     { phone, otp, firstName, lastName, hometown },
   );
+}
+
+/* ---------- profile ---------- */
+
+export interface ProfileUpdateRequest {
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  hometown?: string;
+  avatarUrl?: string;
+}
+
+export async function updateProfile(data: ProfileUpdateRequest): Promise<AuthUser> {
+  const res = await fetch(`${BASE}/users/profile`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || `HTTP ${res.status}`);
+  }
+  const { user } = (await res.json()) as { user: AuthUser };
+  return user;
 }

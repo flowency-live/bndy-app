@@ -12,6 +12,7 @@ interface AuthContextValue {
   role: UserRole | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  profileCompleted: boolean;
   isCurator: boolean;
   isStaff: boolean;
   refresh: () => Promise<void>;
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role,
     isAuthenticated: !!user,
     isLoading,
+    profileCompleted: user?.profileCompleted ?? true,
     isCurator: role === "curator" || role === "staff",
     isStaff: role === "staff",
     refresh,
