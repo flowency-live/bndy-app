@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, Loader2, PartyPopper, Share2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, PartyPopper, RotateCcw, Share2 } from "lucide-react";
 import { useArtists, useVenues } from "@/lib/hooks";
 import { formatTime } from "@/domain/dates";
 import { cn } from "@/lib/cn";
@@ -256,6 +256,16 @@ export function WizardShell() {
 
   /* ---------------- wizard ---------------- */
   const stepIndex = steps.findIndex((s) => s.key === step);
+  // Jason 2026-08-11: the draft cache survives refreshes BY DESIGN (app-flips for
+  // a Facebook URL), so there must be an explicit way out of a changed mind.
+  const dirty = venueDone || artistDone || !!draft.date;
+  const startOver = () => {
+    clearDraft();
+    setDraft({ ...EMPTY_DRAFT });
+    setOutcome(null);
+    setError(null);
+    setStep("venue");
+  };
   return (
     <div className="mx-auto max-w-5xl px-4 pb-28 pt-2 lg:px-8">
       <div className="mb-5 flex items-center gap-3">
@@ -269,6 +279,15 @@ export function WizardShell() {
           <ArrowLeft size={16} />
         </button>
         <h1 className="text-[22px] font-black tracking-tight">Add a gig</h1>
+        {dirty && (
+          <button
+            onClick={startOver}
+            title="Clear everything and start a fresh gig"
+            className="flex items-center gap-1 rounded-full border border-line glass px-2.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-dim transition-colors hover:text-txt"
+          >
+            <RotateCcw size={12} /> Start over
+          </button>
+        )}
         <div className="ml-auto flex items-center gap-1.5">
           {steps.map((s, i) => (
             <button
@@ -290,6 +309,7 @@ export function WizardShell() {
             <StepArtist
               venueId={draft.venueId}
               venueCity={draft.venueCity}
+              initialOpenMic={!!draft.isOpenMic}
               onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined, isOpenMic: undefined, repeat: undefined }); setStep("when"); }}
               onPickNew={(na) => { patch({ newArtist: na, artistId: undefined, artistName: undefined, isOpenMic: undefined, repeat: undefined }); setStep("when"); }}
               onPickOpenMic={(host) => { patch({ isOpenMic: true, artistId: host?.id, artistName: host?.name, newArtist: undefined }); setStep("when"); }}

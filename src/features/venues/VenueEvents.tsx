@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Mic } from "lucide-react";
 import { useArtistImageMap, useUpcomingGigs } from "@/lib/hooks";
 import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import { TicketStub } from "@/components/TicketStub";
 import { gigDisplayName } from "@/domain/gigName";
+import { MicTile } from "@/features/shared/MicTile";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
 
@@ -115,11 +116,20 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
         <div className="my-0.5 text-[22px] font-black">{d}</div>
         <div className="text-[10px] font-extrabold uppercase text-dim">{MON[m - 1]}</div>
       </div>
-      <Avatar id={g.artistId || g.id} name={gigDisplayName(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} size={40} radius={12} />
+      {g.isOpenMic && !(g.artistId && imgMap.get(g.artistId)) ? (
+        <MicTile size={40} radius={12} />
+      ) : (
+        <Avatar id={g.artistId || g.id} name={gigDisplayName(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} size={40} radius={12} />
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{gigDisplayName(g)}</span>
           {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
+          {g.isOpenMic && (
+            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}>
+              <Mic size={9} strokeWidth={2.75} /> Open mic
+            </span>
+          )}
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>

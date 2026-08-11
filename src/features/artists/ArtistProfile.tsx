@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { MapPin, Music2, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { avatarGradient } from "@/domain/avatar";
 import { HeroBack, HeroSocials } from "./HeroControls";
 import { ArtistEvents } from "./ArtistEvents";
 import { ArtistAvailability } from "./ArtistAvailability";
@@ -23,42 +22,64 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
 
   return (
     <div className="pb-24 lg:pb-12">
-      {/* ---- hero ---- */}
-      <div className="relative h-[168px] w-full overflow-hidden lg:h-[290px]">
-        <div className="absolute inset-0" style={{ background: avatarGradient(id) }} />
-        {img && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt="" aria-hidden referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl brightness-[.45] saturate-150" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-ink/10" />
-        <HeroBack />
-        <HeroSocials socials={artist?.socials} name={name} />
-
-        <div className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto flex max-w-content items-end gap-3.5 px-4 pb-4 lg:px-8 lg:pb-6">
-            <div className="shrink-0 rounded-[22px] ring-2 ring-white/70">
-              <Avatar id={id} name={name} src={img} size={86} radius={20} />
+      {/* ---- hero: the real image or nothing (Jason 2026-08-11: no more blank gradient hero) ---- */}
+      {img ? (
+        <div className="relative h-[220px] w-full overflow-hidden lg:h-[340px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={img} alt={name} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
+          <HeroBack />
+          <HeroSocials socials={artist?.socials} name={name} />
+          <div className="absolute inset-x-0 bottom-0">
+            <div className="mx-auto flex max-w-content items-end gap-3.5 px-4 pb-4 lg:px-8 lg:pb-6">
+              <div className="min-w-0 pb-1">
+                {type && (
+                  <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-md border border-[var(--acc)] bg-card2 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">
+                    <Music2 size={11} /> {type}
+                  </span>
+                )}
+                <h1 className="truncate text-[26px] font-black leading-none tracking-tight text-white [text-shadow:0_1px_8px_rgba(0,0,0,.6)] lg:text-4xl">{name}</h1>
+                {artist?.location && (
+                  <div className="mt-1.5 flex items-center gap-1 text-[13px] font-bold text-cyan">
+                    <MapPin size={13} /> {artist.location}
+                  </div>
+                )}
+              </div>
+              <div className="mb-2 ml-auto flex shrink-0 items-center gap-2">
+                <FavouriteButton type="artist" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
+                <FlagButton type="artist" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
+              </div>
             </div>
-            <div className="min-w-0 pb-1">
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-content px-4 pt-3 lg:px-8 lg:pt-5">
+          <div className="flex items-center justify-between">
+            <HeroBack inline />
+            <HeroSocials socials={artist?.socials} name={name} inline />
+          </div>
+          <div className="mt-4 flex items-start gap-3.5">
+            <Avatar id={id} name={name} size={64} radius={16} />
+            <div className="min-w-0">
               {type && (
                 <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-md border border-[var(--acc)] bg-card2 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">
                   <Music2 size={11} /> {type}
                 </span>
               )}
-              <h1 className="truncate text-[26px] font-black leading-none tracking-tight text-white [text-shadow:0_1px_8px_rgba(0,0,0,.6)] lg:text-4xl">{name}</h1>
+              <h1 className="truncate text-[26px] font-black leading-none tracking-tight lg:text-4xl">{name}</h1>
               {artist?.location && (
                 <div className="mt-1.5 flex items-center gap-1 text-[13px] font-bold text-cyan">
                   <MapPin size={13} /> {artist.location}
                 </div>
               )}
             </div>
-            <div className="mb-2 ml-auto flex shrink-0 items-center gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
               <FavouriteButton type="artist" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
               <FlagButton type="artist" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">

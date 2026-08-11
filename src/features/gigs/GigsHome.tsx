@@ -128,6 +128,7 @@ export function GigsHome() {
           <button
             onClick={toggleOpenMics}
             aria-pressed={showOpenMics}
+            title={showOpenMics ? "Open mics shown. Tap to hide them." : "Open mics hidden. Tap to show them."}
             style={showOpenMics ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
             className={cn("flex shrink-0 items-center gap-2 rounded-2xl border border-line glass px-3.5 py-2 text-[12.5px] font-extrabold transition-colors", showOpenMics ? "text-white" : "text-dim")}
           >
@@ -152,7 +153,7 @@ export function GigsHome() {
 
       {isLoading ? (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => <div key={i} className="h-[92px] animate-pulse rounded-2xl border border-line bg-card" />)}
+          {Array.from({ length: 9 }).map((_, i) => <div key={i} className="h-[112px] animate-pulse rounded-2xl border border-line bg-card" />)}
         </div>
       ) : total ? (
         buckets.map((b) => {
@@ -178,7 +179,7 @@ export function GigsHome() {
                     <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{dayHeading(day.date, today)}</span>
                     <span className="text-[11px] font-bold tnum">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</span>
                   </div>
-                  <Deferred count={day.gigs.length} heightPerItem={92} itemsPerRow={1}>
+                  <Deferred count={day.gigs.length} heightPerItem={112} itemsPerRow={1}>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       {day.gigs.map((g) => (
                         <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distById.get(g.id)} tonight={isTonight(g.date, g.startTime, today)} onClick={() => openGig(g)} />

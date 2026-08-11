@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, MapPin } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin, Mic } from "lucide-react";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles, formatDistance } from "@/domain/geo";
 import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
@@ -151,6 +151,11 @@ function EventRow({ g, dist, today, onClick }: { g: Gig; dist: number; today: st
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{g.venueName}</span>
           {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
+          {g.isOpenMic && (
+            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}>
+              <Mic size={9} strokeWidth={2.75} /> Open mic
+            </span>
+          )}
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>

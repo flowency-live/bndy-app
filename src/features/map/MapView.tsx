@@ -411,6 +411,7 @@ export function MapView() {
             onClick={toggleOpenMics}
             aria-pressed={showOpenMics}
             aria-label={showOpenMics ? "Hide open mics" : "Show open mics"}
+            title={showOpenMics ? "Open mics shown. Tap to hide them." : "Open mics hidden. Tap to show them."}
             style={showOpenMics ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
             className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-colors", showOpenMics ? "text-[var(--acc2)]" : "text-dim")}
           >

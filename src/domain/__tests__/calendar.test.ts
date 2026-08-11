@@ -30,6 +30,12 @@ describe("buildIcs", () => {
     expect(ics).toContain("END:VCALENDAR");
   });
 
+  it("rolls an explicit past-midnight end to the next day", () => {
+    const ics = buildIcs({ ...gig, startTime: "22:00", endTime: "01:00" });
+    expect(ics).toContain("DTSTART;TZID=Europe/London:20260905T220000");
+    expect(ics).toContain("DTEND;TZID=Europe/London:20260906T010000");
+  });
+
   it("defaults the end to three hours after the start", () => {
     const ics = buildIcs({ ...gig, endTime: undefined });
     expect(ics).toContain("DTEND;TZID=Europe/London:20260905T230000");

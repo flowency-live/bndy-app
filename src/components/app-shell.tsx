@@ -55,15 +55,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh]">
       <Splash />
       <LiveTicker />
-      {/* ---- mobile account control, top right ---- */}
+      {/* ---- mobile account control, top right. Icon-only pill; Help lives in
+           the account menu — the old two-icon cluster covered page controls. ---- */}
       <div
-        className="fixed right-3 z-30 flex items-center gap-1.5 lg:hidden"
+        className="fixed right-3 z-30 lg:hidden"
         style={{ top: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}
       >
-        <Link href="/help" aria-label="Help" className="flex h-9 w-9 items-center justify-center rounded-xl glass text-dim">
-          <CircleHelp size={18} />
-        </Link>
-        <span className="rounded-xl glass">
+        <span className="block rounded-xl glass">
           <UserButton variant="top" />
         </span>
       </div>
@@ -127,7 +125,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         ))}
       </nav>
 
-      <SkinControl variant="fab" />
+      {/* map page: fab moves bottom-left — bottom-right is maplibre zoom + locate */}
+      <SkinControl variant="fab" side={active === "map" ? "left" : "right"} />
 
       <Disclaimer />
     </div>

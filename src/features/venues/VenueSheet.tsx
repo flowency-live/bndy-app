@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useArtistImageMap } from "@/lib/hooks";
 import { formatTime } from "@/domain/dates";
 import { gigDisplayName } from "@/domain/gigName";
+import { MicTile } from "@/features/shared/MicTile";
 import type { Gig, Venue } from "@/domain/types";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -73,7 +74,11 @@ export function VenueSheet({ venue, gigs, live, onClose, onGigClick }: {
                       <div className="my-0.5 text-[17px] font-black">{dp.day}</div>
                       <div className="text-[9px] font-extrabold uppercase text-dim">{dp.mon}</div>
                     </div>
-                    <Avatar id={g.artistId || g.id} name={gigDisplayName(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} size={34} radius={17} />
+                    {g.isOpenMic && !(g.artistId && imgMap.get(g.artistId)) ? (
+                      <MicTile size={34} radius={17} />
+                    ) : (
+                      <Avatar id={g.artistId || g.id} name={gigDisplayName(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} size={34} radius={17} />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[14.5px] font-extrabold">{gigDisplayName(g)}</div>
                       {g.startTime && <div className="text-[12px] font-semibold text-dim">{formatTime(g.startTime)}</div>}

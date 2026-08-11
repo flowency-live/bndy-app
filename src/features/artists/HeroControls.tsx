@@ -10,31 +10,43 @@ const ICON: Record<SocialPlatform, typeof Globe> = {
   facebook: Facebook, instagram: Instagram, youtube: Youtube, spotify: Music2, x: Globe, website: Globe, other: Globe,
 };
 
-export function HeroBack() {
+/** `inline` renders in normal flow (imageless header); default floats over a hero image. */
+export function HeroBack({ inline }: { inline?: boolean }) {
   const router = useRouter();
   return (
     <button onClick={() => router.back()} aria-label="Back"
-      className="absolute left-3 top-3 z-10 flex h-9 items-center gap-1 rounded-full border border-white/20 bg-black/45 pl-2 pr-3 text-[13px] font-bold text-white backdrop-blur-sm transition hover:bg-black/65 lg:left-6 lg:top-5">
+      className={
+        inline
+          ? "flex h-9 items-center gap-1 rounded-full border border-line glass pl-2 pr-3 text-[13px] font-bold text-txt transition hover:bg-white/5"
+          : "absolute left-3 top-3 z-10 flex h-9 items-center gap-1 rounded-full border border-white/20 bg-black/45 pl-2 pr-3 text-[13px] font-bold text-white backdrop-blur-sm transition hover:bg-black/65 lg:left-6 lg:top-5"
+      }>
       <ChevronLeft size={17} /> Back
     </button>
   );
 }
 
-export function HeroSocials({ socials, name }: { socials?: SocialLink[]; name: string }) {
+export function HeroSocials({ socials, name, inline }: { socials?: SocialLink[]; name: string; inline?: boolean }) {
   // 3b: the AllEvents-style share sheet replaces the old silent copy.
   const [sharing, setSharing] = useState(false);
+  const btn = inline
+    ? "flex h-9 w-9 items-center justify-center rounded-full border border-line glass text-dim transition hover:text-txt"
+    : "flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65";
   return (
-    <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 lg:right-6 lg:top-5">
+    <div className={
+      inline
+        ? "flex items-center gap-1.5"
+        // mobile: keep clear of the fixed account pill in the app shell top-right
+        : "absolute right-14 top-3 z-10 flex items-center gap-1.5 lg:right-6 lg:top-5"
+    }>
       {(socials ?? []).slice(0, 3).map((l) => {
         const Icon = ICON[l.platform] ?? Globe;
         return (
-          <a key={l.url} href={l.url} target="_blank" rel="noopener" aria-label={l.platform}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65">
+          <a key={l.url} href={l.url} target="_blank" rel="noopener" aria-label={l.platform} className={btn}>
             <Icon size={16} />
           </a>
         );
       })}
-      <button onClick={() => setSharing(true)} aria-label="Share" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65">
+      <button onClick={() => setSharing(true)} aria-label="Share" title="Share" className={btn}>
         <Share2 size={16} />
       </button>
       <ShareSheet

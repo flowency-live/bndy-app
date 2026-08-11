@@ -24,7 +24,7 @@ function Swatch({ dots, size = 18 }: { dots: [string, string, string]; size?: nu
   );
 }
 
-export function SkinControl({ variant }: { variant: "sidebar" | "fab" | "map" }) {
+export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | "fab" | "map"; side?: "left" | "right" }) {
   const [open, setOpen] = useState(false);
   const [wiping, setWiping] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -60,7 +60,11 @@ export function SkinControl({ variant }: { variant: "sidebar" | "fab" | "map" })
         <button
           onClick={() => setOpen(true)}
           aria-label="Choose your skin"
-          className="glass-hi fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line shadow-[var(--shadow)] transition-transform active:scale-90 lg:hidden"
+          title="Choose your skin"
+          className={cn(
+            "glass-hi fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line shadow-[var(--shadow)] transition-transform active:scale-90 lg:hidden",
+            side === "left" ? "left-4" : "right-4",
+          )}
         >
           <Swatch dots={current.dots} size={22} />
         </button>

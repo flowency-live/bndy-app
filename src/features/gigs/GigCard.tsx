@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { prettyDate, formatTime } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { gigDisplayName } from "@/domain/gigName";
+import { MicTile } from "@/features/shared/MicTile";
 import { cn } from "@/lib/cn";
 import { TicketStub } from "@/components/TicketStub";
 import type { Gig } from "@/domain/types";
@@ -18,7 +19,11 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
         gig.cancelled && "opacity-50 saturate-50", // feature 7: ghosted row
       )}
     >
-      <Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={52} />
+      {gig.isOpenMic && !imageUrl ? (
+        <MicTile size={72} radius={18} />
+      ) : (
+        <Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={72} radius={18} />
+      )}
       <div className="min-w-0 flex-1">
         <div className="truncate text-[16px] font-extrabold tracking-tight">{gigDisplayName(gig)}</div>
         <div className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] font-semibold text-dim">

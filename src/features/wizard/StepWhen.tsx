@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Repeat } from "lucide-react";
 import { useUpcomingGigs } from "@/lib/hooks";
 import { todayISO, addDaysISO } from "@/domain/dates";
@@ -25,20 +25,71 @@ function quickDates(today: string): { label: string; date: string }[] {
 const TIMES: string[] = [];
 for (let h = 11; h <= 23; h++) for (const m of ["00", "15", "30", "45"]) TIMES.push(`${String(h).padStart(2, "0")}:${m}`);
 
-function TimeSelect({ value, onChange, allowNone, label }: { value?: string; onChange: (v?: string) => void; allowNone?: boolean; label: string }) {
+interface TimeOption { value: string; nextDay?: boolean }
+
+/** End options: only AFTER the start, then the early hours (00:00–03:00) of the
+ *  next day — a gig can finish at 1am, and can never end before it starts. */
+function endOptions(start?: string): TimeOption[] {
+  const out: TimeOption[] = [];
+  for (const t of TIMES) if (!start || t > start) out.push({ value: t });
+  for (let h = 0; h <= 3; h++) {
+    for (const m of ["00", "15", "30", "45"]) {
+      if (h === 3 && m !== "00") continue;
+      out.push({ value: `${String(h).padStart(2, "0")}:${m}`, nextDay: true });
+    }
+  }
+  return out;
+}
+
+/** Skin-styled time dropdown — the native <select> popup ignores the skin. */
+function TimeDropdown({ label, value, options, onChange, allowNone }: {
+  label: string;
+  value?: string;
+  options: TimeOption[];
+  onChange: (v?: string) => void;
+  allowNone?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+  const selected = options.find((o) => o.value === value);
   return (
-    <label className="relative block flex-1">
+    <div ref={wrapRef} className="relative flex-1">
       <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">{label}</span>
-      <select
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-        className="w-full appearance-none rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-orange/55"
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-orange/55"
       >
-        {allowNone && <option value="">None</option>}
-        {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-      </select>
-      <ChevronDown size={15} className="pointer-events-none absolute bottom-3.5 right-3.5 text-dim" />
-    </label>
+        <span className={value ? "" : "text-dim"}>
+          {value ?? "None"}
+          {selected?.nextDay && <span className="ml-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--acc2)]">next day</span>}
+        </span>
+        <ChevronDown size={15} className={cn("text-dim transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="absolute inset-x-0 top-[calc(100%+4px)] z-30 max-h-56 overflow-y-auto rounded-xl border border-line-hi glass-hi p-1.5 shadow-[0_16px_50px_rgba(0,0,0,.6)]">
+          {allowNone && (
+            <button type="button" onClick={() => { onChange(undefined); setOpen(false); }}
+              className="flex w-full items-center rounded-lg px-3 py-2 text-left text-[14px] font-semibold text-dim transition hover:bg-white/5">
+              None
+            </button>
+          )}
+          {options.map((o) => (
+            <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
+              className={cn("flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[14px] font-semibold transition hover:bg-white/5", o.value === value && "bg-acc/15 text-[var(--acc)]")}>
+              {o.value}
+              {o.nextDay && <span className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--acc2)]">next day</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -108,6 +159,14 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
     if (!timeTouched) setStartTime(defaultStartTime(d));
   };
 
+  // End is early-hours (next day) or after the start — a stale in-between value
+  // (e.g. 13:30 after a 22:00 start) is invalid and gets cleared.
+  const pickStart = (v?: string) => {
+    setStartTime(v);
+    setTimeTouched(true);
+    if (v && endTime && endTime > "03:00" && endTime <= v) setEndTime(undefined);
+  };
+
   return (
     <div>
       <h2 className="text-[19px] font-black tracking-tight">When is it?</h2>
@@ -138,8 +197,8 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
       ))}
 
       <div className="mt-3.5 flex gap-2.5">
-        <TimeSelect label="Starts" value={startTime} onChange={(v) => { setStartTime(v); setTimeTouched(true); }} />
-        <TimeSelect label="Ends (optional)" value={endTime} onChange={setEndTime} allowNone />
+        <TimeDropdown label="Starts" value={startTime} options={TIMES.map((t) => ({ value: t }))} onChange={pickStart} />
+        <TimeDropdown label="Ends (optional)" value={endTime} options={endOptions(startTime)} onChange={setEndTime} allowNone />
       </div>
       {date && !timeTouched && (
         <p className="mt-1.5 text-[11.5px] font-semibold text-dim2">We&apos;ve guessed a typical start time for a {new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" })}. Change it if you know better.</p>
@@ -167,17 +226,15 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
                   </button>
                 ))}
               </div>
-              <label className="block">
+              <div>
                 <span className="mb-1 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Until</span>
-                <input
-                  type="date"
-                  value={until}
-                  min={date}
-                  max={maxUntilIso(date)}
-                  onChange={(e) => setUntil(e.target.value)}
-                  className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-orange/55"
+                {/* skinned calendar, not the OS date popup; picks clamp to the 6-month cap */}
+                <WizardCalendar
+                  value={until || undefined}
+                  onPick={(d) => setUntil(d > maxUntilIso(date) ? maxUntilIso(date) : d)}
+                  today={date}
                 />
-              </label>
+              </div>
               {seriesCount > 0 && (
                 <p className="text-[12.5px] font-bold text-dim">
                   Runs {describeRepeat(date, pattern)}. This creates {seriesCount} event{seriesCount === 1 ? "" : "s"}.

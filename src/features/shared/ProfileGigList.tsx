@@ -18,7 +18,7 @@ export function ProfileGigList({ gigs, loading }: { gigs: Gig[]; loading?: boole
   if (loading) {
     return (
       <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-[92px] animate-pulse rounded-2xl border border-line bg-card" />)}
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-[112px] animate-pulse rounded-2xl border border-line bg-card" />)}
       </div>
     );
   }

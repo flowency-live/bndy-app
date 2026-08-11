@@ -17,10 +17,20 @@ function compact(date: string, time?: string): string {
   return time ? `${d}T${time.replace(":", "")}00` : d;
 }
 
-/** endTime, or start + 3 hours (rolling the date when it crosses midnight). */
+function nextDay(date: string): string {
+  const d = new Date(`${date}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** endTime, or start + 3 hours (rolling the date when it crosses midnight).
+ *  An explicit endTime at or before the start means it finishes AFTER midnight
+ *  (a 22:00 gig ending 01:00) — that rolls to the next day too. */
 function resolveEnd(gig: Gig): { date: string; time: string } | null {
   if (!gig.startTime) return null;
-  if (gig.endTime) return { date: gig.date, time: gig.endTime };
+  if (gig.endTime) {
+    return { date: gig.endTime <= gig.startTime ? nextDay(gig.date) : gig.date, time: gig.endTime };
+  }
   const [h, m] = gig.startTime.split(":").map(Number);
   const endH = h + 3;
   if (endH < 24) return { date: gig.date, time: `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}` };
