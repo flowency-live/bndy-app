@@ -13,7 +13,8 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
       onClick={onClick}
       className={cn(
         "bndy-card flex w-full items-center gap-3 rounded-2xl border border-line bg-card p-3.5 text-left transition-transform active:scale-[.985]",
-        tonight && "border-[var(--acc)]",
+        tonight && !gig.cancelled && "border-[var(--acc)]",
+        gig.cancelled && "opacity-50 saturate-50", // feature 7: ghosted row
       )}
     >
       <Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={52} />
@@ -24,7 +25,8 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
           <span className="truncate">{gig.venueName}{gig.venueCity ? ` · ${gig.venueCity}` : ""}</span>
         </div>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <Pill tone={tonight ? "ton" : "date"}>{prettyDate(gig.date, gig.startTime)}{gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""}</Pill>
+          {gig.cancelled && <Pill tone="cancelled">CANCELLED</Pill>}
+          <Pill tone={tonight && !gig.cancelled ? "ton" : "date"}>{prettyDate(gig.date, gig.startTime)}{gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""}</Pill>
           {distance !== undefined && isFinite(distance) && <Pill tone="dist">{formatDistance(distance)}</Pill>}
           {gig.ticketed && <TicketStub onCard price={gig.ticketing?.price} />}
         </div>
@@ -38,6 +40,7 @@ const TONE: Record<string, string> = {
   date: "bg-card2 text-txt",
   ton: "bg-acc text-on-acc",
   dist: "bg-card2 text-dim",
+  cancelled: "bg-red-500/20 text-red-400 uppercase tracking-wide",
 };
 function Pill({ tone, children }: { tone: keyof typeof TONE; children: React.ReactNode }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10.5px] font-extrabold", TONE[tone])}>{children}</span>;

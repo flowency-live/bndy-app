@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 
 /** Sets skin attributes before first paint — no flash of wrong theme.
  *  Family/mode map must stay in sync with src/lib/appSkins.ts. */
-const NO_FLASH = `(function(){try{var M={print:["print","light"],"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],openair:["soft","light"],goldenhour:["soft","light"],solar:["soft","light"],lemonrock:["soft","light"],synthwave:["soft","dark"],blackout:["mono","dark"],onthecase:["print","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(!M[s])s="print";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
+const NO_FLASH = `(function(){try{var M={print:["print","light"],"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],openair:["soft","light"],goldenhour:["soft","light"],solar:["soft","light"],underground:["mono","light"],synthwave:["soft","dark"],blackout:["mono","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(!M[s])s="print";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

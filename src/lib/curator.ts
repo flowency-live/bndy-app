@@ -32,6 +32,9 @@ export const curatorApi = {
   hide: (type: CuratorEntity, id: string, reason?: string) =>
     send("POST", `/api/curator/${type}s/${id}/hide`, { reason: reason || null }),
   restore: (type: CuratorEntity, id: string) => send("POST", `/api/curator/${type}s/${id}/restore`),
+  // Feature 7: cancel is public information, not a hide.
+  cancelEvent: (id: string, reason?: string) => send("POST", `/api/curator/events/${id}/cancel`, { reason: reason || null }),
+  uncancelEvent: (id: string) => send("POST", `/api/curator/events/${id}/uncancel`),
 };
 
 export interface ActivityEntry {

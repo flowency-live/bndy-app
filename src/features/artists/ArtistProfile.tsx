@@ -10,6 +10,7 @@ import { ArtistEvents } from "./ArtistEvents";
 import { ArtistAvailability } from "./ArtistAvailability";
 import { cn } from "@/lib/cn";
 import { CuratorBar } from "@/features/curator/CuratorBar";
+import { FlagButton } from "@/features/shared/FlagButton";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
 
@@ -58,7 +59,10 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
 
       {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        {artist && <CuratorBar target={{ kind: "artist", artist }} className="mt-4" />}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {artist && <CuratorBar target={{ kind: "artist", artist }} />}
+          <FlagButton type="artist" id={id} name={name} />
+        </div>
         {genres.length > 0 && (
           <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
             {genres.map((g, i) => (

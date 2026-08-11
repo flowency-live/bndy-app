@@ -1,4 +1,4 @@
-// App-level skin registry — 12 user-selectable skins.
+// App-level skin registry — 11 user-selectable skins.
 // Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md · visual truth: bndy-skins-v4.html
 // A skin = token block in src/app/skins.css + one entry here. Nothing else.
 
@@ -7,7 +7,7 @@ export type SkinMode = "light" | "mid" | "dark";
 
 export type AppSkinId =
   | "print" | "bndy-light" | "bndy-dark" | "openair" | "goldenhour"
-  | "solar" | "lemonrock" | "synthwave" | "blackout" | "onthecase" | "poole" | "hyper";
+  | "solar" | "underground" | "synthwave" | "blackout" | "poole" | "hyper";
 
 export interface AppSkin {
   key: AppSkinId;
@@ -52,10 +52,10 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     dots: ["#CB4B16", "#2AA198", "#FDF6E3"],
     pal: [["#CB4B16", "#8F3410"], ["#2AA198", "#1B6E68"], ["#B58900", "#CB4B16"], ["#6C71C4", "#2AA198"], ["#D33682", "#6C71C4"]],
   },
-  lemonrock: {
-    key: "lemonrock", name: "Lemonrock", desc: "Gig-guide classic · lemon & lime", family: "soft", mode: "light",
-    dots: ["#2F7A1F", "#F7E017", "#C2185B"],
-    pal: [["#2F7A1F", "#F7E017"], ["#C2185B", "#8C0F3F"], ["#F49C12", "#C2185B"], ["#5FA832", "#2F7A1F"], ["#F7E017", "#F49C12"]],
+  underground: {
+    key: "underground", name: "Underground", desc: "Mind the gap · tube-map London", family: "mono", mode: "light",
+    dots: ["#DC241F", "#10069F", "#FFD300"],
+    pal: [["#DC241F", "#10069F"], ["#10069F", "#00A0E2"], ["#007D32", "#DC241F"], ["#FFD300", "#B26300"], ["#000000", "#DC241F"]],
   },
   synthwave: {
     key: "synthwave", name: "Synthwave Stage", desc: "Retro neon · '84 vibes", family: "soft", mode: "dark",
@@ -66,11 +66,6 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     key: "blackout", name: "Blackout", desc: "Venue mono · stark", family: "mono", mode: "dark",
     dots: ["#000000", "#FFFFFF", "#4D7CFE"],
     pal: [["#1A1A1A", "#4D7CFE"], ["#4D7CFE", "#16224A"], ["#333333", "#111111"], ["#4D7CFE", "#99B4FF"], ["#222222", "#000000"]],
-  },
-  onthecase: {
-    key: "onthecase", name: "On The Case", desc: "NE pub circuit · stencil greens", family: "print", mode: "dark",
-    dots: ["#8DC63F", "#F2F7EC", "#0C0F0A"],
-    pal: [["#8DC63F", "#4A7115"], ["#A4D65E", "#2E4A0E"], ["#5E8C24", "#8DC63F"], ["#F2F7EC", "#4A7115"], ["#3E5C14", "#8DC63F"]],
   },
   poole: {
     key: "poole", name: "Poole Position", desc: "KLMA Stoke homage · red & gold", family: "soft", mode: "dark",
@@ -86,7 +81,7 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
 
 /** Picker order (product decision: 6 light/mid before 3 dark alternates). */
 export const SKIN_ORDER: AppSkinId[] = [
-  "print", "bndy-light", "bndy-dark", "openair", "goldenhour", "solar", "lemonrock", "synthwave", "blackout", "onthecase", "poole", "hyper",
+  "print", "bndy-light", "bndy-dark", "openair", "goldenhour", "solar", "underground", "synthwave", "blackout", "poole", "hyper",
 ];
 
 export const DEFAULT_SKIN: AppSkinId = "print";

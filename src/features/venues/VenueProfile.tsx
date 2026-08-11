@@ -7,6 +7,7 @@ import { VenueEvents } from "./VenueEvents";
 import { VenueTicketingBanner } from "./VenueTicketingBanner";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import { CuratorBar } from "@/features/curator/CuratorBar";
+import { FlagButton } from "@/features/shared/FlagButton";
 import type { Gig, Venue } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
@@ -53,7 +54,10 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
 
       {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        {venue && <CuratorBar target={{ kind: "venue", venue }} className="mt-4" />}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {venue && <CuratorBar target={{ kind: "venue", venue }} />}
+          <FlagButton type="venue" id={id} name={name} />
+        </div>
         <div className="mt-4 flex max-w-md gap-2.5">
           {loc && (
             <a href={gmaps(loc.lat, loc.lng)} target="_blank" rel="noopener"

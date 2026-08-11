@@ -45,7 +45,7 @@ interface GigDTO {
   id: string; title?: string; name?: string; date: string; startTime?: string; endTime?: string;
   venueId: string; venueName?: string; venueCity?: string; venue?: { name?: string; city?: string };
   artistId?: string; artistName?: string; geoLat?: number; geoLng?: number;
-  ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean;
+  ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean; cancelled?: boolean;
 }
 export function toGig(e: GigDTO): Gig | null {
   if (typeof e.geoLat !== "number" || typeof e.geoLng !== "number") return null;
@@ -80,6 +80,7 @@ export function toGig(e: GigDTO): Gig | null {
     ticketUrl,
     ticketing: resolved,
     isOpenMic: e.isOpenMic,
+    cancelled: !!e.cancelled,
   };
 }
 
@@ -127,6 +128,8 @@ export interface LightEvent {
   geoLng: number;
   /** absent until the geo GSI carries it (see AGENT-WORKORDER TASK 7) — MapView falls back to a join */
   ticketed?: boolean;
+  /** feature 7 — may be absent from the GSI projection; MapView joins the full gigs cache as fallback */
+  cancelled?: boolean;
 }
 
 export interface BBox { west: number; south: number; east: number; north: number }

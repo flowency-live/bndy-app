@@ -35,6 +35,8 @@ export interface Gig {
   /** Resolved ticketing from backend (includes venue inheritance) */
   ticketing?: ResolvedTicketing;
   isOpenMic?: boolean;
+  /** Feature 7: cancelled gigs stay visible as a ghosted row with a stamp. */
+  cancelled?: boolean;
 }
 
 /** A performing act. An artist plays many gigs; act qualifiers live on the gig title. */

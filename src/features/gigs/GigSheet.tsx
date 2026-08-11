@@ -6,6 +6,7 @@ import { Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket, U
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
 import { CuratorBar } from "@/features/curator/CuratorBar";
+import { FlagButton } from "@/features/shared/FlagButton";
 import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
@@ -201,7 +202,12 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
             <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
           </div>
         )}
-        {tonight && (
+        {gig.cancelled && (
+          <span className="absolute left-3 top-3 rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
+            Cancelled
+          </span>
+        )}
+        {tonight && !gig.cancelled && (
           <span className="absolute left-3 top-3 rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
             Tonight
           </span>
@@ -209,8 +215,11 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 
-      {/* Feature 4: curators edit or hide the gig in place; hide closes the sheet */}
-      <CuratorBar target={{ kind: "gig", gig }} className="mb-3" onHidden={onClose} />
+      {/* Feature 4/6/7: curators edit, cancel or hide; anyone flags a problem */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <CuratorBar target={{ kind: "gig", gig }} onHidden={onClose} />
+        <FlagButton type="event" id={gig.id} name={name} />
+      </div>
 
       <div className="text-[22px] font-black leading-tight tracking-tight">{name}</div>
       <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">

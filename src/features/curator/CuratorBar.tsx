@@ -4,8 +4,9 @@
 // The server enforces the role again on every call.
 
 import { useState } from "react";
-import { EyeOff, Pencil } from "lucide-react";
+import { CalendarX, EyeOff, Pencil, RotateCcw } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { CancelGigSheet } from "./CancelGigSheet";
 import { EditArtistSheet, EditGigSheet, EditVenueSheet, HideSheet } from "./CuratorSheets";
 import type { Artist, Gig, Venue } from "@/domain/types";
 import { cn } from "@/lib/cn";
@@ -22,6 +23,7 @@ export function CuratorBar({ target, className, onHidden }: { target: Target; cl
   const { isCurator } = useAuth();
   const [editing, setEditing] = useState(false);
   const [hiding, setHiding] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   if (!isCurator) return null;
 
@@ -35,6 +37,13 @@ export function CuratorBar({ target, className, onHidden }: { target: Target; cl
       <button type="button" onClick={() => setEditing(true)} className={btn}>
         <Pencil size={13} className="text-[var(--acc)]" /> Edit
       </button>
+      {target.kind === "gig" && (
+        <button type="button" onClick={() => setCancelling(true)} className={btn}>
+          {target.gig.cancelled
+            ? <><RotateCcw size={13} className="text-emerald-400" /> Un-cancel</>
+            : <><CalendarX size={13} className="text-amber-400" /> Cancel</>}
+        </button>
+      )}
       <button type="button" onClick={() => setHiding(true)} className={btn}>
         <EyeOff size={13} className="text-red-400" /> Hide
       </button>
@@ -42,6 +51,10 @@ export function CuratorBar({ target, className, onHidden }: { target: Target; cl
       {target.kind === "artist" && <EditArtistSheet artist={target.artist} open={editing} onClose={() => setEditing(false)} />}
       {target.kind === "venue" && <EditVenueSheet venue={target.venue} open={editing} onClose={() => setEditing(false)} />}
       {target.kind === "gig" && <EditGigSheet gig={target.gig} open={editing} onClose={() => setEditing(false)} />}
+
+      {target.kind === "gig" && (
+        <CancelGigSheet gig={target.gig} open={cancelling} onClose={() => setCancelling(false)} />
+      )}
 
       <HideSheet
         type={entityType}

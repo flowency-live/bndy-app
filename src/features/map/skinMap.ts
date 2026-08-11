@@ -21,10 +21,9 @@ const BASEMAP_BY_SKIN: Record<AppSkinId, BasemapKey> = {
   openair: "light",
   goldenhour: "voyager",
   solar: "voyager",
-  lemonrock: "voyager",
+  underground: "light",
   synthwave: "dark",
   blackout: "dark",
-  onthecase: "dark",
   poole: "dark",
   hyper: "light",
 };

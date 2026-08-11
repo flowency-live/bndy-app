@@ -120,13 +120,22 @@ export function MapView() {
     return ids;
   }, [sq, venues]);
 
+  // Feature 7: cancelled gigs leave the map. Join fallback for geo events
+  // whose GSI projection lacks the flag — same pattern as tikById.
+  const cancById = useMemo(() => {
+    const m = new Set<string>();
+    for (const g of gigs) if (g.cancelled) m.add(g.id);
+    return m;
+  }, [gigs]);
+
   // shownCount: count lightEvents in viewport matching date filter AND search
   const shownCount = useMemo(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
+    filtered = filtered.filter((e) => !(e.cancelled ?? cancById.has(e.id)));
     return filtered.length;
-  }, [lightEvents, sel, today, matchingEventIds, favActive, favArtists, favVenues]);
+  }, [lightEvents, sel, today, matchingEventIds, favActive, favArtists, favVenues, cancById]);
 
   const venueGigs = useMemo(() => {
     if (!selectedVenue) return [];
@@ -146,6 +155,7 @@ export function MapView() {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
+    filtered = filtered.filter((e) => !(e.cancelled ?? cancById.has(e.id)));
     return {
       type: "FeatureCollection",
       features: filtered.map((e) => ({
@@ -154,7 +164,7 @@ export function MapView() {
         properties: { id: e.id, tonight: e.date === today ? 1 : 0, ticketed: (e.ticketed ?? tikById.get(e.id)) ? 1 : 0 },
       })),
     };
-  }, [lightEvents, sel, today, matchingEventIds, tikById, favActive, favArtists, favVenues]);
+  }, [lightEvents, sel, today, matchingEventIds, tikById, favActive, favArtists, favVenues, cancById]);
   // Same-venue stack: gig pins at one venue overlap at identical coordinates, so a tap on
   // "a pin" must surface ALL that venue's gigs within the active date filter + search —
   // otherwise only the top-of-stack feature is reachable. Ref pattern (like gigByIdRef)
@@ -164,6 +174,7 @@ export function MapView() {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
     if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
+    filtered = filtered.filter((e) => !(e.cancelled ?? cancById.has(e.id)));
     const me = filtered.find((e) => e.id === id);
     if (!me || !me.venueId) return [id];
     return filtered
