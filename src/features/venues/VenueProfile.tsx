@@ -47,17 +47,17 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
                 </div>
               )}
             </div>
-            <FavouriteButton type="venue" id={id} name={name} size={20} className="mb-2 ml-auto h-10 w-10 shrink-0 rounded-xl" />
+            <div className="mb-2 ml-auto flex shrink-0 items-center gap-2">
+              <FavouriteButton type="venue" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
+              <FlagButton type="venue" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {venue && <CuratorBar target={{ kind: "venue", venue }} />}
-          <FlagButton type="venue" id={id} name={name} />
-        </div>
+        {venue && <CuratorBar target={{ kind: "venue", venue }} className="mt-4" />}
         <div className="mt-4 flex max-w-md gap-2.5">
           {loc && (
             <a href={gmaps(loc.lat, loc.lng)} target="_blank" rel="noopener"

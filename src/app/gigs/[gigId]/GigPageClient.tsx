@@ -74,7 +74,7 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
           <Share2 size={13} className="text-[var(--acc2)]" /> Share
         </button>
         <CuratorBar target={{ kind: "gig", gig }} />
-        <FlagButton type="event" id={gig.id} name={name} />
+        <FlagButton type="event" id={gig.id} name={name} size={15} className="ml-auto h-[34px] w-[34px] rounded-xl border border-line glass bg-transparent text-dim hover:text-txt" />
       </div>
 
       {/* navigation */}

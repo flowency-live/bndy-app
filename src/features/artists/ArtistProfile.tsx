@@ -52,17 +52,17 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
                 </div>
               )}
             </div>
-            <FavouriteButton type="artist" id={id} name={name} size={20} className="mb-2 ml-auto h-10 w-10 shrink-0 rounded-xl" />
+            <div className="mb-2 ml-auto flex shrink-0 items-center gap-2">
+              <FavouriteButton type="artist" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
+              <FlagButton type="artist" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {artist && <CuratorBar target={{ kind: "artist", artist }} />}
-          <FlagButton type="artist" id={id} name={name} />
-        </div>
+        {artist && <CuratorBar target={{ kind: "artist", artist }} className="mt-4" />}
         {genres.length > 0 && (
           <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
             {genres.map((g, i) => (

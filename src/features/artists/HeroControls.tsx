@@ -42,7 +42,7 @@ export function HeroSocials({ socials, name }: { socials?: SocialLink[]; name: s
         onClose={() => setSharing(false)}
         url={typeof window !== "undefined" ? window.location.href : ""}
         title={`Share ${name}`}
-        text={`${name} on bndy — keeping live music alive`}
+        text={`${name} on bndy · keeping live music alive`}
       />
     </div>
   );

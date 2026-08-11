@@ -41,7 +41,7 @@ function locationOf(gig: Gig): string {
 function descriptionOf(gig: Gig): string {
   const path = gig.artistId ? `/artists/${gig.artistId}` : `/venues/${gig.venueId}`;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://bndy.co.uk";
-  return `Found on bndy — keeping live music alive. ${origin}${path}`;
+  return `Found on bndy. Keeping live music alive. ${origin}${path}`;
 }
 
 export function buildIcs(gig: Gig): string {

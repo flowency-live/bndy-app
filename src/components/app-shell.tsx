@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
+import { CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
@@ -57,10 +57,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       <LiveTicker />
       {/* ---- mobile account control, top right ---- */}
       <div
-        className="fixed right-3 z-30 rounded-xl glass lg:hidden"
+        className="fixed right-3 z-30 flex items-center gap-1.5 lg:hidden"
         style={{ top: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}
       >
-        <UserButton variant="top" />
+        <Link href="/help" aria-label="Help" className="flex h-9 w-9 items-center justify-center rounded-xl glass text-dim">
+          <CircleHelp size={18} />
+        </Link>
+        <span className="rounded-xl glass">
+          <UserButton variant="top" />
+        </span>
       </div>
       {/* ---- desktop sidebar ---- */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
@@ -86,6 +91,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <Link
+          href="/help"
+          className={cn(
+            "mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold transition-colors",
+            path.startsWith("/help") ? "bg-white/10 text-txt" : "text-dim hover:bg-white/5 hover:text-txt",
+          )}
+        >
+          <CircleHelp size={19} className={path.startsWith("/help") ? "text-[var(--acc)]" : ""} />
+          Help
+        </Link>
         <SkinControl variant="sidebar" />
       </aside>
 

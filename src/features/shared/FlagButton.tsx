@@ -13,11 +13,16 @@ export function FlagButton({
   id,
   name,
   className,
+  variant = "icon",
+  size = 14,
 }: {
   type: FlagEntityType;
   id: string;
   name: string;
   className?: string;
+  /** icon: a small flag glyph, sits beside the favourite heart. pill: labelled button. */
+  variant?: "icon" | "pill";
+  size?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -47,25 +52,44 @@ export function FlagButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        className={cn(
-          "flex items-center gap-1.5 rounded-xl border border-line glass px-3 py-2 text-[12px] font-extrabold text-dim transition-colors hover:text-txt",
-          className,
-        )}
-      >
-        <Flag size={13} className="text-[var(--acc2)]" /> Flag a problem
-      </button>
+      {variant === "icon" ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          aria-label={`Flag a problem with ${name}`}
+          title="Flag a problem"
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg bg-black/55 text-white/80 backdrop-blur-sm transition-colors hover:text-white",
+            className,
+          )}
+        >
+          <Flag size={size} strokeWidth={2.5} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className={cn(
+            "flex items-center gap-1.5 rounded-xl border border-line glass px-3 py-2 text-[12px] font-extrabold text-dim transition-colors hover:text-txt",
+            className,
+          )}
+        >
+          <Flag size={13} className="text-[var(--acc2)]" /> Flag a problem
+        </button>
+      )}
 
       <Sheet open={open} onClose={close}>
         {done ? (
           <div className="py-4 text-center">
-            <h2 className="text-lg font-black tracking-tight text-txt">Thanks — got it.</h2>
+            <h2 className="text-lg font-black tracking-tight text-txt">Thanks. Got it.</h2>
             <p className="mt-1 text-[13px] font-semibold text-dim">
               bndy staff review every flag.
             </p>
@@ -81,8 +105,8 @@ export function FlagButton({
           <>
             <h2 className="text-lg font-black tracking-tight text-txt">Flag a problem</h2>
             <p className="mt-1 text-[13px] font-semibold text-dim">
-              Something wrong with {name}? Tell us what. No account needed —
-              sign in and we can come back to you about it.
+              Something wrong with {name}? Tell us what. No account needed.
+              Sign in and we can come back to you about it.
             </p>
             <textarea
               rows={4}

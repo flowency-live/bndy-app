@@ -210,7 +210,7 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <AddToCalendarButton gig={gig} />
         <CuratorBar target={{ kind: "gig", gig }} onHidden={onClose} />
-        <FlagButton type="event" id={gig.id} name={name} />
+        <FlagButton type="event" id={gig.id} name={name} size={15} className="ml-auto h-[34px] w-[34px] rounded-xl border border-line glass bg-transparent text-dim hover:text-txt" />
       </div>
 
       <div className="text-[22px] font-black leading-tight tracking-tight">{name}</div>

@@ -79,7 +79,7 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging, onDelete }
       )}
 
       <div className="absolute inset-x-0 bottom-0 p-2">
-        {errored && <span className="mb-0.5 block text-[9px] font-extrabold uppercase text-red-400">Delete failed — retry</span>}
+        {errored && <span className="mb-0.5 block text-[9px] font-extrabold uppercase text-red-400">Delete failed. Retry.</span>}
         {act && (
           <span className="mb-0.5 inline-block rounded bg-black/45 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-white/85 backdrop-blur-sm">
             {act}
