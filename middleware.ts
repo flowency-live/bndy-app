@@ -7,11 +7,20 @@ import type { NextRequest } from 'next/server';
  * redirect to map.bndy.co.uk with a 301 permanent redirect.
  */
 export function middleware(request: NextRequest) {
-  // Amplify/CloudFront may pass original host in x-forwarded-host
-  const host =
-    request.headers.get('x-forwarded-host') ||
-    request.headers.get('host') ||
-    '';
+  // Check multiple possible host headers
+  const forwardedHost = request.headers.get('x-forwarded-host') || '';
+  const hostHeader = request.headers.get('host') || '';
+  const urlHost = request.nextUrl.hostname;
+
+  // Use the most reliable source - URL hostname from the request
+  const host = forwardedHost || urlHost || hostHeader;
+
+  // Debug: Add header to see what host is detected (remove after testing)
+  const response = NextResponse.next();
+  response.headers.set('x-debug-host', host);
+  response.headers.set('x-debug-fwd', forwardedHost);
+  response.headers.set('x-debug-hdr', hostHeader);
+  response.headers.set('x-debug-url', urlHost);
 
   // Canonical domain - no redirect needed
   if (
@@ -20,7 +29,7 @@ export function middleware(request: NextRequest) {
     host.includes('amplifyapp.com') ||
     host.includes('cloudfront.net')
   ) {
-    return NextResponse.next();
+    return response;
   }
 
   // Redirect alternate domains to canonical
@@ -35,7 +44,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
