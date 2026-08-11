@@ -6,6 +6,7 @@ import { VenueEvents } from "./VenueEvents";
 import { VenueTicketingBanner } from "./VenueTicketingBanner";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import { CuratorBar } from "@/features/curator/CuratorBar";
+import { AvatarUpload } from "@/features/curator/AvatarUpload";
 import { FlagButton } from "@/features/shared/FlagButton";
 import type { Gig, Venue } from "@/domain/types";
 
@@ -41,7 +42,8 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
                 )}
               </div>
               <div className="mb-2 ml-auto flex shrink-0 items-center gap-2">
-                <FavouriteButton type="venue" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
+                <AvatarUpload type="venue" id={id} className="h-10 w-10 rounded-xl" />
+              <FavouriteButton type="venue" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
                 <FlagButton type="venue" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
               </div>
             </div>
@@ -67,6 +69,7 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
               )}
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              <AvatarUpload type="venue" id={id} className="h-10 w-10 rounded-xl" />
               <FavouriteButton type="venue" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
               <FlagButton type="venue" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
             </div>

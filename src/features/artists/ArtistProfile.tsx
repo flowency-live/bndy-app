@@ -9,6 +9,7 @@ import { ArtistEvents } from "./ArtistEvents";
 import { ArtistAvailability } from "./ArtistAvailability";
 import { cn } from "@/lib/cn";
 import { CuratorBar } from "@/features/curator/CuratorBar";
+import { AvatarUpload } from "@/features/curator/AvatarUpload";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
@@ -46,7 +47,8 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
                 )}
               </div>
               <div className="mb-2 ml-auto flex shrink-0 items-center gap-2">
-                <FavouriteButton type="artist" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
+                <AvatarUpload type="artist" id={id} className="h-10 w-10 rounded-xl" />
+              <FavouriteButton type="artist" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
                 <FlagButton type="artist" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
               </div>
             </div>
@@ -74,6 +76,7 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
               )}
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              <AvatarUpload type="artist" id={id} className="h-10 w-10 rounded-xl" />
               <FavouriteButton type="artist" id={id} name={name} size={20} className="h-10 w-10 rounded-xl" />
               <FlagButton type="artist" id={id} name={name} size={18} className="h-10 w-10 rounded-xl" />
             </div>
