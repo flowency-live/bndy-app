@@ -17,11 +17,55 @@ function parse(iso: string): Date {
   return new Date(y, m - 1, d);
 }
 
-export function prettyDate(iso: string, today = todayISO()): string {
-  if (iso === today) return "Tonight";
+/** A gig starting at or after this hour counts as an evening gig. */
+export const EVENING_FROM = "17:00";
+
+/**
+ * "Tonight" means today AND an evening start. A 2pm gig today is "Today".
+ * A gig today with no start time is "Today" — we cannot claim an evening we do not know.
+ * This is the single source for the label, the badge and the card accent. Do not
+ * re-test `date === today` at a call site; that is the bug this replaces.
+ */
+export function isTonight(iso: string, startTime?: string, today = todayISO()): boolean {
+  if (iso !== today) return false;
+  if (!startTime) return false;
+  return startTime >= EVENING_FROM;
+}
+
+export function prettyDate(iso: string, startTime?: string, today = todayISO()): string {
+  if (iso === today) return isTonight(iso, startTime, today) ? "Tonight" : "Today";
   if (iso === addDaysISO(today, 1)) return "Tomorrow";
   const d = parse(iso);
   return `${DOW[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
+}
+
+/** Minutes from start to end, wrapping past midnight (21:00–00:30 is 210, not −1230). */
+export function spanMinutes(start: string, end: string): number {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  return mins < 0 ? mins + 1440 : mins;
+}
+
+/** Above this, a start–end pair is a venue opening window, not a set time. */
+export const MAX_SET_MINUTES = 240;
+
+/**
+ * Sources often give venue opening hours instead of a stage time, which rendered
+ * as `2pm – 8pm` on a gig card. Over four hours, show the start alone.
+ */
+export function isSetWindow(start?: string, end?: string): boolean {
+  if (!start || !end) return false;
+  const mins = spanMinutes(start, end);
+  return mins > 0 && mins <= MAX_SET_MINUTES;
+}
+
+/** The value for a gig's time block: a range when it is a real set, otherwise the start alone. */
+export function setTimeLabel(start?: string, end?: string): { label: "Time" | "From"; value: string } | null {
+  if (!start) return null;
+  return isSetWindow(start, end)
+    ? { label: "Time", value: `${formatTime(start)} – ${formatTime(end)}` }
+    : { label: "From", value: formatTime(start) };
 }
 export function shortDate(iso: string): { day: number; mon: string } {
   const d = parse(iso);
