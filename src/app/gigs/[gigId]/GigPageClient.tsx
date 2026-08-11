@@ -32,20 +32,22 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
     <div className="mx-auto max-w-xl px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:pb-12 lg:pt-8">
       {/* hero */}
       <div className="relative mb-4 h-52 overflow-hidden rounded-2xl border border-line">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
-            <span className="text-[52px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
-          </div>
+        <div className={gig.cancelled ? "h-full w-full opacity-60 saturate-0" : "h-full w-full"}>
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
+              <span className="text-[52px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
+            </div>
+          )}
+        </div>
+        {gig.cancelled && (
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-md border-[3px] border-red-500 bg-black/60 px-5 py-1.5 text-[22px] font-black uppercase tracking-[4px] text-red-500 shadow-xl">
+            Cancelled
+          </span>
         )}
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {gig.cancelled && (
-            <span className="rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
-              Cancelled
-            </span>
-          )}
           {tonight && !gig.cancelled && (
             <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
               Tonight
@@ -57,7 +59,7 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
             </span>
           )}
         </div>
-        {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
+        {gig.ticketed && !gig.cancelled && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 
       <h1 className="text-[26px] font-black leading-tight tracking-tight lg:text-3xl">{name}</h1>

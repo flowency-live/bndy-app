@@ -141,7 +141,7 @@ function EventRow({ g, dist, today, onClick }: { g: Gig; dist: number; today: st
   const [, m, d] = g.date.split("-").map(Number);
   const dow = new Date(Date.UTC(Number(g.date.slice(0, 4)), m - 1, d)).getUTCDay();
   return (
-    <button onClick={onClick} className="group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]">
+    <button onClick={onClick} className={cn("group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]", g.cancelled && "opacity-50 saturate-50")}>
       <div className="w-12 shrink-0 leading-none">
         <div className="text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{DOW[dow]}</div>
         <div className="my-0.5 text-[22px] font-black">{d}</div>
@@ -149,7 +149,8 @@ function EventRow({ g, dist, today, onClick }: { g: Gig; dist: number; today: st
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="truncate text-[15px] font-extrabold">{g.venueName}</span>
+          <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{g.venueName}</span>
+          {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>

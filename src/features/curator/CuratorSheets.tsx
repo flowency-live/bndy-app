@@ -1,20 +1,26 @@
 "use client";
 
 // Curator edit sheets + hide flow (backlog feature 4).
-// One compact form per entity. The server whitelist is the contract;
-// these forms only offer fields the server accepts.
+// The server whitelist is the contract; these forms only offer fields the
+// server accepts. Jason rulings 2026-08-11:
+// - Venue address/postcode/city come from the VERIFIED Google Place ID and
+//   are never hand-edited. Curators touch socials, website, ticketing only.
+// - Artist location works like godmode: town (places look-up, with
+//   coordinates) OR region, two explicit modes.
+// - Every sheet has a visible close button and a Cancel action.
 
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Loader2, MapPin, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { curatorApi, useCuratorInvalidate, type CuratorEntity } from "@/lib/curator";
+import { GENRES, REGIONS } from "@/features/wizard/lib";
+import { placesSuggest, placesDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
+import { cn } from "@/lib/cn";
 import type { Artist, Gig, Venue } from "@/domain/types";
 
 const field =
-  "w-full rounded-xl border border-line bg-white/5 px-3.5 py-2.5 text-[14px] font-semibold text-txt outline-none placeholder:text-dim2 focus:border-[var(--acc)]";
-const label = "mb-1 mt-3 block text-[11px] font-extrabold uppercase tracking-wide text-dim";
-const primaryBtn =
-  "mt-5 w-full rounded-xl bg-[var(--acc)] px-4 py-3 text-[14px] font-extrabold text-black transition-opacity hover:opacity-90 disabled:opacity-50";
+  "w-full rounded-2xl border border-line glass px-4 py-3 text-[14.5px] font-semibold text-txt outline-none placeholder:text-dim2 focus:border-orange/55";
+const label = "mb-1.5 mt-4 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim";
 
 function useSubmit(type: CuratorEntity, id: string, onDone: () => void) {
   const invalidate = useCuratorInvalidate();
@@ -36,8 +42,54 @@ function useSubmit(type: CuratorEntity, id: string, onDone: () => void) {
   return { busy, error, run };
 }
 
-function SheetHeader({ title }: { title: string }) {
-  return <h2 className="text-lg font-black tracking-tight text-txt">{title}</h2>;
+/** Header with a real close button, and a Cancel + primary footer. */
+export function SheetHeader({ title, sub, onClose }: { title: string; sub?: string; onClose: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h2 className="truncate text-[19px] font-black tracking-tight text-txt">{title}</h2>
+        {sub && <p className="mt-0.5 text-[12px] font-semibold text-dim">{sub}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line glass text-dim transition-colors hover:text-txt"
+      >
+        <X size={15} />
+      </button>
+    </div>
+  );
+}
+
+export function SheetFooter({ busy, disabled, saveLabel, onCancel, onSave, tone = "acc" }: {
+  busy: boolean;
+  disabled?: boolean;
+  saveLabel: string;
+  onCancel: () => void;
+  onSave: () => void;
+  tone?: "acc" | "red" | "amber" | "green";
+}) {
+  const toneCls =
+    tone === "red" ? "bg-red-600 text-white"
+    : tone === "amber" ? "bg-amber-600 text-white"
+    : tone === "green" ? "bg-emerald-600 text-white"
+    : "bg-acc text-on-acc";
+  return (
+    <div className="mt-5 flex gap-2.5">
+      <button type="button" onClick={onCancel} disabled={busy} className="bndy-btn2 flex-1 rounded-2xl py-3 text-[14px] font-extrabold">
+        Cancel
+      </button>
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={busy || disabled}
+        className={cn("flex flex-[2] items-center justify-center rounded-2xl py-3 text-[14px] font-extrabold transition-opacity hover:opacity-90 disabled:opacity-50", toneCls)}
+      >
+        {busy ? <Loader2 size={18} className="animate-spin" /> : saveLabel}
+      </button>
+    </div>
+  );
 }
 
 function ErrorLine({ error }: { error: string | null }) {
@@ -49,95 +101,190 @@ function ErrorLine({ error }: { error: string | null }) {
   );
 }
 
+function socialOf(entity: { socials?: { platform: string; url: string }[] }, platform: string): string {
+  return entity.socials?.find((s) => s.platform === platform)?.url ?? "";
+}
+
 /* ---------- venue ---------- */
 
 export function EditVenueSheet({ venue, open, onClose }: { venue: Venue; open: boolean; onClose: () => void }) {
   const [f, setF] = useState({
-    address: venue.address ?? "",
-    postcode: venue.postcode ?? "",
-    city: venue.city ?? "",
     website: venue.website ?? "",
+    facebookUrl: socialOf(venue, "facebook"),
+    instagramUrl: socialOf(venue, "instagram"),
     standardTicketed: venue.standardTicketed ?? false,
     standardTicketUrl: venue.standardTicketUrl ?? "",
+    standardTicketInformation: venue.standardTicketInformation ?? "",
   });
   const { busy, error, run } = useSubmit("venue", venue.id, onClose);
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title={`Edit ${venue.name}`} />
-      <p className="mt-0.5 text-[12px] font-semibold text-dim">Name changes stay with bndy staff.</p>
-      <label className={label}>Address</label>
-      <input className={field} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />
-      <label className={label}>Postcode</label>
-      <input className={field} value={f.postcode} onChange={(e) => setF({ ...f, postcode: e.target.value })} />
-      <label className={label}>City</label>
-      <input className={field} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} />
+      <SheetHeader title={`Edit ${venue.name}`} sub="Name and address stay locked to the verified Google listing. Wrong address? Flag the venue for staff." onClose={onClose} />
       <label className={label}>Website</label>
-      <input className={field} value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
-      <label className="mt-4 flex items-center gap-2 text-[13.5px] font-bold text-txt">
-        <input
-          type="checkbox"
-          checked={f.standardTicketed}
-          onChange={(e) => setF({ ...f, standardTicketed: e.target.checked })}
-        />
+      <input className={field} value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} placeholder="https://…" inputMode="url" />
+      <label className={label}>Facebook</label>
+      <input className={field} value={f.facebookUrl} onChange={(e) => setF({ ...f, facebookUrl: e.target.value })} placeholder="https://facebook.com/…" inputMode="url" />
+      <label className={label}>Instagram</label>
+      <input className={field} value={f.instagramUrl} onChange={(e) => setF({ ...f, instagramUrl: e.target.value })} placeholder="https://instagram.com/…" inputMode="url" />
+      <button
+        type="button"
+        onClick={() => setF({ ...f, standardTicketed: !f.standardTicketed })}
+        aria-pressed={f.standardTicketed}
+        className="mt-4 flex w-full items-center gap-2.5 rounded-2xl border border-line glass px-4 py-3 text-left text-[14px] font-extrabold"
+      >
+        <span className={cn("flex h-[18px] w-[18px] items-center justify-center rounded-md border", f.standardTicketed ? "border-transparent bg-acc2 text-on-acc2" : "border-line-hi")}>
+          {f.standardTicketed && <Check size={12} strokeWidth={3.5} />}
+        </span>
         Usually ticketed
-      </label>
+      </button>
       {f.standardTicketed && (
         <>
           <label className={label}>Ticket URL</label>
-          <input className={field} value={f.standardTicketUrl} onChange={(e) => setF({ ...f, standardTicketUrl: e.target.value })} />
+          <input className={field} value={f.standardTicketUrl} onChange={(e) => setF({ ...f, standardTicketUrl: e.target.value })} placeholder="https://…" inputMode="url" />
+          <label className={label}>Ticket info</label>
+          <input className={field} value={f.standardTicketInformation} onChange={(e) => setF({ ...f, standardTicketInformation: e.target.value })} placeholder="e.g. £8 adv / £10 door" />
         </>
       )}
       <ErrorLine error={error} />
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => run(() => curatorApi.updateVenue(venue.id, f))}
-        className={primaryBtn}
-      >
-        {busy ? <Loader2 size={18} className="mx-auto animate-spin" /> : "Save venue"}
-      </button>
+      <SheetFooter busy={busy} saveLabel="Save venue" onCancel={onClose} onSave={() => run(() => curatorApi.updateVenue(venue.id, f))} />
     </Sheet>
   );
 }
 
 /* ---------- artist ---------- */
 
+type LocMode = "town" | "region";
+
 export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; open: boolean; onClose: () => void }) {
+  const isRegion = (REGIONS as readonly string[]).includes(artist.location ?? "");
   const [f, setF] = useState({
     bio: artist.bio ?? "",
-    location: artist.location ?? "",
-    genres: (artist.genres ?? []).join(", "),
+    genres: artist.genres ?? [],
+    facebookUrl: socialOf(artist, "facebook"),
+    instagramUrl: socialOf(artist, "instagram"),
+    websiteUrl: socialOf(artist, "website"),
   });
+  const [locMode, setLocMode] = useState<LocMode>(isRegion ? "region" : "town");
+  const [region, setRegion] = useState(isRegion ? artist.location ?? "" : "");
+  const [townQ, setTownQ] = useState(isRegion ? "" : artist.location ?? "");
+  const [townPicked, setTownPicked] = useState<string | null>(isRegion ? null : artist.location ?? null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [preds, setPreds] = useState<PlaceSuggestion[]>([]);
+  const deb = useRef<number | undefined>(undefined);
   const { busy, error, run } = useSubmit("artist", artist.id, onClose);
+
+  // Town look-up via bndy's own Places proxy — same source as the wizard.
+  useEffect(() => {
+    window.clearTimeout(deb.current);
+    if (locMode !== "town" || townQ.trim().length < 2 || townPicked === townQ) { setPreds([]); return; }
+    deb.current = window.setTimeout(async () => {
+      try { setPreds(await placesSuggest(townQ, "town")); } catch { setPreds([]); }
+    }, 220);
+    return () => window.clearTimeout(deb.current);
+  }, [townQ, townPicked, locMode]);
+
+  const tidy = (s: string) => s.replace(/,\s*UK$/i, "").trim();
+  const pickTown = async (p: PlaceSuggestion) => {
+    const clean = tidy(p.name);
+    setTownQ(clean);
+    setTownPicked(clean);
+    setPreds([]);
+    const d = await placesDetails(p.placeId).catch(() => null);
+    setCoords(d && typeof d.lat === "number" ? { lat: d.lat, lng: d.lng } : null);
+  };
+
+  const location = locMode === "town" ? (townPicked ?? townQ.trim()) : region;
+  const toggleGenre = (g: string) =>
+    setF((prev) => ({ ...prev, genres: prev.genres.includes(g) ? prev.genres.filter((x) => x !== g) : [...prev.genres, g] }));
+
+  const payload = useMemo(() => ({
+    bio: f.bio,
+    location,
+    locationType: locMode === "town" ? "city" : "region",
+    ...(locMode === "town" && coords ? { locationLat: coords.lat, locationLng: coords.lng } : {}),
+    ...(locMode === "region" ? { locationLat: null, locationLng: null } : {}),
+    genres: f.genres,
+    facebookUrl: f.facebookUrl.trim(),
+    instagramUrl: f.instagramUrl.trim(),
+    websiteUrl: f.websiteUrl.trim(),
+  }), [f, location, locMode, coords]);
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title={`Edit ${artist.name}`} />
-      <p className="mt-0.5 text-[12px] font-semibold text-dim">Name changes stay with bndy staff.</p>
+      <SheetHeader title={`Edit ${artist.name}`} sub="Name changes stay with bndy staff." onClose={onClose} />
+
+      <label className={label}>Based in</label>
+      <div className="flex gap-2">
+        {locMode === "town" ? (
+          <div className="relative flex-1">
+            <MapPin size={15} className="absolute left-3.5 top-[15px] text-dim" />
+            <input
+              value={townQ}
+              onChange={(e) => { setTownQ(e.target.value); setTownPicked(null); setCoords(null); }}
+              placeholder="Their home town…"
+              className={cn(field, "pl-9", townPicked && "pr-9")}
+            />
+            {townPicked && <Check size={15} className="absolute right-3.5 top-[15px] text-[var(--acc)]" />}
+            {preds.length > 0 && (
+              <div className="absolute inset-x-0 top-[calc(100%+4px)] z-20 overflow-hidden rounded-xl border border-line-hi glass-hi shadow-lg">
+                {preds.slice(0, 5).map((p) => (
+                  <button key={p.placeId} type="button" onClick={() => pickTown(p)}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13.5px] font-semibold transition-colors hover:bg-white/5">
+                    <MapPin size={13} className="shrink-0 text-dim" />
+                    <span className="min-w-0 truncate">{tidy(p.name)}<span className="text-dim"> · {tidy(p.address) || "UK"}</span></span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative flex-1">
+            <select value={region} onChange={(e) => setRegion(e.target.value)} className={cn(field, "appearance-none")}>
+              <option value="">Choose a region…</option>
+              {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
+          </div>
+        )}
+        <div className="flex shrink-0 gap-1 self-start rounded-2xl border border-line p-1">
+          {(["town", "region"] as const).map((m) => (
+            <button key={m} type="button" onClick={() => setLocMode(m)}
+              className={cn("rounded-xl px-2.5 py-2 text-[11px] font-extrabold uppercase tracking-wide transition-colors", locMode === m ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
+              {m === "town" ? "Town" : "Region"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <label className={label}>Bio</label>
       <textarea className={field} rows={4} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} />
-      <label className={label}>Location</label>
-      <input className={field} value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} placeholder="Read it off the act's own page" />
-      <label className={label}>Genres (comma separated)</label>
-      <input className={field} value={f.genres} onChange={(e) => setF({ ...f, genres: e.target.value })} />
+
+      <label className={label}>Genres</label>
+      <div className="flex flex-wrap gap-1.5">
+        {GENRES.map((g) => (
+          <button key={g} type="button" onClick={() => toggleGenre(g)}
+            className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", f.genres.includes(g) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
+            {g}
+          </button>
+        ))}
+      </div>
+
+      <label className={label}>Facebook</label>
+      <input className={field} value={f.facebookUrl} onChange={(e) => setF({ ...f, facebookUrl: e.target.value })} placeholder="https://facebook.com/…" inputMode="url" />
+      <label className={label}>Instagram</label>
+      <input className={field} value={f.instagramUrl} onChange={(e) => setF({ ...f, instagramUrl: e.target.value })} placeholder="https://instagram.com/…" inputMode="url" />
+      <label className={label}>Website</label>
+      <input className={field} value={f.websiteUrl} onChange={(e) => setF({ ...f, websiteUrl: e.target.value })} placeholder="https://…" inputMode="url" />
+
       <ErrorLine error={error} />
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() =>
-          run(() =>
-            curatorApi.updateArtist(artist.id, {
-              bio: f.bio,
-              location: f.location,
-              genres: f.genres.split(",").map((g) => g.trim()).filter(Boolean),
-            }),
-          )
-        }
-        className={primaryBtn}
-      >
-        {busy ? <Loader2 size={18} className="mx-auto animate-spin" /> : "Save artist"}
-      </button>
+      <SheetFooter
+        busy={busy}
+        disabled={!location}
+        saveLabel="Save artist"
+        onCancel={onClose}
+        onSave={() => run(() => curatorApi.updateArtist(artist.id, payload))}
+      />
     </Sheet>
   );
 }
@@ -158,7 +305,7 @@ export function EditGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean; 
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title="Edit gig" />
+      <SheetHeader title="Edit gig" onClose={onClose} />
       <label className={label}>Title</label>
       <input className={field} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
       <label className={label}>Date</label>
@@ -173,29 +320,36 @@ export function EditGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean; 
           <input type="time" className={field} value={f.endTime} onChange={(e) => setF({ ...f, endTime: e.target.value })} />
         </div>
       </div>
-      <label className="mt-4 flex items-center gap-2 text-[13.5px] font-bold text-txt">
-        <input type="checkbox" checked={f.ticketed} onChange={(e) => setF({ ...f, ticketed: e.target.checked })} />
+      <button
+        type="button"
+        onClick={() => setF({ ...f, ticketed: !f.ticketed })}
+        aria-pressed={f.ticketed}
+        className="mt-4 flex w-full items-center gap-2.5 rounded-2xl border border-line glass px-4 py-3 text-left text-[14px] font-extrabold"
+      >
+        <span className={cn("flex h-[18px] w-[18px] items-center justify-center rounded-md border", f.ticketed ? "border-transparent bg-acc2 text-on-acc2" : "border-line-hi")}>
+          {f.ticketed && <Check size={12} strokeWidth={3.5} />}
+        </span>
         Ticketed
-      </label>
+      </button>
       {f.ticketed && (
         <>
           <label className={label}>Ticket URL</label>
-          <input className={field} value={f.ticketUrl} onChange={(e) => setF({ ...f, ticketUrl: e.target.value })} />
+          <input className={field} value={f.ticketUrl} onChange={(e) => setF({ ...f, ticketUrl: e.target.value })} placeholder="https://…" inputMode="url" />
         </>
       )}
-      <label className="mt-3 flex items-center gap-2 text-[13.5px] font-bold text-txt">
-        <input type="checkbox" checked={f.isOpenMic} onChange={(e) => setF({ ...f, isOpenMic: e.target.checked })} />
-        Open mic
-      </label>
-      <ErrorLine error={error} />
       <button
         type="button"
-        disabled={busy}
-        onClick={() => run(() => curatorApi.updateEvent(gig.id, f))}
-        className={primaryBtn}
+        onClick={() => setF({ ...f, isOpenMic: !f.isOpenMic })}
+        aria-pressed={f.isOpenMic}
+        className="mt-2.5 flex w-full items-center gap-2.5 rounded-2xl border border-line glass px-4 py-3 text-left text-[14px] font-extrabold"
       >
-        {busy ? <Loader2 size={18} className="mx-auto animate-spin" /> : "Save gig"}
+        <span className={cn("flex h-[18px] w-[18px] items-center justify-center rounded-md border", f.isOpenMic ? "border-transparent bg-acc2 text-on-acc2" : "border-line-hi")}>
+          {f.isOpenMic && <Check size={12} strokeWidth={3.5} />}
+        </span>
+        Open mic
       </button>
+      <ErrorLine error={error} />
+      <SheetFooter busy={busy} saveLabel="Save gig" onCancel={onClose} onSave={() => run(() => curatorApi.updateEvent(gig.id, f))} />
     </Sheet>
   );
 }
@@ -220,10 +374,11 @@ export function HideSheet({
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title={`Hide ${name}?`} />
-      <p className="mt-1 text-[13px] font-semibold text-dim">
-        This removes it from every public page. Nothing is destroyed. bndy staff can restore it from godmode.
-      </p>
+      <SheetHeader
+        title={`Hide ${name}?`}
+        sub="This removes it from every public page. Nothing is destroyed. bndy staff can restore it from godmode."
+        onClose={onClose}
+      />
       <label className={label}>Reason</label>
       <input
         className={field}
@@ -232,14 +387,14 @@ export function HideSheet({
         placeholder="Duplicate, closed down, wrong listing…"
       />
       <ErrorLine error={error} />
-      <button
-        type="button"
-        disabled={busy || !reason.trim()}
-        onClick={() => run(() => curatorApi.hide(type, id, reason.trim()))}
-        className="mt-5 w-full rounded-xl bg-red-600 px-4 py-3 text-[14px] font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {busy ? <Loader2 size={18} className="mx-auto animate-spin" /> : "Hide it"}
-      </button>
+      <SheetFooter
+        busy={busy}
+        disabled={!reason.trim()}
+        saveLabel="Hide it"
+        tone="red"
+        onCancel={onClose}
+        onSave={() => run(() => curatorApi.hide(type, id, reason.trim()))}
+      />
     </Sheet>
   );
 }

@@ -9,7 +9,7 @@ import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { AddToCalendarButton } from "./AddToCalendarButton";
 import { ShareSheet } from "@/features/shared/ShareSheet";
-import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
+import { useArtistImageMap, useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
@@ -43,6 +43,15 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   // Batch-loaded map events can omit denormalised names — resolve from cached entity lists.
   const { data: artists = [] } = useArtists();
   const { data: venues = [] } = useVenues();
+  // Live state join: the sheet holds a SNAPSHOT of the gig from when it was
+  // tapped. A cancel/un-cancel invalidates the gigs cache — read the flag
+  // back from it so the stamp appears the moment the action completes,
+  // without closing and reopening the sheet.
+  const { data: liveGigs = [] } = useUpcomingGigs();
+  const liveOf = (g: Gig): Gig => {
+    const live = liveGigs.find((x) => x.id === g.id);
+    return live ? { ...g, cancelled: live.cancelled, isOpenMic: g.isOpenMic ?? live.isOpenMic } : g;
+  };
   const hostOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || undefined;
   const nameOf = (g: Gig) => {
     if (g.isOpenMic) { const h = hostOf(g); return h ? `Open mic with ${h}` : "Open mic"; }
@@ -93,7 +102,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   return (
     <Sheet open={!!gig} onClose={onClose}>
       {gig && !multi && (
-        <Body gig={gig} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
+        <Body gig={liveOf(gig)} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
       )}
       {gig && multi && (
         <>
@@ -121,7 +130,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
                     className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
                     style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
                   >
-                    <Body gig={g} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
+                    <Body gig={liveOf(g)} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
                   </div>
                 );
               })}
@@ -189,20 +198,23 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
     <>
       {/* hero: big artist image (falls back to the palette gradient + initials) */}
       <div className="relative mb-3.5 h-44 overflow-hidden rounded-2xl border border-line">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
-            <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
-          </div>
+        <div className={cn("h-full w-full", gig.cancelled && "opacity-60 saturate-0")}>
+          {src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
+              <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
+            </div>
+          )}
+        </div>
+        {/* feature 7: rubber-stamp treatment — unmissable, hero greyed underneath */}
+        {gig.cancelled && (
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-md border-[3px] border-red-500 bg-black/60 px-5 py-1.5 text-[20px] font-black uppercase tracking-[4px] text-red-500 shadow-xl">
+            Cancelled
+          </span>
         )}
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {gig.cancelled && (
-            <span className="rounded-lg bg-red-600 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-white shadow-lg">
-              Cancelled
-            </span>
-          )}
           {tonight && !gig.cancelled && (
             <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
               Tonight
@@ -214,7 +226,7 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
             </span>
           )}
         </div>
-        {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
+        {gig.ticketed && !gig.cancelled && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 
       {/* Feature 3a/4/6/7: calendar for everyone; curators edit, cancel, hide; anyone flags */}
