@@ -7,7 +7,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
 import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
-import { prettyDate, formatTime } from "@/domain/dates";
+import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
@@ -167,8 +167,10 @@ function Slab({ label, value, hot }: { label: string; value: string; hot?: boole
 }
 
 function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig: Gig; name: string; venueName: string; venueCity?: string; distance?: number; src?: string; onClose: () => void }) {
-  const tonight = prettyDate(gig.date) === "Tonight";
+  const tonight = isTonight(gig.date, gig.startTime);
+  const isToday = gig.date === todayISO();
   const { dow, label } = dateParts(gig.date);
+  const time = setTimeLabel(gig.startTime, gig.endTime);
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
@@ -216,8 +218,8 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
       </div>
 
       <div className="mb-4 mt-3.5 flex flex-wrap gap-2">
-        <Slab label={tonight ? "Tonight" : dow} value={label} hot={tonight} />
-        {gig.startTime && <Slab label={gig.endTime ? "Time" : "From"} value={`${formatTime(gig.startTime)}${gig.endTime ? ` – ${formatTime(gig.endTime)}` : ""}`} />}
+        <Slab label={tonight ? "Tonight" : isToday ? "Today" : dow} value={label} hot={tonight} />
+        {time && <Slab label={time.label} value={time.value} />}
         {distance !== undefined && isFinite(distance) && <Slab label="Away" value={formatDistance(distance)} />}
       </div>
 

@@ -1,8 +1,10 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 import { useArtists, useUpcomingGigs } from "@/lib/hooks";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useFavourites } from "@/lib/favourites";
 import { ArtistTile } from "./ArtistTile";
 import { groupByInitial, ALPHA_INDEX } from "@/domain/grouping";
 import { cn } from "@/lib/cn";
@@ -13,14 +15,20 @@ export function ArtistsBrowse() {
   const { data: gigs = [] } = useUpcomingGigs();
   const gigging = useMemo(() => new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)), [gigs]);
   const [q, setQ] = useState("");
+  // Favourites filter (backlog feature 3)
+  const { isAuthenticated } = useAuth();
+  const { artistSet: favArtists } = useFavourites();
+  const [favOnly, setFavOnly] = useState(false);
+  const favActive = favOnly && isAuthenticated;
 
   const dq = useDeferredValue(q); // keystrokes stay responsive; filter runs at low priority
   const groups = useMemo(() => {
     const query = dq.trim().toLowerCase();
     let list = [...artists].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    if (favActive) list = list.filter((a) => favArtists.has(a.id));
     if (query) list = list.filter((a) => a.name.toLowerCase().includes(query) || (a.genres ?? []).some((g) => g.toLowerCase().includes(query)));
     return groupByInitial(list, (a) => a.name);
-  }, [artists, dq]);
+  }, [artists, dq, favActive, favArtists]);
 
   const present = useMemo(() => new Set(groups.map((g) => g.key)), [groups]);
   const jump = (k: string) => document.getElementById(`grp-${k}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -34,15 +42,28 @@ export function ArtistsBrowse() {
         </p>
       </header>
 
-      <div className="relative mb-2 lg:max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="Search artists by name or genre"
-          placeholder="Search artists or genres…"
-          className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
-        />
+      <div className="mb-2 flex items-center gap-2 lg:max-w-md">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Search artists by name or genre"
+            placeholder="Search artists or genres…"
+            className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
+          />
+        </div>
+        {isAuthenticated && (
+          <button
+            onClick={() => setFavOnly((v) => !v)}
+            aria-pressed={favOnly}
+            aria-label="Show favourite artists only"
+            style={favOnly ? { borderColor: "color-mix(in srgb, var(--acc) 60%, transparent)", background: "color-mix(in srgb, var(--acc) 22%, var(--glass))" } : undefined}
+            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-3 transition-colors", favOnly ? "text-[var(--acc)]" : "text-dim")}
+          >
+            <Heart size={17} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />
+          </button>
+        )}
       </div>
 
       {isLoading ? (

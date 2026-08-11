@@ -9,6 +9,7 @@ import { HeroBack, HeroSocials } from "./HeroControls";
 import { ArtistEvents } from "./ArtistEvents";
 import { ArtistAvailability } from "./ArtistAvailability";
 import { cn } from "@/lib/cn";
+import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
 
 export function ArtistProfile({ id, artist, gigs, availability }: { id: string; artist: Artist | null; gigs: Gig[]; availability: AvailabilityDate[] }) {
@@ -49,6 +50,7 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
                 </div>
               )}
             </div>
+            <FavouriteButton type="artist" id={id} name={name} size={20} className="mb-2 ml-auto h-10 w-10 shrink-0 rounded-xl" />
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
+import { UserButton } from "@/features/auth/UserButton";
 import { cn } from "@/lib/cn";
 import { Disclaimer } from "@/components/Disclaimer";
 import type { ReactNode } from "react";
@@ -38,7 +39,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-[var(--acc)] brand-glow">bndy</span>
             <span className="text-txt">.live</span>
           </span>
-          <Link href="/gigs" className="text-[12.5px] font-extrabold text-dim transition-colors hover:text-txt">Browse gigs →</Link>
+          <div className="flex items-center gap-3">
+            <UserButton variant="top" />
+            <Link href="/gigs" className="text-[12.5px] font-extrabold text-dim transition-colors hover:text-txt">Browse gigs →</Link>
+          </div>
         </header>
         <p className="mx-auto max-w-5xl px-4 pb-4 text-[12px] font-bold uppercase tracking-[1.5px] text-dim2 lg:px-8">Keeping live music alive</p>
         <main>{children}</main>
@@ -51,12 +55,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh]">
       <Splash />
       <LiveTicker />
+      {/* ---- mobile account control, top right ---- */}
+      <div
+        className="fixed right-3 z-30 rounded-xl glass lg:hidden"
+        style={{ top: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}
+      >
+        <UserButton variant="top" />
+      </div>
       {/* ---- desktop sidebar ---- */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
-        <Link href="/" className="mb-8 px-2 text-2xl font-black tracking-tight">
+        <Link href="/" className="mb-6 px-2 text-2xl font-black tracking-tight">
           <span className="text-[var(--acc)] brand-glow">bndy</span>
           <span className="text-txt">.live</span>
         </Link>
+        <div className="mb-6">
+          <UserButton variant="sidebar" />
+        </div>
         <nav className="flex flex-col gap-1">
           {NAV.map(({ key, label, href, icon: Icon }) => (
             <Link

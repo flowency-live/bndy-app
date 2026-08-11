@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { WizardShell } from "@/features/wizard/WizardShell";
+import { AuthGate } from "@/features/auth/AuthGate";
 
 export const metadata: Metadata = {
   title: "List a gig on bndy: free, one minute",
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
 export default function ListAGigPage() {
   return (
     <Suspense>
-      <WizardShell />
+      {/* Backlog item 2: the wizard sits behind sign-in. The wizard itself is unchanged. */}
+      <AuthGate title="Sign in to list a gig">
+        <WizardShell />
+      </AuthGate>
     </Suspense>
   );
 }

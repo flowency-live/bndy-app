@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { avatarGradient, initials } from "@/domain/avatar";
+import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Artist } from "@/domain/types";
 
 /** onDelete: pre-launch cleanup only — hard-deletes the artist + all its events. Remove the prop wiring before public launch. */
@@ -48,6 +49,8 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging, onDelete }
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
       {gigging && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--acc2)] shadow-[0_0_8px_var(--acc2)]" aria-label="Gigging soon" />}
+
+      {!onDelete && <FavouriteButton type="artist" id={artist.id} name={artist.name} className="absolute left-1.5 top-1.5 z-10" size={13} />}
 
       {onDelete && !confirming && !busy && (
         <button

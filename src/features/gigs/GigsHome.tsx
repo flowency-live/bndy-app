@@ -1,11 +1,13 @@
 "use client";
 
 import { useDeferredValue, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, Check } from "lucide-react";
+import { Search, ChevronDown, Check, Heart } from "lucide-react";
 import { useUpcomingGigs, useArtistImageMap } from "@/lib/hooks";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useFavourites } from "@/lib/favourites";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles } from "@/domain/geo";
-import { inWhenRange, todayISO, type WhenRange } from "@/domain/dates";
+import { inWhenRange, isTonight, todayISO, type WhenRange } from "@/domain/dates";
 import { bucketGigs, dayHeading } from "@/domain/gigGrouping";
 import { cn } from "@/lib/cn";
 import { Deferred } from "@/components/DeferredSection";
@@ -34,6 +36,11 @@ export function GigsHome() {
   const [dateSel, setDateSel] = useState<DateSel | null>(null);
   const [showTicketed, setShowTicketed] = useState(false);
   const [q, setQ] = useState("");
+  // Favourites filter (backlog feature 3)
+  const { isAuthenticated } = useAuth();
+  const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
+  const [favOnly, setFavOnly] = useState(false);
+  const favActive = favOnly && isAuthenticated;
   const [selected, setSelected] = useState<Gig | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(["later"]));
 
@@ -52,9 +59,10 @@ export function GigsHome() {
     const query = dq.trim().toLowerCase();
     let out = gigs.filter((g) => g.date >= today);
     if (!showTicketed) out = out.filter((g) => !g.ticketed);
+    if (favActive) out = out.filter((g) => (g.artistId && favArtists.has(g.artistId)) || favVenues.has(g.venueId));
     if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title}`.toLowerCase().includes(query));
     return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= dRadius);
-  }, [gigs, showTicketed, dq, originLoc, dRadius, today]);
+  }, [gigs, showTicketed, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
 
   const dayCounts = useMemo(() => { const m = new Map<string, number>(); for (const x of eligible) m.set(x.gig.date, (m.get(x.gig.date) ?? 0) + 1); return m; }, [eligible]);
 
@@ -102,6 +110,17 @@ export function GigsHome() {
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
           {WHENS.map((w) => (<Chip key={w.k} on={!dateSel && when === w.k} onClick={() => { setWhen(w.k); setDateSel(null); }}>{w.l}</Chip>))}
           <GigDatePicker value={dateSel} onChange={setDateSel} today={today} dayCounts={dayCounts} onClosed={() => { shieldRef.current = Date.now() + 500; }} />
+          {isAuthenticated && (
+            <button
+              onClick={() => setFavOnly((v) => !v)}
+              aria-pressed={favOnly}
+              style={favOnly ? { borderColor: "color-mix(in srgb, var(--acc) 60%, transparent)", background: "color-mix(in srgb, var(--acc) 22%, var(--glass))" } : undefined}
+              className={cn("flex shrink-0 items-center gap-2 rounded-2xl border border-line glass px-3.5 py-2 text-[12.5px] font-extrabold transition-colors", favOnly ? "text-white" : "text-dim")}
+            >
+              <Heart size={14} fill={favOnly ? "var(--acc)" : "none"} strokeWidth={2.5} className={favOnly ? "text-[var(--acc)]" : ""} />
+              Favourites
+            </button>
+          )}
           <button
             onClick={() => setShowTicketed((v) => !v)}
             aria-pressed={showTicketed}
@@ -147,7 +166,7 @@ export function GigsHome() {
                   <Deferred count={day.gigs.length} heightPerItem={92} itemsPerRow={1}>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       {day.gigs.map((g) => (
-                        <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distById.get(g.id)} tonight={g.date === today} onClick={() => openGig(g)} />
+                        <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distById.get(g.id)} tonight={isTonight(g.date, g.startTime, today)} onClick={() => openGig(g)} />
                       ))}
                     </div>
                   </Deferred>

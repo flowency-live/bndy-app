@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import maplibregl from "maplibre-gl";
-import { Search, X } from "lucide-react";
+import { Heart, Search, X } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
 import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
 import { fetchEventsBatch, type BBox } from "@/lib/api";
@@ -16,6 +16,8 @@ import { GigSheet } from "@/features/gigs/GigSheet";
 import { VenueSheet } from "@/features/venues/VenueSheet";
 import { MapDateControl } from "./MapDateControl";
 import { cn } from "@/lib/cn";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useFavourites } from "@/lib/favourites";
 import type { Gig, Venue } from "@/domain/types";
 import { basemapFor, registerDiamonds, registerPills, tokenSkin } from "./skinMap";
 import { ALL_LAYERS, GIG_LAYERS, VEN_LAYERS, buildGigLayers, buildVenueLayers } from "./layers";
@@ -62,6 +64,11 @@ export function MapView() {
     if (m === "venues") setMode("venues");
   }, [searchParams]);
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
+  // Favourites filter (backlog feature 3): pins narrow to favourite artists + venues.
+  const { isAuthenticated } = useAuth();
+  const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
+  const [favOnly, setFavOnly] = useState(false);
+  const favActive = favOnly && isAuthenticated;
   const [selected, setSelected] = useState<Gig | null>(null);
   const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
@@ -117,8 +124,9 @@ export function MapView() {
   const shownCount = useMemo(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
+    if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
     return filtered.length;
-  }, [lightEvents, sel, today, matchingEventIds]);
+  }, [lightEvents, sel, today, matchingEventIds, favActive, favArtists, favVenues]);
 
   const venueGigs = useMemo(() => {
     if (!selectedVenue) return [];
@@ -137,6 +145,7 @@ export function MapView() {
   const gigGeo = useMemo<FeatureCollection<Point>>(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
+    if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
     return {
       type: "FeatureCollection",
       features: filtered.map((e) => ({
@@ -145,7 +154,7 @@ export function MapView() {
         properties: { id: e.id, tonight: e.date === today ? 1 : 0, ticketed: (e.ticketed ?? tikById.get(e.id)) ? 1 : 0 },
       })),
     };
-  }, [lightEvents, sel, today, matchingEventIds, tikById]);
+  }, [lightEvents, sel, today, matchingEventIds, tikById, favActive, favArtists, favVenues]);
   // Same-venue stack: gig pins at one venue overlap at identical coordinates, so a tap on
   // "a pin" must surface ALL that venue's gigs within the active date filter + search —
   // otherwise only the top-of-stack feature is reachable. Ref pattern (like gigByIdRef)
@@ -154,6 +163,7 @@ export function MapView() {
   stackForRef.current = (id: string) => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
+    if (favActive) filtered = filtered.filter((e) => (e.artistId && favArtists.has(e.artistId)) || favVenues.has(e.venueId));
     const me = filtered.find((e) => e.id === id);
     if (!me || !me.venueId) return [id];
     return filtered
@@ -165,6 +175,7 @@ export function MapView() {
   const venGeo = useMemo<FeatureCollection<Point>>(() => {
     let filtered = venues;
     if (matchingVenueIds) filtered = venues.filter((v) => matchingVenueIds.has(v.id));
+    if (favActive) filtered = filtered.filter((v) => favVenues.has(v.id));
     return {
       type: "FeatureCollection",
       features: filtered.map((v) => ({
@@ -173,7 +184,7 @@ export function MapView() {
         properties: { id: v.id, name: v.name, live: venueIdsLive.has(v.id) ? 1 : 0 },
       })),
     };
-  }, [venues, venueIdsLive, matchingVenueIds]);
+  }, [venues, venueIdsLive, matchingVenueIds, favActive, favVenues]);
   const gigGeoRef = useRef(gigGeo); gigGeoRef.current = gigGeo;
   const venGeoRef = useRef(venGeo); venGeoRef.current = venGeo;
 
@@ -358,6 +369,17 @@ export function MapView() {
             </button>
           )}
         </div>
+        {isAuthenticated && (
+          <button
+            onClick={() => setFavOnly((v) => !v)}
+            aria-pressed={favOnly}
+            aria-label="Show favourites only"
+            style={favOnly ? { borderColor: "color-mix(in srgb, var(--acc) 60%, transparent)", background: "color-mix(in srgb, var(--acc) 22%, var(--glass))" } : undefined}
+            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-colors", favOnly ? "text-[var(--acc)]" : "text-dim")}
+          >
+            <Heart size={16} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />
+          </button>
+        )}
         {mode === "events" && (
           <div className="hidden items-center gap-1.5 rounded-2xl border border-line glass px-3 py-2.5 text-[13px] font-black lg:flex">
             <span className="h-2 w-2 rounded-full bg-acc shadow-[0_0_8px_var(--acc)]" />{shownCount}

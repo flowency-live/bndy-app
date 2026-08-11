@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { useArtistImageMap } from "@/lib/hooks";
 import { distanceMiles } from "@/domain/geo";
-import { todayISO } from "@/domain/dates";
+import { isTonight, todayISO } from "@/domain/dates";
 import { GigCard } from "@/features/gigs/GigCard";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import type { Gig } from "@/domain/types";
@@ -28,7 +28,7 @@ export function ProfileGigList({ gigs, loading }: { gigs: Gig[]; loading?: boole
     <>
       <div className="grid gap-3 lg:grid-cols-2">
         {gigs.map((g) => (
-          <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distanceMiles(location, g.location)} tonight={g.date === today} onClick={() => setSelected(g)} />
+          <GigCard key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} distance={distanceMiles(location, g.location)} tonight={isTonight(g.date, g.startTime, today)} onClick={() => setSelected(g)} />
         ))}
       </div>
       <GigSheet gig={selected} distance={selected ? distanceMiles(location, selected.location) : undefined} onClose={() => setSelected(null)} />

@@ -5,6 +5,7 @@ import { avatarGradient } from "@/domain/avatar";
 import { HeroBack, HeroSocials } from "@/features/artists/HeroControls";
 import { VenueEvents } from "./VenueEvents";
 import { VenueTicketingBanner } from "./VenueTicketingBanner";
+import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Gig, Venue } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
@@ -44,6 +45,7 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
                 </div>
               )}
             </div>
+            <FavouriteButton type="venue" id={id} name={name} size={20} className="mb-2 ml-auto h-10 w-10 shrink-0 rounded-xl" />
           </div>
         </div>
       </div>
