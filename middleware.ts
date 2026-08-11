@@ -7,10 +7,19 @@ import type { NextRequest } from 'next/server';
  * redirect to map.bndy.co.uk with a 301 permanent redirect.
  */
 export function middleware(request: NextRequest) {
-  const host = request.headers.get('host') || '';
+  // Amplify/CloudFront may pass original host in x-forwarded-host
+  const host =
+    request.headers.get('x-forwarded-host') ||
+    request.headers.get('host') ||
+    '';
 
   // Canonical domain - no redirect needed
-  if (host === 'map.bndy.co.uk' || host.includes('localhost') || host.includes('amplifyapp.com')) {
+  if (
+    host === 'map.bndy.co.uk' ||
+    host.includes('localhost') ||
+    host.includes('amplifyapp.com') ||
+    host.includes('cloudfront.net')
+  ) {
     return NextResponse.next();
   }
 
