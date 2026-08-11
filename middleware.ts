@@ -20,10 +20,10 @@ export function middleware(request: NextRequest) {
     host === 'gigs.bndy.co.uk' ||
     host === 'gigmap.bndy.co.uk'
   ) {
-    const url = request.nextUrl.clone();
-    url.host = 'map.bndy.co.uk';
-    url.port = '';
-    return NextResponse.redirect(url, 301);
+    const pathname = request.nextUrl.pathname;
+    const search = request.nextUrl.search;
+    const redirectUrl = `https://map.bndy.co.uk${pathname}${search}`;
+    return NextResponse.redirect(redirectUrl, 301);
   }
 
   return NextResponse.next();
