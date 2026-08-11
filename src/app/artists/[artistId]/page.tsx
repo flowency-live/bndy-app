@@ -9,7 +9,16 @@ export async function generateMetadata({ params }: { params: Promise<{ artistId:
   const { artistId } = await params;
   try {
     const a = await fetchArtist(artistId);
-    return { title: `${a.name} · bndy`, description: a.bio || `See ${a.name}'s upcoming gigs on bndy.` };
+    const title = `${a.name} · bndy`;
+    const description = a.bio || `See ${a.name}'s upcoming gigs on bndy.`;
+    const image = a.profileImageUrl || "/og-card.png";
+    // 3b: rich preview card for chat and social shares
+    return {
+      title,
+      description,
+      openGraph: { title, description, images: [image] },
+      twitter: { card: "summary_large_image", title, description, images: [image] },
+    };
   } catch {
     return { title: "Artist · bndy" };
   }

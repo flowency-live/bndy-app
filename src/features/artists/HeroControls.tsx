@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ChevronLeft, Facebook, Instagram, Youtube, Globe, Music2, Share2 } from "lucide-react";
+import { ShareSheet } from "@/features/shared/ShareSheet";
 import type { SocialLink, SocialPlatform } from "@/domain/types";
 
 const ICON: Record<SocialPlatform, typeof Globe> = {
@@ -19,12 +21,8 @@ export function HeroBack() {
 }
 
 export function HeroSocials({ socials, name }: { socials?: SocialLink[]; name: string }) {
-  const share = () => {
-    if (typeof window === "undefined") return;
-    const url = window.location.href;
-    if (navigator.share) navigator.share({ title: name, url }).catch(() => {});
-    else navigator.clipboard?.writeText(url).catch(() => {});
-  };
+  // 3b: the AllEvents-style share sheet replaces the old silent copy.
+  const [sharing, setSharing] = useState(false);
   return (
     <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 lg:right-6 lg:top-5">
       {(socials ?? []).slice(0, 3).map((l) => {
@@ -36,9 +34,16 @@ export function HeroSocials({ socials, name }: { socials?: SocialLink[]; name: s
           </a>
         );
       })}
-      <button onClick={share} aria-label="Share" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65">
+      <button onClick={() => setSharing(true)} aria-label="Share" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65">
         <Share2 size={16} />
       </button>
+      <ShareSheet
+        open={sharing}
+        onClose={() => setSharing(false)}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+        title={`Share ${name}`}
+        text={`${name} on bndy — keeping live music alive`}
+      />
     </div>
   );
 }

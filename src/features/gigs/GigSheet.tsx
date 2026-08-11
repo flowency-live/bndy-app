@@ -8,6 +8,7 @@ import { TicketStub } from "@/components/TicketStub";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { AddToCalendarButton } from "./AddToCalendarButton";
+import { ShareSheet } from "@/features/shared/ShareSheet";
 import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
@@ -174,22 +175,11 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
   const isToday = gig.date === todayISO();
   const { dow, label } = dateParts(gig.date);
   const time = setTimeLabel(gig.startTime, gig.endTime);
-  const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
-  const share = async () => {
-    const path = gig.artistId ? `/artists/${gig.artistId}` : `/venues/${gig.venueId}`;
-    const url = `${window.location.origin}${path}`;
-    const text = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} · found on bndy`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: `${name} · live on bndy`, text, url });
-      } else {
-        await navigator.clipboard.writeText(`${text}\n${url}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1600);
-      }
-    } catch { /* user dismissed the share sheet */ }
-  };
+  // 3b: the gig now has its own URL — share the short /g link, not the profile.
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/g/${gig.id}` : `/g/${gig.id}`;
+  const shareText = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} · found on bndy`;
 
   return (
     <>
@@ -258,13 +248,15 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
           <MapPin size={16} /> Venue
         </Link>
         <button
-          onClick={share}
-          aria-label={copied ? "Link copied" : "Share this gig"}
+          onClick={() => setSharing(true)}
+          aria-label="Share this gig"
           className="bndy-btn2 flex w-[54px] shrink-0 items-center justify-center py-3.5 transition-transform active:scale-[.97]"
         >
-          {copied ? <Check size={16} /> : <Share2 size={16} />}
+          <Share2 size={16} />
         </button>
       </div>
+
+      <ShareSheet open={sharing} onClose={() => setSharing(false)} url={shareUrl} title="Share this gig" text={shareText} />
     </>
   );
 }

@@ -19,7 +19,9 @@ const FONT_VARS = `${inter.variable} ${archivoBlack.variable} ${archivo.variable
 export const metadata: Metadata = {
   title: "bndy · live music near you",
   description: "Find live music: gigs, artists and venues near you.",
-  metadataBase: new URL("https://bndy.co.uk"),
+  // 3b: OG images resolve against this. Today's live origin; switch via env
+  // (NEXT_PUBLIC_SITE_URL) when map.bndy.co.uk goes canonical.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gigmap.bndy.co.uk"),
 };
 
 export const viewport: Viewport = {

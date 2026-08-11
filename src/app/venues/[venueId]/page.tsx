@@ -9,7 +9,16 @@ export async function generateMetadata({ params }: { params: Promise<{ venueId: 
   const { venueId } = await params;
   try {
     const v = await fetchVenue(venueId);
-    return { title: `${v?.name ?? "Venue"} · bndy`, description: v ? `What's on at ${v.name}: upcoming gigs on bndy.` : undefined };
+    const title = `${v?.name ?? "Venue"} · bndy`;
+    const description = v ? `What's on at ${v.name}: upcoming gigs on bndy.` : undefined;
+    const image = v?.profileImageUrl || "/og-card.png";
+    // 3b: rich preview card for chat and social shares
+    return {
+      title,
+      description,
+      openGraph: { title, description, images: [image] },
+      twitter: { card: "summary_large_image", title, description, images: [image] },
+    };
   } catch {
     return { title: "Venue · bndy" };
   }
