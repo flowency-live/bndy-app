@@ -7,6 +7,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
+import { AddToCalendarButton } from "./AddToCalendarButton";
 import { useArtistImageMap, useArtists, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
@@ -215,8 +216,9 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         {gig.ticketed && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 
-      {/* Feature 4/6/7: curators edit, cancel or hide; anyone flags a problem */}
+      {/* Feature 3a/4/6/7: calendar for everyone; curators edit, cancel, hide; anyone flags */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
+        <AddToCalendarButton gig={gig} />
         <CuratorBar target={{ kind: "gig", gig }} onHidden={onClose} />
         <FlagButton type="event" id={gig.id} name={name} />
       </div>
