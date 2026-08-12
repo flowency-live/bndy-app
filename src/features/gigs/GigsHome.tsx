@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, Check, Heart, Mic, MicOff } from "lucide-react";
+import { Search, ChevronDown, Heart, Mic, MicOff, Ticket } from "lucide-react";
 import { useUpcomingGigs, useArtistImageMap } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
@@ -15,7 +15,7 @@ import { Deferred } from "@/components/DeferredSection";
 import { GigCard } from "./GigCard";
 import { GigSheet } from "./GigSheet";
 import { LocationField, type OriginChoice } from "./LocationField";
-import { GigDatePicker, type DateSel } from "./GigDatePicker";
+import { GigDatePicker, gigDateLabel, type DateSel } from "./GigDatePicker";
 import type { Gig, LatLng } from "@/domain/types";
 
 const WHENS: { k: WhenRange; l: string }[] = [
@@ -35,6 +35,7 @@ export function GigsHome() {
   const [radius, setRadius] = useState(5);
   const [when, setWhen] = useState<WhenRange>("all");
   const [dateSel, setDateSel] = useState<DateSel | null>(null);
+  const [whenMenuOpen, setWhenMenuOpen] = useState(false);
   const [showTicketed, setShowTicketed] = useState(false);
   const [q, setQ] = useState("");
   const { isAuthenticated } = useAuth();
@@ -81,11 +82,18 @@ export function GigsHome() {
   }, [filtered]);
   const buckets = useMemo(() => bucketGigs(filtered.map((x) => x.gig), today), [filtered, today]);
   const total = filtered.length;
+  const mobileWhenLabel = dateSel ? gigDateLabel(dateSel, today) : (WHENS.find((w) => w.k === when)?.l ?? "Anytime");
   const toggle = (k: string) => setCollapsed((prev) => {
     const n = new Set(prev);
     if (n.has(k)) n.delete(k); else n.add(k);
     return n;
   });
+
+  const selectWhen = (next: WhenRange) => {
+    setWhen(next);
+    setDateSel(null);
+    setWhenMenuOpen(false);
+  };
 
   return (
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
@@ -128,45 +136,114 @@ export function GigsHome() {
           </div>
         </div>
 
-        <div className="no-scrollbar sticky top-0 z-20 -mx-4 mt-3 flex gap-2 overflow-x-auto border-y border-line bg-ink/92 px-4 py-2.5 backdrop-blur lg:static lg:col-span-2 lg:mx-0 lg:mt-0 lg:flex-wrap lg:border-x-0 lg:border-t-0 lg:bg-transparent lg:px-0 lg:pb-3 lg:pt-0 lg:backdrop-blur-none">
-          {WHENS.map((w) => (
-            <Chip key={w.k} on={!dateSel && when === w.k} onClick={() => { setWhen(w.k); setDateSel(null); }}>{w.l}</Chip>
-          ))}
-          <GigDatePicker value={dateSel} onChange={setDateSel} today={today} dayCounts={dayCounts} onClosed={() => { shieldRef.current = Date.now() + 500; }} />
-          {isAuthenticated && (
-            <button
-              onClick={() => setFavOnly((v) => !v)}
-              aria-pressed={favOnly}
-              style={favOnly ? { borderColor: "color-mix(in srgb, var(--acc) 60%, transparent)", background: "color-mix(in srgb, var(--acc) 22%, var(--glass))" } : undefined}
-              className={cn("flex shrink-0 items-center gap-2 rounded-[var(--rad)] border border-line glass px-3.5 py-2 text-[12px] font-extrabold transition-colors", favOnly ? "text-txt" : "text-dim")}
-            >
-              <Heart size={14} fill={favOnly ? "var(--acc)" : "none"} strokeWidth={2.5} className={favOnly ? "text-[var(--acc)]" : ""} />
-              Favourites
-            </button>
-          )}
-          <button
-            onClick={toggleOpenMics}
-            aria-pressed={showOpenMics}
-            title={showOpenMics ? "Open mics shown. Tap to hide them." : "Open mics hidden. Tap to show them."}
-            style={showOpenMics ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
-            className={cn("flex shrink-0 items-center gap-2 rounded-[var(--rad)] border border-line glass px-3.5 py-2 text-[12px] font-extrabold transition-colors", showOpenMics ? "text-txt" : "text-dim")}
-          >
-            {showOpenMics
-              ? <Mic size={14} strokeWidth={2.5} className="text-[var(--acc2)]" />
-              : <MicOff size={14} strokeWidth={2.5} />}
-            Open mics
-          </button>
-          <button
-            onClick={() => setShowTicketed((v) => !v)}
-            aria-pressed={showTicketed}
-            style={showTicketed ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
-            className={cn("ml-auto flex shrink-0 items-center gap-2 rounded-[var(--rad)] border border-line glass px-3.5 py-2 text-[12px] font-extrabold transition-colors", showTicketed ? "text-txt" : "text-dim")}
-          >
-            <span className={cn("flex h-[15px] w-[15px] items-center justify-center rounded-[5px] border", showTicketed ? "border-transparent bg-acc2 text-on-acc2" : "border-line-hi")}>
-              {showTicketed && <Check size={11} strokeWidth={3.5} />}
-            </span>
-            Show ticketed
-          </button>
+        <div className="sticky top-0 z-20 -mx-4 mt-3 border-y border-line bg-ink/92 px-4 py-2.5 backdrop-blur lg:static lg:col-span-2 lg:mx-0 lg:mt-0 lg:border-x-0 lg:border-t-0 lg:bg-transparent lg:px-0 lg:pb-3 lg:pt-0 lg:backdrop-blur-none">
+          <div className="relative lg:hidden">
+            <div className="grid grid-flow-col auto-cols-fr gap-1.5">
+              <button
+                onClick={() => setWhenMenuOpen((v) => !v)}
+                aria-expanded={whenMenuOpen}
+                aria-haspopup="menu"
+                style={{ borderColor: "color-mix(in srgb, var(--acc) 55%, transparent)", background: "color-mix(in srgb, var(--acc) 18%, var(--glass))" }}
+                className="flex min-w-0 items-center justify-center gap-1 rounded-[var(--rad)] border px-1.5 py-2.5 text-[10.5px] font-extrabold text-txt transition-colors"
+              >
+                <span className="min-w-0 truncate">{mobileWhenLabel}</span>
+                <ChevronDown size={13} className={cn("shrink-0 transition-transform", whenMenuOpen && "rotate-180")} />
+              </button>
+
+              {isAuthenticated && (
+                <FacetToggle
+                  compact
+                  on={favOnly}
+                  onClick={() => setFavOnly((v) => !v)}
+                  label="Favourites"
+                  accent="var(--acc)"
+                  icon={<Heart size={13} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.4} />}
+                />
+              )}
+
+              <FacetToggle
+                compact
+                on={showOpenMics}
+                onClick={toggleOpenMics}
+                label="Open Mic"
+                accent="var(--acc2)"
+                icon={showOpenMics ? <Mic size={13} strokeWidth={2.4} /> : <MicOff size={13} strokeWidth={2.4} />}
+              />
+
+              <FacetToggle
+                compact
+                on={showTicketed}
+                onClick={() => setShowTicketed((v) => !v)}
+                label="Tickets"
+                accent="var(--acc2)"
+                icon={<Ticket size={13} strokeWidth={2.4} />}
+              />
+            </div>
+
+            {whenMenuOpen && (
+              <>
+                <button aria-label="Close date filter" onClick={() => setWhenMenuOpen(false)} className="fixed inset-0 z-20 cursor-default" />
+                <div role="menu" className="absolute left-0 top-[calc(100%+8px)] z-30 w-[min(270px,calc(100vw-32px))] rounded-[var(--rad-lg)] border border-line bg-card p-1.5 shadow-[var(--shadow)]">
+                  <div className="px-3 pb-1.5 pt-2 font-meta text-[9px] font-extrabold uppercase tracking-[1.7px] text-dim2">When?</div>
+                  {WHENS.map((w) => {
+                    const active = !dateSel && when === w.k;
+                    return (
+                      <button
+                        key={w.k}
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => selectWhen(w.k)}
+                        className={cn("flex w-full items-center gap-3 rounded-[var(--rad)] px-3 py-2.5 text-left text-[12px] font-extrabold transition-colors hover:bg-card2", active ? "text-txt" : "text-dim")}
+                      >
+                        <span className={cn("h-2 w-2 shrink-0 rounded-full border border-line-hi", active && "border-[var(--acc)] bg-[var(--acc)]")} />
+                        {w.l}
+                      </button>
+                    );
+                  })}
+                  <div className="my-1 border-t border-line" />
+                  <GigDatePicker
+                    variant="menu"
+                    value={dateSel}
+                    onChange={(s) => { setDateSel(s); if (s) setWhenMenuOpen(false); }}
+                    today={today}
+                    dayCounts={dayCounts}
+                    onClosed={() => { shieldRef.current = Date.now() + 500; setWhenMenuOpen(false); }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="hidden gap-2 lg:flex lg:flex-wrap">
+            {WHENS.map((w) => (
+              <Chip key={w.k} on={!dateSel && when === w.k} onClick={() => selectWhen(w.k)}>{w.l}</Chip>
+            ))}
+            <GigDatePicker value={dateSel} onChange={setDateSel} today={today} dayCounts={dayCounts} onClosed={() => { shieldRef.current = Date.now() + 500; }} />
+            {isAuthenticated && (
+              <FacetToggle
+                on={favOnly}
+                onClick={() => setFavOnly((v) => !v)}
+                label="Favourites"
+                accent="var(--acc)"
+                icon={<Heart size={14} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />}
+              />
+            )}
+            <FacetToggle
+              on={showOpenMics}
+              onClick={toggleOpenMics}
+              label="Open Mic"
+              accent="var(--acc2)"
+              icon={showOpenMics ? <Mic size={14} strokeWidth={2.5} /> : <MicOff size={14} strokeWidth={2.5} />}
+            />
+            <FacetToggle
+              className="ml-auto"
+              on={showTicketed}
+              onClick={() => setShowTicketed((v) => !v)}
+              label="Tickets"
+              accent="var(--acc2)"
+              icon={<Ticket size={14} strokeWidth={2.5} />}
+            />
+          </div>
         </div>
       </div>
 
@@ -264,6 +341,33 @@ function Chip({ on, onClick, accent, children }: { on: boolean; onClick: () => v
       className={cn("shrink-0 rounded-[var(--rad)] border border-line glass px-3.5 py-2 text-[12px] font-extrabold transition-colors", on ? "text-txt" : "text-dim")}
     >
       {children}
+    </button>
+  );
+}
+
+function FacetToggle({ on, onClick, label, icon, accent, compact, className }: {
+  on: boolean;
+  onClick: () => void;
+  label: string;
+  icon: React.ReactNode;
+  accent: string;
+  compact?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={on}
+      style={on ? { borderColor: `color-mix(in srgb, ${accent} 60%, transparent)`, background: `color-mix(in srgb, ${accent} 20%, var(--glass))` } : undefined}
+      className={cn(
+        "flex min-w-0 shrink-0 items-center border border-line glass font-extrabold transition-colors",
+        compact ? "justify-center gap-1 rounded-[var(--rad)] px-1.5 py-2.5 text-[10.5px]" : "gap-2 rounded-[var(--rad)] px-3.5 py-2 text-[12px]",
+        on ? "text-txt" : "text-dim",
+        className,
+      )}
+    >
+      <span className="shrink-0" style={on ? { color: accent } : undefined}>{icon}</span>
+      <span className="min-w-0 truncate whitespace-nowrap">{label}</span>
     </button>
   );
 }
