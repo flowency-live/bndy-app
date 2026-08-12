@@ -125,11 +125,11 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
           open ? "translate-y-0 lg:opacity-100" : "translate-y-full lg:translate-y-[-46%] lg:opacity-0",
         )}
       >
-        {/* Close button - accessibility requirement (C1: removed duplicate from SheetHeader) */}
+        {/* Close button - always visible against any background (C1 fix; C3 fix: dark bg for contrast) */}
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-dim hover:bg-white/10 hover:text-txt transition-colors"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70 hover:text-white transition-colors"
         >
           <X size={18} />
         </button>

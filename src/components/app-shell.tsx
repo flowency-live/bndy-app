@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
       </div>
       {/* ---- desktop sidebar ---- */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-line glass px-4 py-5 lg:flex">
         <Link href="/" className="mb-6 px-2 text-2xl font-black tracking-tight">
           <span className="text-[var(--acc)] brand-glow">bndy</span>
           <span className="text-txt">.live</span>
