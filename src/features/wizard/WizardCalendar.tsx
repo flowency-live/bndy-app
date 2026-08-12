@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { addDaysISO, isoOf } from "@/domain/dates";
+import { addDaysISO, isoOf, MON } from "@/domain/dates";
 import { cn } from "@/lib/cn";
-
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const MONTHS_AHEAD = 12;
 

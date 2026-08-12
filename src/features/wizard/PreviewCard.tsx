@@ -4,12 +4,9 @@ import { MapPin, Mic } from "lucide-react";
 import { TicketStub } from "@/components/TicketStub";
 import { useArtistImageMap } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
-import { formatTime } from "@/domain/dates";
+import { formatTime, DOW, MON } from "@/domain/dates";
 import { cn } from "@/lib/cn";
 import type { Draft } from "./lib";
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function dateParts(iso: string): { dow: string; label: string } {
   const [y, m, d] = iso.split("-").map(Number);
   return { dow: DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()], label: `${d} ${MON[m - 1]}` };

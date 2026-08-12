@@ -89,17 +89,3 @@ export const DEFAULT_SKIN: AppSkinId = "print";
 export function isAppSkinId(v: unknown): v is AppSkinId {
   return typeof v === "string" && v in APP_SKINS;
 }
-
-/** Deterministic palette pair for an entity (stable across pagination). */
-export function palFor(skin: AppSkinId, seed: string): [string, string] {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const pal = APP_SKINS[skin].pal;
-  return pal[Math.abs(h) % pal.length];
-}
-
-/** CSS background for avatar/tile fallbacks (print = flat + halftone elsewhere). */
-export function paletteBg(skin: AppSkinId, seed: string): string {
-  const [a, b] = palFor(skin, seed);
-  return skin === "print" ? a : `linear-gradient(135deg, ${a}, ${b})`;
-}

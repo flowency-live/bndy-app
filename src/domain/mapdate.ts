@@ -1,15 +1,12 @@
 // Map "when" selection: Today (default), a specific day within the next fortnight,
 // or a weekend (this / next). Anything further ahead → the full gig list.
 
-import { addDaysISO } from "./dates";
+import { addDaysISO, DOW, MON } from "./dates";
 
 export type MapDateSel =
   | { kind: "today" }
   | { kind: "date"; date: string }
   | { kind: "weekend"; which: "this" | "next" };
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function dowOf(iso: string): number { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d).getDay(); }
 
 /** N consecutive days starting today. */

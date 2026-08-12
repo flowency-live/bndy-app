@@ -3,7 +3,7 @@
 // Curator API + hooks (backlog feature 4). Server gates every call by role;
 // the UI only decides what to show. All calls send the session cookie.
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
@@ -68,15 +68,4 @@ export function useCuratorInvalidate() {
     await Promise.all(keys.map((k) => qc.invalidateQueries({ queryKey: k })));
     qc.invalidateQueries({ queryKey: ["my-activity"] });
   };
-}
-
-export function useCuratorMutation<TVars extends { id: string }>(
-  type: CuratorEntity,
-  fn: (vars: TVars) => Promise<unknown>,
-) {
-  const invalidate = useCuratorInvalidate();
-  return useMutation({
-    mutationFn: fn,
-    onSuccess: (_data, vars) => invalidate(type, vars.id),
-  });
 }

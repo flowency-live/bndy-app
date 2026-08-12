@@ -5,14 +5,11 @@ import { Navigation, Calendar, Share2, Globe, Facebook, ChevronRight, ExternalLi
 import { Sheet } from "@/components/ui/Sheet";
 import { Avatar } from "@/components/ui/Avatar";
 import { useArtistImageMap } from "@/lib/hooks";
-import { formatTime } from "@/domain/dates";
+import { formatTime, DOW, MON } from "@/domain/dates";
 import { gigDisplayName } from "@/domain/gigName";
 import { MicTile } from "@/features/shared/MicTile";
 import { safeHref } from "@/lib/safeHref";
 import type { Gig, Venue } from "@/domain/types";
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function dateParts(iso: string) { const [y, m, d] = iso.split("-").map(Number); const dt = new Date(y, m - 1, d); return { dow: DOW[dt.getDay()], day: d, mon: MON[m - 1] }; }
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
 

@@ -4,17 +4,13 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, MapPin, Mic } from "lucide-react";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles, formatDistance } from "@/domain/geo";
-import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
+import { todayISO, formatTime, addDaysISO, DOW, MON, MON_FULL } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import { TicketStub } from "@/components/TicketStub";
 import { MiniMap } from "./MiniMap";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MON_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 type View = "date" | "distance" | "map";
 
 export function ArtistEvents({ gigs }: { gigs: Gig[] }) {

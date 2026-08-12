@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { addDaysISO, isoOf } from "@/domain/dates";
+import { addDaysISO, isoOf, MON } from "@/domain/dates";
 import { cn } from "@/lib/cn";
 
 export interface DateSel { start: string; end: string }
-
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const MONTHS_AHEAD = 12;
 

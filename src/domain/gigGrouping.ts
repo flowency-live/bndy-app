@@ -2,11 +2,8 @@
 // and within each period stack them by day. Most gigs fall Thu–Sun, so day
 // headers read naturally.
 
-import { addDaysISO } from "./dates";
+import { addDaysISO, DOW, MON } from "./dates";
 import type { Gig } from "./types";
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function mondayIdx(iso: string) { const [y, m, d] = iso.split("-").map(Number); return (new Date(y, m - 1, d).getDay() + 6) % 7; }
 
 export function dayHeading(iso: string, today: string): string {

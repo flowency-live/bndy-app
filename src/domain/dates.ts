@@ -1,5 +1,6 @@
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+export const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+export const MON_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const;
 
 /** Local "today" as YYYY-MM-DD. */
 export function todayISO(base: Date = new Date()): string {
@@ -12,10 +13,12 @@ export function addDaysISO(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   return isoOf(new Date(y, m - 1, d + n));
 }
-function parse(iso: string): Date {
+export function parseISO(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
+/** @deprecated Use parseISO */
+const parse = parseISO;
 
 /** A gig starting at or after this hour counts as an evening gig. */
 export const EVENING_FROM = "17:00";
@@ -66,10 +69,6 @@ export function setTimeLabel(start?: string, end?: string): { label: "Time" | "F
   return isSetWindow(start, end)
     ? { label: "Time", value: `${formatTime(start)} – ${formatTime(end)}` }
     : { label: "From", value: formatTime(start) };
-}
-export function shortDate(iso: string): { day: number; mon: string } {
-  const d = parse(iso);
-  return { day: d.getDate(), mon: MON[d.getMonth()] };
 }
 export function formatTime(t?: string): string {
   if (!t) return "";

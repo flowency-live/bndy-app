@@ -3,11 +3,8 @@
 import { useMemo, useState } from "react";
 import { Calendar, ChevronDown, ChevronRight, Phone, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { DOW, MON, MON_FULL } from "@/domain/dates";
 import type { Artist, AvailabilityDate } from "@/domain/types";
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MON_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export function ArtistAvailability({ artist, availability }: { artist: Artist; availability: AvailabilityDate[] }) {
   // Group availability by month

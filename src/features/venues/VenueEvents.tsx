@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Mic } from "lucide-react";
 import { useArtistImageMap, useUpcomingGigs } from "@/lib/hooks";
-import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
+import { todayISO, formatTime, addDaysISO, DOW, MON, MON_FULL } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
 import { Avatar } from "@/components/ui/Avatar";
 import { GigSheet } from "@/features/gigs/GigSheet";
@@ -12,10 +12,6 @@ import { gigDisplayName } from "@/domain/gigName";
 import { MicTile } from "@/features/shared/MicTile";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MON_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 /** Reads all upcoming gigs (cached) and filters to this venue — robust vs the per-venue endpoint. */
 export function VenueEvents({ venueId }: { venueId: string }) {

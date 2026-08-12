@@ -4,12 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Calendar, ArrowRight } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { addDaysISO } from "@/domain/dates";
+import { addDaysISO, MON } from "@/domain/dates";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
 import { type MapDateSel, mapDateLabel, matchesMapDate, weekendDates, focusedDay, selFromDay } from "@/domain/mapdate";
-
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const HORIZON = 14;
 

@@ -15,12 +15,10 @@ import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import { safeHref } from "@/lib/safeHref";
+import { DOW, MON } from "@/domain/dates";
 import type { Gig } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
-
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function dateParts(iso: string): { dow: string; label: string } {
   const [y, m, d] = iso.split("-").map(Number);
   const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
