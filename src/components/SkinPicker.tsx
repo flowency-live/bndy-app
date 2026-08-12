@@ -46,15 +46,13 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
   return (
     <>
       {variant === "sidebar" && (
-        <div className="mt-auto">
-          <button
-            onClick={() => setOpen(true)}
-            className="flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-[14px] font-bold text-dim transition-colors hover:text-txt"
-          >
-            <Swatch dots={current.dots} />
-            <span className="truncate">Skin · {current.name}</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="mt-2 flex w-full shrink-0 items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-[14px] font-bold text-dim transition-colors hover:text-txt"
+        >
+          <Swatch dots={current.dots} />
+          <span className="truncate">Skin · {current.name}</span>
+        </button>
       )}
       {variant === "fab" && (
         <button
