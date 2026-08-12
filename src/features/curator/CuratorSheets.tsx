@@ -42,22 +42,12 @@ function useSubmit(type: CuratorEntity, id: string, onDone: () => void) {
   return { busy, error, run };
 }
 
-/** Header with a real close button, and a Cancel + primary footer. */
-export function SheetHeader({ title, sub, onClose }: { title: string; sub?: string; onClose: () => void }) {
+/** Header for curator sheets. Close button removed — Sheet now provides it globally. */
+export function SheetHeader({ title, sub }: { title: string; sub?: string }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <h2 className="truncate text-[19px] font-black tracking-tight text-txt">{title}</h2>
-        {sub && <p className="mt-0.5 text-[12px] font-semibold text-dim">{sub}</p>}
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line glass text-dim transition-colors hover:text-txt"
-      >
-        <X size={15} />
-      </button>
+    <div className="min-w-0 pr-10">
+      <h2 className="truncate text-[19px] font-black tracking-tight text-txt">{title}</h2>
+      {sub && <p className="mt-0.5 text-[12px] font-semibold text-dim">{sub}</p>}
     </div>
   );
 }
@@ -133,7 +123,7 @@ export function EditVenueSheet({ venue, open, onClose }: { venue: Venue; open: b
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title={`Edit ${venue.name}`} sub="Name and address stay locked to the verified Google listing. Wrong address? Flag the venue for staff." onClose={onClose} />
+      <SheetHeader title={`Edit ${venue.name}`} sub="Name and address stay locked to the verified Google listing. Wrong address? Flag the venue for staff." />
       <label className={label}>Website</label>
       <input className={field} value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} placeholder="https://…" inputMode="url" />
       <label className={label}>Facebook</label>
@@ -245,7 +235,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title={`Edit ${artist.name}`} sub="Name changes stay with bndy staff." onClose={onClose} />
+      <SheetHeader title={`Edit ${artist.name}`} sub="Name changes stay with bndy staff." />
 
       <label className={label}>Based in</label>
       <div className="flex gap-2">
@@ -352,7 +342,7 @@ export function EditGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean; 
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title="Edit gig" onClose={onClose} />
+      <SheetHeader title="Edit gig" />
       <label className={label}>Title</label>
       <input className={field} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
       <label className={label}>Date</label>
@@ -424,7 +414,6 @@ export function HideSheet({
       <SheetHeader
         title={`Hide ${name}?`}
         sub="This removes it from every public page. Nothing is destroyed. bndy staff can restore it from godmode."
-        onClose={onClose}
       />
       <label className={label}>Reason</label>
       <input

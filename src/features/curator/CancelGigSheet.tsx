@@ -39,8 +39,7 @@ export function CancelGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean
           <SheetHeader
             title="Un-cancel this gig?"
             sub="The CANCELLED stamp comes off and the gig returns to the map."
-            onClose={onClose}
-          />
+            />
           <SheetFooter busy={busy} saveLabel="Un-cancel gig" tone="green" onCancel={onClose} onSave={() => run(() => curatorApi.uncancelEvent(gig.id))} />
         </>
       ) : (
@@ -48,8 +47,7 @@ export function CancelGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean
           <SheetHeader
             title="Cancel this gig?"
             sub="The gig stays visible with a CANCELLED stamp on the artist and venue pages. It leaves the map."
-            onClose={onClose}
-          />
+            />
           <label className="mb-1.5 mt-4 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Reason</label>
           <input
             className={field}

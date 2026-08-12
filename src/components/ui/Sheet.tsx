@@ -8,13 +8,27 @@ import { cn } from "@/lib/cn";
 /** Responsive overlay: bottom sheet on mobile, centered modal on desktop.
  *  Portals to <body>: an ancestor with backdrop-filter/transform otherwise becomes
  *  the containing block for position:fixed and traps the sheet inside it.
- *  R4 fix: focus trap, focus restoration, close button. */
+ *  R4 fix: focus trap, focus restoration, close button.
+ *  C2 fix: delayed unmount preserves slide animation. */
 export function Sheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
+  // C2 fix: track visibility separately from open state for animation
+  const [visible, setVisible] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // C2 fix: delayed unmount - keep in DOM during close animation
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+    } else {
+      // Allow 450ms for the slide-out animation (duration-[420ms] + buffer)
+      const timer = setTimeout(() => setVisible(false), 450);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   // Track the element that triggered the open (for focus restoration)
   useEffect(() => {
@@ -64,7 +78,7 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
         if (first) first.focus();
         else dialog.focus();
       }
-    }, 50); // Small delay to allow animation to start
+    }, 50);
 
     return () => {
       window.removeEventListener("keydown", onKey);
@@ -78,14 +92,22 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
 
   if (!mounted) return null;
 
-  // Don't render content when closed (removes from tab sequence entirely)
-  if (!open) return null;
+  // C2 fix: only remove from DOM after close animation completes
+  if (!visible) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50" aria-hidden={false}>
+    <div
+      className={cn("fixed inset-0 z-50", open ? "" : "pointer-events-none")}
+      aria-hidden={!open}
+      // Prevent tab focus when closed but still visible (during animation)
+      inert={!open ? true : undefined}
+    >
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-black/55 transition-opacity duration-300 opacity-100"
+        className={cn(
+          "absolute inset-0 bg-black/55 transition-opacity duration-300",
+          open ? "opacity-100" : "opacity-0"
+        )}
         aria-label="Close dialog"
       />
       <div
@@ -99,10 +121,11 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
           "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-[24px] border-t",
           // desktop: centered modal
           "lg:inset-auto lg:left-1/2 lg:top-1/2 lg:w-[440px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-3xl lg:border",
-          "translate-y-0 lg:opacity-100",
+          // C2 fix: apply correct transform/opacity based on open state
+          open ? "translate-y-0 lg:opacity-100" : "translate-y-full lg:translate-y-[-46%] lg:opacity-0",
         )}
       >
-        {/* Close button - accessibility requirement */}
+        {/* Close button - accessibility requirement (C1: removed duplicate from SheetHeader) */}
         <button
           onClick={onClose}
           aria-label="Close"
