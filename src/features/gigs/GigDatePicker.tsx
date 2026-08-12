@@ -14,18 +14,19 @@ function mondayIdx(iso: string) { const [y, m, d] = iso.split("-").map(Number); 
 function ym(iso: string) { return { y: Number(iso.slice(0, 4)), m: Number(iso.slice(5, 7)) - 1 }; }
 
 /** Short label for the trigger: single day or a range. */
-function label(sel: DateSel | null, today: string): string {
+export function gigDateLabel(sel: DateSel | null, today: string): string {
   if (!sel) return "Any date";
   const f = (iso: string) => { const d = Number(iso.slice(8, 10)); const mo = MON[Number(iso.slice(5, 7)) - 1]; return iso === today ? "Today" : iso === addDaysISO(today, 1) ? "Tomorrow" : `${d} ${mo}`; };
   return sel.start === sel.end ? f(sel.start) : `${Number(sel.start.slice(8, 10))} ${MON[Number(sel.start.slice(5, 7)) - 1]} – ${f(sel.end)}`;
 }
 
-export function GigDatePicker({ value, onChange, today, dayCounts, onClosed }: {
+export function GigDatePicker({ value, onChange, today, dayCounts, onClosed, variant = "chip" }: {
   value: DateSel | null;
   onChange: (s: DateSel | null) => void;
   today: string;
   dayCounts: Map<string, number>;
   onClosed?: () => void; // fired whenever the sheet closes — lets the parent shield stray taps
+  variant?: "chip" | "menu";
 }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState(() => ym(today)); // month being shown
@@ -57,20 +58,35 @@ export function GigDatePicker({ value, onChange, today, dayCounts, onClosed }: {
 
   return (
     <>
-      <div
-        style={value ? { borderColor: "color-mix(in srgb, var(--acc) 55%, transparent)", background: "color-mix(in srgb, var(--acc) 18%, var(--glass))" } : undefined}
-        className={cn("flex shrink-0 items-center rounded-2xl border border-line glass text-[12.5px] font-extrabold transition-colors", value ? "text-white" : "text-dim")}
-      >
-        <button onClick={() => setOpen(true)} aria-label="Pick dates" className="flex items-center gap-2 py-2 pl-3.5 pr-2.5">
-          <Calendar size={14} className={value ? "text-[var(--acc)]" : "text-dim"} />
-          {label(value, today)}
+      {variant === "menu" ? (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Pick dates"
+          className={cn(
+            "flex w-full items-center gap-3 rounded-[var(--rad)] px-3 py-2.5 text-left text-[12px] font-extrabold transition-colors hover:bg-card2",
+            value ? "text-txt" : "text-dim",
+          )}
+        >
+          <Calendar size={15} className={value ? "text-[var(--acc)]" : "text-dim2"} />
+          <span className="min-w-0 flex-1 truncate">{value ? gigDateLabel(value, today) : "Choose a date"}</span>
+          <ChevronRight size={15} className="shrink-0 text-dim2" />
         </button>
-        {value && (
-          <button onClick={clear} aria-label="Clear dates" className="py-2 pl-1 pr-3 text-dim2 hover:text-white">
-            <X size={14} />
+      ) : (
+        <div
+          style={value ? { borderColor: "color-mix(in srgb, var(--acc) 55%, transparent)", background: "color-mix(in srgb, var(--acc) 18%, var(--glass))" } : undefined}
+          className={cn("flex shrink-0 items-center rounded-2xl border border-line glass text-[12.5px] font-extrabold transition-colors", value ? "text-white" : "text-dim")}
+        >
+          <button onClick={() => setOpen(true)} aria-label="Pick dates" className="flex items-center gap-2 py-2 pl-3.5 pr-2.5">
+            <Calendar size={14} className={value ? "text-[var(--acc)]" : "text-dim"} />
+            {gigDateLabel(value, today)}
           </button>
-        )}
-      </div>
+          {value && (
+            <button onClick={clear} aria-label="Clear dates" className="py-2 pl-1 pr-3 text-dim2 hover:text-white">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       <Sheet open={open} onClose={close}>
         <div className="mb-3 flex items-center justify-between">
@@ -128,7 +144,7 @@ export function GigDatePicker({ value, onChange, today, dayCounts, onClosed }: {
         </div>
 
         <button onClick={close} className="bndy-btn mt-5 w-full py-3 text-[14px] transition-transform active:scale-[.98]">
-          {value ? `Show ${label(value, today)}` : "Done"}
+          {value ? `Show ${gigDateLabel(value, today)}` : "Done"}
         </button>
       </Sheet>
     </>
