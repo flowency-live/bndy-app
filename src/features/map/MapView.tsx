@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import maplibregl from "maplibre-gl";
-import { Heart, Mic, MicOff, Search, X } from "lucide-react";
+import { Heart, Loader2, Mic, MicOff, Search, X } from "lucide-react";
 import type { FeatureCollection, Point } from "geojson";
 import { useUpcomingGigs, useVenues, useGigsInView } from "@/lib/hooks";
 import { fetchEventsBatch, type BBox } from "@/lib/api";
@@ -76,6 +76,8 @@ export function MapView() {
   const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [loadingGig, setLoadingGig] = useState(false);
+  // C3 fix: the tap-to-open state was tracked but never shown.
+  const [gigError, setGigError] = useState(false);
   const gigRequestId = useRef(0); // A4 fix: track latest request to ignore stale responses
   const [searchQuery, setSearchQuery] = useState("");
   const modeRef = useRef(mode); modeRef.current = mode;
@@ -258,7 +260,13 @@ export function MapView() {
           setSelectedStack(gigs.length > 1 ? gigs : null);
           setSelected(gigs[0]);
         })
-        .catch(() => {})
+        .catch(() => {
+          // C3 fix: a failed tap used to show the user nothing at all, so the
+          // pin looked dead. Say so, and clear the message by itself.
+          if (thisRequest !== gigRequestId.current) return;
+          setGigError(true);
+          window.setTimeout(() => setGigError(false), 4000);
+        })
         .finally(() => {
           if (thisRequest === gigRequestId.current) setLoadingGig(false);
         });
@@ -435,6 +443,23 @@ export function MapView() {
       {mode === "events" && (
         <div className="absolute left-3 top-[calc(env(safe-area-inset-top,0px)+82px)] z-20 lg:left-4 lg:top-[96px]">
           <MapDateControl sel={sel} onChange={setSel} gigs={gigs} today={today} />
+        </div>
+      )}
+
+      {/* C3 fix: tell the user what the tap did. Nothing was shown before. */}
+      {(loadingGig || gigError) && (
+        <div
+          role="status"
+          className="pointer-events-none absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line glass-hi px-4 py-2.5 text-[13px] font-extrabold shadow-lg"
+        >
+          {gigError ? (
+            <span className="text-red-400">Could not open that gig. Tap it again.</span>
+          ) : (
+            <>
+              <Loader2 size={15} className="animate-spin text-[var(--acc)]" />
+              <span className="text-dim">Opening…</span>
+            </>
+          )}
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, Facebook, Instagram, Youtube, Globe, Music2, Share2 } from "lucide-react";
 import { ShareSheet } from "@/features/shared/ShareSheet";
+import { safeHref } from "@/lib/safeHref";
 import type { SocialLink, SocialPlatform } from "@/domain/types";
 
 const ICON: Record<SocialPlatform, typeof Globe> = {
@@ -41,7 +42,7 @@ export function HeroSocials({ socials, name, inline }: { socials?: SocialLink[];
       {(socials ?? []).slice(0, 3).map((l) => {
         const Icon = ICON[l.platform] ?? Globe;
         return (
-          <a key={l.url} href={l.url} target="_blank" rel="noopener" aria-label={l.platform} className={btn}>
+          <a key={l.url} href={safeHref(l.url)} target="_blank" rel="noopener noreferrer" aria-label={l.platform} className={btn}>
             <Icon size={16} />
           </a>
         );

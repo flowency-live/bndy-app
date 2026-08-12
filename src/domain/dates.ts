@@ -2,9 +2,20 @@ export const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 export const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 export const MON_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const;
 
-/** Local "today" as YYYY-MM-DD. */
+/** UK "today" as YYYY-MM-DD.
+ *  C4 fix: this runs in server components as well as the browser. The local
+ *  clock of a UTC host is one day behind UK time between 00:00 and 01:00 in
+ *  British Summer Time, which made a gig list start on the wrong day. bndy is
+ *  a UK product and `domain/calendar.ts` already pins Europe/London, so the
+ *  date comes from that zone, not from the host. */
+const UK_DATE = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/London",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 export function todayISO(base: Date = new Date()): string {
-  return isoOf(new Date(base.getFullYear(), base.getMonth(), base.getDate()));
+  return UK_DATE.format(base);
 }
 export function isoOf(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

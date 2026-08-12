@@ -172,7 +172,12 @@ export function WizardShell() {
       setPhase("idle");
       if (ok > 0) {
         // A2 fix: invalidate gigs cache so the new event appears immediately
+        // C5 fix: the wizard can also create a NEW artist and a NEW venue.
+        // Clear those caches too, or the new record stays hidden until the
+        // cache expires.
         queryClient.invalidateQueries({ queryKey: ["gigs"] });
+        queryClient.invalidateQueries({ queryKey: ["artists"] });
+        queryClient.invalidateQueries({ queryKey: ["venues"] });
         setOutcome({ kind: "published", eventId: firstEventId, count: ok, dups });
         clearDraft();
       }
