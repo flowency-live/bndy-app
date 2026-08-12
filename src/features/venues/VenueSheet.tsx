@@ -8,6 +8,7 @@ import { useArtistImageMap } from "@/lib/hooks";
 import { formatTime } from "@/domain/dates";
 import { gigDisplayName } from "@/domain/gigName";
 import { MicTile } from "@/features/shared/MicTile";
+import { safeHref } from "@/lib/safeHref";
 import type { Gig, Venue } from "@/domain/types";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -92,10 +93,10 @@ export function VenueSheet({ venue, gigs, live, onClose, onGigClick }: {
             <p className="py-6 text-center text-[13px] font-semibold text-dim">No upcoming gigs listed.</p>
           )}
 
-          {(website || facebook) && (
+          {(safeHref(website) || safeHref(facebook)) && (
             <div className="mt-4 flex items-center justify-center gap-6 border-t border-line pt-4 text-[13px] font-bold text-dim">
-              {website && <a href={website} target="_blank" rel="noopener" className="flex items-center gap-1.5"><Globe size={15} /> Website</a>}
-              {facebook && <a href={facebook} target="_blank" rel="noopener" className="flex items-center gap-1.5"><Facebook size={15} /> Facebook</a>}
+              {safeHref(website) && <a href={safeHref(website)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5"><Globe size={15} /> Website</a>}
+              {safeHref(facebook) && <a href={safeHref(facebook)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5"><Facebook size={15} /> Facebook</a>}
             </div>
           )}
         </>

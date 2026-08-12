@@ -19,7 +19,9 @@ export function LoginClient() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
-  const next = params.get("next") || "/";
+  // SEC-AUD-005: Only allow relative paths, not protocol-relative URLs (//evil.com)
+  const rawNext = params.get("next") || "/";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
   const errorKey = params.get("error");
   const error = errorKey ? (ERRORS[errorKey] ?? "Sign-in failed. Try again.") : null;
 

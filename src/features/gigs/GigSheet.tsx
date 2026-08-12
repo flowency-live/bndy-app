@@ -14,6 +14,7 @@ import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { cn } from "@/lib/cn";
+import { safeHref } from "@/lib/safeHref";
 import type { Gig } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
@@ -251,8 +252,8 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         {distance !== undefined && isFinite(distance) && <Slab label="Away" value={formatDistance(distance)} />}
       </div>
 
-      {gig.ticketed && gig.ticketUrl && (
-        <a href={gig.ticketUrl} target="_blank" rel="noopener"
+      {gig.ticketed && safeHref(gig.ticketUrl) && (
+        <a href={safeHref(gig.ticketUrl)} target="_blank" rel="noopener noreferrer"
           className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
           <Ticket size={16} /> Get tickets
         </a>

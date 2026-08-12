@@ -8,6 +8,7 @@ import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { AvatarUpload } from "@/features/curator/AvatarUpload";
 import { FlagButton } from "@/features/shared/FlagButton";
+import { safeHref } from "@/lib/safeHref";
 import type { Gig, Venue } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
@@ -62,8 +63,8 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
               <Navigation size={16} /> Directions
             </a>
           )}
-          {website && (
-            <a href={website} target="_blank" rel="noopener"
+          {safeHref(website) && (
+            <a href={safeHref(website)} target="_blank" rel="noopener noreferrer"
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-white/5 py-3 text-[13.5px] font-extrabold transition-transform active:scale-[.97]">
               <Globe size={16} /> Website
             </a>

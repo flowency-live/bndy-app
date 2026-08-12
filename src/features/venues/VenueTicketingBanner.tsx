@@ -1,6 +1,7 @@
 "use client";
 
 import { Ticket } from "lucide-react";
+import { safeHref } from "@/lib/safeHref";
 import type { Venue } from "@/domain/types";
 
 /**
@@ -13,15 +14,16 @@ import type { Venue } from "@/domain/types";
  * - NEVER says "Buy tickets" (bndy does not sell tickets)
  */
 export function VenueTicketingBanner({ venue }: { venue: Venue | null }) {
-  // Suppress banner if no venue, not ticketed, or no URL
-  if (!venue?.standardTicketed || !venue.standardTicketUrl) {
+  // Suppress banner if no venue, not ticketed, or no safe URL
+  const ticketUrl = safeHref(venue?.standardTicketUrl);
+  if (!venue?.standardTicketed || !ticketUrl) {
     return null;
   }
 
   // Extract domain for display (e.g., "thehairydogderby.co.uk")
   let domain: string;
   try {
-    const url = new URL(venue.standardTicketUrl);
+    const url = new URL(ticketUrl);
     domain = url.hostname.replace(/^www\./, "");
   } catch {
     // Invalid URL - suppress banner
@@ -31,7 +33,7 @@ export function VenueTicketingBanner({ venue }: { venue: Venue | null }) {
   return (
     <div className="mt-4 rounded-xl border border-cyan/30 bg-cyan/10">
       <a
-        href={venue.standardTicketUrl}
+        href={ticketUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2.5 px-4 py-3 transition-colors hover:bg-cyan/5"
