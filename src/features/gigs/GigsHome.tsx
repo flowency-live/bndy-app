@@ -204,7 +204,7 @@ export function GigsHome() {
                   <GigDatePicker
                     variant="menu"
                     value={dateSel}
-                    onChange={(s) => { setDateSel(s); if (s) setWhenMenuOpen(false); }}
+                    onChange={setDateSel}
                     today={today}
                     dayCounts={dayCounts}
                     onClosed={() => { shieldRef.current = Date.now() + 500; setWhenMenuOpen(false); }}
