@@ -13,6 +13,10 @@ describe("weekendDates", () => {
   it("still resolves the current weekend on a Sunday", () => {
     expect(weekendDates("this", "2026-07-05")).toEqual(["2026-07-03", "2026-07-04", "2026-07-05"]);
   });
+  it("R5: Saturday still finds the current weekend correctly", () => {
+    // If today is Saturday, "this weekend" should include today (Sat) + tomorrow (Sun) + yesterday (Fri)
+    expect(weekendDates("this", "2026-07-04")).toEqual(["2026-07-03", "2026-07-04", "2026-07-05"]);
+  });
 });
 
 describe("matchesMapDate", () => {

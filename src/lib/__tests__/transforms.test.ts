@@ -16,6 +16,30 @@ describe("toGig", () => {
   it("drops gigs without coordinates", () => {
     expect(toGig({ id: "1", date: "2026-07-05", venueId: "v" })).toBeNull();
   });
+
+  // R5 audit tests
+  it("resolved ticketing takes precedence over legacy fields", () => {
+    const g = toGig({
+      id: "1", date: "2026-07-05", venueId: "v", geoLat: 1, geoLng: 2,
+      ticketed: false, ticketUrl: "https://old.com",
+      ticketing: { isTicketed: true, source: "venue", ticketUrl: "https://new.com", price: "£10" },
+    })!;
+    expect(g.ticketed).toBe(true);
+    expect(g.ticketUrl).toBe("https://new.com");
+    expect(g.ticketing?.price).toBe("£10");
+  });
+
+  it("recognises open mic from type field", () => {
+    const g = toGig({ id: "1", date: "2026-07-05", venueId: "v", geoLat: 1, geoLng: 2, type: "open-mic" })!;
+    expect(g.isOpenMic).toBe(true);
+  });
+
+  it("falls back venueName from nested venue object", () => {
+    // This was a production bug: map cards showed "Venue TBC" because venueName was missing
+    const g = toGig({ id: "1", date: "2026-07-05", venueId: "v", geoLat: 1, geoLng: 2, venue: { name: "The Blue Moon", city: "Crewe" } })!;
+    expect(g.venueName).toBe("The Blue Moon");
+    expect(g.venueCity).toBe("Crewe");
+  });
 });
 
 describe("toVenue", () => {
