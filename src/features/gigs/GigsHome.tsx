@@ -45,15 +45,12 @@ export function GigsHome() {
   const [selected, setSelected] = useState<Gig | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(["later"]));
 
-  // Ignore card taps that fire immediately after the date sheet closes (mobile ghost-click).
   const shieldRef = useRef(0);
   const openGig = (g: Gig) => { if (Date.now() < shieldRef.current) return; setSelected(g); };
 
   const originLoc: LatLng = useMemo(() => origin.loc ?? geo, [origin.loc, geo]);
   const usingCurrent = origin.loc === null;
 
-  // Location + ticket + text filtered, ignoring the date/period filter — feeds the calendar's day dots.
-  // Deferred values keep typing and radius changes responsive while the list is large.
   const dq = useDeferredValue(q);
   const dRadius = useDeferredValue(radius);
   const eligible = useMemo(() => {
@@ -92,16 +89,16 @@ export function GigsHome() {
 
   return (
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
-      <header className="mb-5 lg:mb-6">
-        <h1 className="text-[28px] font-black tracking-tight lg:text-4xl">Gigs near you</h1>
-        <p className="mt-1 text-[13px] font-semibold text-dim lg:text-[15px]">
-          {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label}`}
-          {usingCurrent && !located ? " · allow location for near-you results" : ""}
-        </p>
-      </header>
+      <div className="mb-6 lg:grid lg:grid-cols-[250px_minmax(0,1fr)] lg:items-end lg:gap-x-8 lg:gap-y-4 lg:mb-8">
+        <header className="mb-5 lg:mb-0">
+          <h1 className="font-disp text-[29px] font-black tracking-tight lg:text-[38px] lg:leading-none">Gigs near you</h1>
+          <p className="mt-1.5 text-[12.5px] font-semibold text-dim lg:text-[13px]">
+            {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label}`}
+            {usingCurrent && !located ? " · allow location for near-you results" : ""}
+          </p>
+        </header>
 
-      <div className="sticky top-0 z-20 -mx-4 mb-5 space-y-2.5 border-y border-line bg-ink/90 px-4 py-3 backdrop-blur lg:static lg:mx-0 lg:mb-7 lg:rounded-[var(--rad-lg)] lg:border lg:bg-card lg:p-3.5">
-        <div className="grid gap-2.5 lg:grid-cols-[minmax(300px,440px)_auto_minmax(260px,1fr)] lg:items-center">
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(260px,1fr)_auto_minmax(230px,.72fr)] lg:items-center">
           <div className="relative">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dim" />
             <input
@@ -109,14 +106,14 @@ export function GigsHome() {
               onChange={(e) => setQ(e.target.value)}
               aria-label="Search gigs by artist or venue"
               placeholder="Search artists or venues…"
-              className="w-full rounded-[var(--rad)] border border-line glass px-10 py-3 text-[14px] font-semibold outline-none placeholder:text-dim focus:border-[var(--acc)]"
+              className="w-full rounded-[var(--rad)] border border-line glass px-10 py-3 text-[14px] font-semibold outline-none transition-colors placeholder:text-dim focus:border-[var(--acc)]"
             />
           </div>
 
           <LocationField value={origin} onChange={setOrigin} />
 
-          <div className="flex min-w-[180px] items-center gap-2.5 lg:px-1">
-            <span className="shrink-0 text-[10px] font-bold uppercase tracking-[1.2px] text-dim2">within</span>
+          <div className="flex min-w-[180px] items-center gap-2.5 sm:col-span-2 lg:col-span-1 lg:px-1">
+            <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[1.3px] text-dim2">within</span>
             <input
               type="range"
               min={1}
@@ -127,11 +124,11 @@ export function GigsHome() {
               className="h-1.5 flex-1 cursor-pointer"
               style={{ accentColor: "var(--acc)" }}
             />
-            <span className="w-[46px] shrink-0 text-right text-[12.5px] font-extrabold tnum">{radius} mi</span>
+            <span className="w-[46px] shrink-0 text-right text-[12px] font-extrabold tnum">{radius} mi</span>
           </div>
         </div>
 
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto border-t border-line px-4 pt-2.5 lg:mx-0 lg:flex-wrap lg:px-0">
+        <div className="no-scrollbar sticky top-0 z-20 -mx-4 mt-3 flex gap-2 overflow-x-auto border-y border-line bg-ink/92 px-4 py-2.5 backdrop-blur lg:static lg:col-span-2 lg:mx-0 lg:mt-0 lg:flex-wrap lg:border-x-0 lg:border-t-0 lg:bg-transparent lg:px-0 lg:pb-3 lg:pt-0 lg:backdrop-blur-none">
           {WHENS.map((w) => (
             <Chip key={w.k} on={!dateSel && when === w.k} onClick={() => { setWhen(w.k); setDateSel(null); }}>{w.l}</Chip>
           ))}
@@ -174,31 +171,35 @@ export function GigsHome() {
       </div>
 
       {isLoading ? (
-        <div className="overflow-hidden rounded-[var(--rad-lg)] border border-line bg-card">
-          {Array.from({ length: 7 }).map((_, i) => <div key={i} className="h-[92px] animate-pulse border-b border-line bg-card last:border-b-0" />)}
+        <div>
+          {Array.from({ length: 7 }).map((_, i) => <div key={i} className="h-[100px] animate-pulse border-b border-line bg-card/40" />)}
         </div>
       ) : total ? (
         buckets.map((b) => {
           const open = dateSel ? true : !collapsed.has(b.key);
           return (
-            <section key={b.key} className="mt-7 first:mt-0 lg:mt-9">
-              <button onClick={() => toggle(b.key)} className="flex w-full items-center justify-between border-b border-line pb-2">
-                <span className="text-[12px] font-extrabold uppercase tracking-[1.8px] text-[var(--acc)]">{b.label}</span>
-                <span className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-wide text-dim2">
+            <section key={b.key} className="mt-7 first:mt-0 lg:mt-10">
+              <button onClick={() => toggle(b.key)} className="group flex w-full items-center gap-3 pb-2 text-left">
+                <span className="font-meta text-[10.5px] font-extrabold uppercase tracking-[2px] text-[var(--acc)] lg:text-[11px]">{b.label}</span>
+                <span className="h-px flex-1 bg-[color-mix(in_srgb,var(--line)_70%,transparent)]" />
+                <span className="flex items-center gap-2 font-meta text-[9.5px] font-bold uppercase tracking-wide text-dim2">
                   {b.count} gig{b.count === 1 ? "" : "s"}
-                  <ChevronDown size={15} className={cn("transition-transform", open && "rotate-180")} />
+                  <ChevronDown size={14} className={cn("transition-transform", open && "rotate-180")} />
                 </span>
               </button>
 
               {open && b.days.map((day) => {
                 const parts = dateParts(day.date, today);
                 return (
-                  <div key={day.date} className="mt-4 lg:grid lg:grid-cols-[104px_minmax(0,1fr)] lg:gap-5 lg:mt-5">
-                    <aside className="hidden border-r border-line pr-5 pt-2 text-right lg:block">
-                      <div className="text-[10px] font-extrabold uppercase tracking-[1.7px] text-[var(--acc)]">{parts.weekday}</div>
-                      <div className="tnum mt-1 text-[44px] font-black leading-[0.88] tracking-[-2px] text-txt">{parts.day}</div>
-                      <div className="mt-2 text-[10px] font-bold uppercase tracking-[1.5px] text-dim">{parts.month}</div>
-                      <div className="mt-2 text-[9.5px] font-bold uppercase tracking-wide text-dim2">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</div>
+                  <div key={day.date} className="mt-4 lg:grid lg:grid-cols-[124px_minmax(0,1fr)] lg:gap-7 lg:mt-6">
+                    <aside className="relative hidden pr-7 text-right lg:block">
+                      <div className="sticky top-6 pt-1">
+                        <div className="font-meta text-[9px] font-extrabold uppercase tracking-[2px] text-[var(--acc)]">{parts.weekday}</div>
+                        <div className="tnum font-disp mt-1 text-[52px] font-black leading-[0.84] tracking-[-2.5px] text-txt">{parts.day}</div>
+                        <div className="font-meta mt-2.5 text-[9px] font-bold uppercase tracking-[1.8px] text-dim">{parts.month}</div>
+                        <div className="font-meta mt-2 text-[8.5px] font-bold uppercase tracking-[1px] text-dim2">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</div>
+                      </div>
+                      <span className="absolute bottom-0 right-0 top-0 w-px bg-[color-mix(in_srgb,var(--line)_65%,transparent)]" aria-hidden />
                     </aside>
 
                     <div className="min-w-0">
@@ -212,8 +213,8 @@ export function GigsHome() {
                         <span className="text-[10px] font-bold tnum">{day.gigs.length} gig{day.gigs.length === 1 ? "" : "s"}</span>
                       </div>
 
-                      <Deferred count={day.gigs.length} heightPerItem={92} itemsPerRow={1}>
-                        <div className="overflow-hidden rounded-[var(--rad-lg)] border border-line bg-card" style={{ borderWidth: "var(--bw, 1px)" }}>
+                      <Deferred count={day.gigs.length} heightPerItem={100} itemsPerRow={1}>
+                        <div className="overflow-hidden rounded-[var(--rad-lg)] border border-line bg-card lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent">
                           {day.gigs.map((g) => (
                             <GigCard
                               key={g.id}
