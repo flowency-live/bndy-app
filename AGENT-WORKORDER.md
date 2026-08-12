@@ -199,6 +199,124 @@ Verify:
 
 ---
 
+## TASK 9 — THREE new skins: Lemonrock (light) + On The Case (dark) + Poole Position (dark) (implemented 2026-08-01, needs tsc + contrast gate)
+
+> ⚠️ RESTORED 2026-08-06 — an agent log-write overwrote tasks 9–11. **Do not truncate this file when logging; APPEND to the STATUS LOG only.**
+
+**Homage skins to three real bndy sources/people, per Jason. Implemented by Claude (uncommitted at time of writing — check git first, may already be committed).** Adding a skin = token block + registry entry, and that contract held: `skins.css` (lemonrock after solar, onthecase after blackout, poole after onthecase — all blocks carry the FULL current contract incl. `--dayhead-*` + `--stub-*`), `appSkins.ts` (AppSkinId union, 3 entries, SKIN_ORDER: …solar, lemonrock, synthwave, blackout, onthecase, poole, hyper), `skinMap.ts` BASEMAP_BY_SKIN (lemonrock→voyager, onthecase→dark, poole→dark).
+
+Skin identities:
+- **lemonrock** (soft, light): surface #F7FAF0, acc dark green #2F7A1F/white, acc2 raspberry #C2185B/white (= stub), hl lemon #F7E017 (= TONIGHT day bar + ticker text on dark green).
+- **onthecase** (print family, dark — the FIRST dark print skin): green-tinged near-black, acc stencil green #8DC63F with BLACK on-acc (white fails ~2:1), acc2 white, 2.5px green borders + hard #3E5C14 offset shadows, Archivo Black uppercase, black ticker w/ green text, white stub.
+- **poole "Poole Position"** (soft, dark — KLMA Stoke homage for Dave Poole; name = Jason's pick): warm black, KLMA red acc #D9201A/white (banner red #E3221C darkened one notch — 4.66→5.0), gold acc2 #F5D327/#2B2300 (10.7 — gold diamonds + stub + ticker text), red TONIGHT bar, red/gold pin glows.
+
+Verify (gates): 1) `npx tsc --noEmit` clean. 2) Contrast script (TASK 4) over ALL THREE new blocks — every pair ≥4.5 (txt/card, dim/card, dayhead ×2, stub, tick, acc/on-acc, acc2/on-acc2, hl/on-hl). Hand-computed worst: lemonrock acc/white 5.35; onthecase acc/black 9.2; poole acc/white 5.0. Scrapes under → darken bg one notch, re-run. 3) Visual pass all 3: picker order/dots, splash+ticker, day bars + TONIGHT, stubs, map (basemap/pins/diamonds/pills/£glyph — bestOn auto-picks glyph colours), print-family tilt+shadows on onthecase. 4) **NO_FLASH check (bug found 2026-08-06, fixed in layout.tsx): select poole → hard refresh → NO print flash, family=soft, .dark set.** 5) Commit "feat: lemonrock + onthecase + poole skins" + deploy.
+
+---
+
+## TASK 10 — Gig popup (GigSheet) redesign: hero image, artist name, slab date/time, share (implemented 2026-08-01, needs tsc gate)
+
+> ⚠️ RESTORED 2026-08-06 (same overwrite).
+
+**Jason feedback on the map popup:** artist name wasn't displayed (avatar only), image too small, date/time flat, share missing (all in OLD frontstage — concepts recreated, no code copied). Implemented in `GigSheet.tsx` `Body`:
+- **Hero:** full-width h-44 rounded image (imgMap; fallback avatarGradient + big initials). TONIGHT chip top-left; ticket stub top-right when ticketed.
+- **Name resolution:** events sometimes lack `artistName` (Six Card Trick example) → `nameOf()` falls back to cached artists list via `artistId`, then title.
+- **Hierarchy:** 22px black name → "at **Venue** · City" ("Venue TBC" when blank).
+- **Slabs:** date/time/distance framed blocks (accent keyline top via inset box-shadow — token-driven): [SAT / 1 Aug] [TIME / 8pm–12am] [AWAY / 138 mi]; tonight → date slab solid accent "TONIGHT".
+- **Share:** square bndy-btn2 beside Artist/Venue — `navigator.share` on mobile, clipboard + ✓ flash on desktop; shares artist-page URL (venue fallback) + human text line.
+- Carousel/deck (TASK 8) untouched — every deck card gets the new body.
+
+Verify: tsc clean; single popup shows Six Card Trick's NAME; deck cards, tonight state, ticketed overlay, share both platforms; 3–4 skins incl. print (slab keyline) + poole. Commit + deploy.
+
+---
+
+## TASK 11 — GIG WIZARD: backend enablers + frontend verification (2026-08-06)
+
+> ⚠️ RESTORED 2026-08-06 (same overwrite). **Spec: `Projects/bndy/GIG-WIZARD-SPEC.md` v1.0 — READ IT FIRST.**
+
+Frontend is IMPLEMENTED by Claude (uncommitted; sandbox down — NO tsc run). Public "Add a gig": `/add` route (+ `?artistId=`/`?venueId=` prefills that lock their step), nav `+` item, Add-a-gig buttons on artist/venue profiles, 4-step wizard (venue → artist → when → publish) with live-assembling preview card. Files: `src/features/wizard/{lib,wizardApi,PreviewCard,StepVenue,StepArtist,StepWhen,WizardCalendar,WizardShell}` + `src/app/add/page.tsx` + `src/app/list-a-gig/page.tsx`; edits: app-shell, ArtistProfile, VenueProfile, layout.tsx (NO_FLASH).
+
+### Backend (spec §6 — B1–B7, bndy-serverless-api, guardrails apply)
+- **B1 Places proxy** (venues-lambda, key already wired): `GET /api/places/suggest?q=` → `{ suggestions: [{ placeId, name, address }] }` (UK-biased, session tokens, 60s cache); `GET /api/places/details?placeId=` → `{ place: { placeId, name, address, city, lat, lng } }`. **These shapes are the contract — `wizardApi.ts` is already coded against them.** Check the 25-route cap.
+- **B2 CORS**: `getCommunityHeaders()` (artists-lambda handler.js ~:3719) hard-codes live.bndy.co.uk on `/api/artists/search`, `/community`, `/find-or-create` → switch to the dynamic allowlist + add gigmap.bndy.co.uk. **Wizard is DOA without this.**
+- **B3 `dryRun: true`** on `POST /api/artists/find-or-create`: full verdict (matched/review/clear + candidates **with `location`**), ZERO writes.
+- **B4 `needsReview: true`** stamped on community-wizard-created artist + event + newly created venue (`source: 'community_wizard'` is passed by the frontend on all three calls).
+- **B5** Remove dead `POST /api/venues/community` from template.yaml (~:458 — no handler, 404s).
+- **B6** Genres: frontend hard-codes the enum in `wizard/lib.ts` mirroring `artists-lambda/lib/genres.js` — verify EXACT match (33 entries incl. era tags + Other) and add sync comments both ends.
+- **B7 WAF** (Jason-approved): rate-based rule ~100 req/5min/IP on the four community POSTs + both `/api/places/*` GETs, block action. Record WebACL ARN in DEPLOYMENT.md.
+
+### Addendum A — When-step upgrades (Jason review)
+- Native date input REPLACED by `WizardCalendar.tsx` — inline branded single-tap calendar (GigDatePicker visual language: 12-month range, today ring, accent selection). **acc2 dots mark nights the chosen venue already has gigs** + legend line.
+- **Proactive conflict warnings** from the cached gig list on date pick: artist-already-at-this-venue-that-night (hard warning — publish will likely 409), artist-gigging-elsewhere-that-night, venue-has-another-act-that-night (soft, non-blocking; server gate final).
+- Smart default start time (§5.6: Fri/Sat 21:00, Sun 19:00, weekday 20:00) FOLLOWS date changes until the user touches the time (`timeTouched`); hint names the weekday. Button = "Review & publish".
+
+### Addendum B — standalone webform + "add another" flows (Jason)
+- NEW route `/list-a-gig` — same WizardShell, ZERO app chrome (AppShell short-circuits on the path: bndy logo + "Keeping live music alive" + "Browse gigs →" + skin fab only). Shareable webform for FB groups/venues.
+- Success/duplicate screens (BOTH routes): Share · See it on the map · **Add another: {artist} at {venue} — another date (→ When) / another for {artist} (→ Where) / another at {venue} (→ Who) / start fresh.** Anchor kept in draft, title re-inferred.
+- **layout.tsx NO_FLASH fix** (TASK 9 gap): map now carries all 12 skins.
+- URL-prefill effects apply once (refs) so "add another" resets aren't overwritten by background refetches.
+
+### Addendum C — polish pass (Jason 2026-08-06)
+- **Em-dashes removed from ALL UI-rendered strings** (errors, hints, buttons, placeholders, share text, metadata). Comments untouched. Grep gate: `—` must appear in NO string that renders (comments/CSS comments are fine).
+- **Artist ranking is venue-aware**: when the venue is chosen, `rankArtists` gets a proximity context: +12 if artist's location text contains the venue's town, else footprint tiers (+8 <30mi, +4 <60mi) from `distById` = artistId → miles to their NEAREST gig, built in ONE memoised pass over cached gigs per venue change (artists have no coordinates; footprint is the honest signal). Ties sort nearest-first. No per-keystroke geometry.
+- **Venue search is user-proximity-sorted**: matches ranked name-startsWith > name-contains > town-contains, then nearest-first via `useGeolocation` + `distanceMiles` on the MATCHED subset only; rows show "Town · 3 mi" when located. Degrades cleanly with no geo permission.
+- Verify: three same-name artists rank nearest-the-venue first (Not Guilty test with a Stoke venue selected); venue search with geolocation granted orders by distance and shows miles; with permission denied, alphabetical within score bands; no perf regression typing fast in either search (no long tasks).
+
+### Addendum D — new-artist form upgrades (Jason 2026-08-06)
+- **Location = Google Places town autocomplete** via the existing `usePlaces` hook (same NEXT_PUBLIC_GOOGLE_MAPS_API_KEY loader as the gigs-list LocationField; UK cities, session tokens, ", UK" suffix stripped for storage). Free-typed text still accepted when no prediction is picked (server resolves the region); no key → plain input, degrades cleanly.
+- **Town / Region segmented control** (NOT godmode's radio UI): Town default with autocomplete; Region shows the 13 canonical bndy-region chips (runbook §1A.1 list, `REGIONS` in wizard/lib.ts). Helper copy switches per mode.
+- **Artist type chips** ("They are": Band / Solo Act / Duo / Trio / Group / DJ / Collective, single-select, skippable, `ARTIST_TYPES` in lib.ts — mirrors the godmode edit screen enum). Passed as `artistType`; `actType` array now also passed on create. **Agent: verify `POST /api/artists/find-or-create` / community create accept + persist `artistType` and `actType` pass-through — if community create drops them, add them (both are standard artist fields), or follow the create with the standard edit call. Also verify the enum casing matches stored data ("Band" vs "band" — check a few real artist records) and adjust `ARTIST_TYPES` values to match.**
+- Verify: town autocomplete suggests + ✓ tick on pick; region chips write the canonical string; new artist lands in bndy with location, artistType, actType intact; no-key env still usable.
+
+### Addendum F — stale-draft fix (Jason repro 2026-08-07)
+Bug: entering the wizard from a venue page skipped straight to Review. Cause: sessionStorage resume-draft from an earlier half-finished run already held artist+date; the venue prefill completed the set. Fix: (1) a prefilled entry (`?venueId=`/`?artistId=`) that does NOT match the stored draft resets to a clean draft (only the anchor applies) — refresh mid-wizard still resumes because the anchor matches; (2) drafts expire after 6h (`savedAt` in storage). Verify: half-complete a run on /add, abandon, enter from a venue page → starts at WHO with venue locked; refresh mid-wizard → state kept; same flow from an artist page → starts at WHERE.
+
+### Addendum E — CTO ruling on SEC-04 vs public wizard (2026-08-07)
+Decisions (relayed to Jason, approved):
+1. **`/api/community/*` namespace APPROVED** as the single explicit unauthenticated mutation surface: `POST /api/community/artists/find-or-create`, `POST /api/community/venues/find-or-create`, `POST /api/community/events`. MUST alias the existing handlers (no logic duplication); check 25-route caps. `wizardApi.ts` is ALREADY updated to these paths — they are the contract. CORS on this namespace = dynamic allowlist incl. gigmap + live + localhost (CORS is plumbing, not security — understood and accepted).
+2. **Tags: `source: 'community_wizard'` + `needsReview: true` (camelCase)** — NOT 'public-wizard'/'needs_review'. Prod data + dedup ranking already use community_wizard; don't fork vocabulary.
+3. **Rate limits (WAF, per IP): mutations 5/min AND 50/day on the three community POSTs; Places proxy GETs 60/min** (autocomplete must not be throttled to death); blanket 100 req/5min WebACL stays as outer wall. Replaces the older B7 single-number rule.
+4. **No CAPTCHA day one.** Bot traps instead, frontend half ALREADY WIRED: the community event POST now carries `hp` (honeypot, always empty from the real wizard) and `startedAt` (wizard-mount epoch ms). Server-side: reject when `hp` is non-empty OR `Date.now() - startedAt < 3000` — reject SILENTLY (return a plausible 200-shaped response, don't teach the bot). **Cloudflare Turnstile (invisible) pre-approved as escalation** if the review queue shows real abuse — no further sign-off needed.
+5. **Public-before-review stands** (live + flagged, Jason's standing decision 1a).
+6. Old public routes (`/api/artists/community`, `/api/artists/find-or-create`, `/api/venues/find-or-create`, `/api/events/community`) — after the namespace ships, either remove from the template or leave behind requireAuth; do NOT leave a second unauth surface.
+
+### Addendum G — venue-type filtering on the Places proxy (Jason 2026-08-07)
+The old frontstage wizard restricted venue lookups to entertainment-ish places; the new proxy (`venues-lambda/handlers/places.js`) currently filters only `types: 'establishment'` (any business). Restore the constraint as **denylist + soft warn** — NOT an allowlist (bndy's real venues are social clubs / memorial halls / village halls / yacht clubs that Google types as bare `establishment`/`point_of_interest`; an allowlist would reject them):
+1. **Suggest**: autocomplete predictions carry a `types` array — post-filter OUT predictions whose types intersect a HARD_DENY list: `doctor, dentist, hospital, physiotherapist, pharmacy, drugstore, veterinary_care, car_dealer, car_rental, car_repair, car_wash, gas_station, bank, atm, accounting, insurance_agency, lawyer, real_estate_agency, supermarket, grocery_or_supermarket, convenience_store, hardware_store, home_goods_store, furniture_store, electronics_store, clothing_store, shoe_store, jewelry_store, laundry, moving_company, storage, plumber, electrician, locksmith, roofing_contractor, funeral_home, cemetery, courthouse, police, fire_station, embassy, post_office, airport, train_station, bus_station, transit_station, subway_station, taxi_stand, parking, travel_agency`. Keep the list as a module constant with a comment.
+2. **Details**: add `'types'` to the requested fields. If types intersect HARD_DENY → 404-style `{ error: 'not a venue' }` (belt + braces — a denied suggestion shouldn't reach details, but direct placeId calls exist). If types intersect a SOFT_WARN list (`school, primary_school, secondary_school, university, local_government_office`) → include `typeWarning: "<human label>"` (e.g. "a school") in the place payload. **Frontend already renders `typeWarning`** on the confirm card (StepVenue) — the field name is the contract.
+3. Do NOT warn/deny on `church`, `library`, `museum`, `gym`, `stadium`, community/point_of_interest types — all host gigs in the real estate.
+4. Verify: "smiths dental stoke" surfaces no dentist; a school search reaches the confirm card WITH the caution line; "New Hartley Memorial Hall"-style venues still come through clean.
+
+**UPDATE: 1–3 are ALREADY IMPLEMENTED by Claude in `places.js`** (HARD_DENY/SOFT_WARN constants + suggest prediction filter + details 404 on denied types + `typeWarning` in the payload; `'types'` added to the details fields). Sandbox down: NOT syntax-checked or run — `node -e "require('./handlers/places.js')"` + a live suggest/details smoke are your gate, then deploy venues-lambda and run the three verification searches above.
+
+### Addendum H — LIVE BUG (Jason repro 2026-08-07): new venue + new artist → event creation fails
+**Repro:** wizard with brand-new venue AND brand-new artist. Venue + artist records WERE created in bndy, but publish died on `POST /api/community/artists/find-or-create` → **422**, so the event step never ran. Known venue + known artist works fine.
+
+**Investigate in CloudWatch (artists-lambda) for that 422 — the answer is one of these:**
+1. **Is `dryRun` actually implemented (B3) on the community alias?** If the form's pre-check ("Looks good") did a REAL create, the artist exists by publish time, and the publish-time second call bounces. A bounce should be **409 with `existingArtistId`** (frontend maps that to matched and continues) — if the alias returns **422** for a duplicate/gate outcome, that's the bug: return the 409 + ids contract.
+2. Which 422 `code` was it (DATA_QUALITY / LOCATION_UNRESOLVABLE / other)? If LOCATION_UNRESOLVABLE fired on the SECOND call after a create succeeded on the first, the alias is validating in a different order than the original handler — align it.
+3. Confirm the create-then-error sequence in the logs: if the handler creates the artist and THEN errors (non-atomic), fix the order — validate fully before any write.
+
+**Frontend hardening ALREADY shipped by Claude (deploy with next push):** publish-time artist failure now self-heals — after a non-review error it re-checks via `dryRun`; if the artist exists it proceeds to the event instead of stranding the user. Error copy now includes the backend `code`. This masks the symptom for users; the backend contract still needs the real fix.
+
+**Acceptance:** brand-new venue + brand-new artist + publish in one run = event created, no 422 in the network tab; second identical run = "Already listed!".
+
+### Addendum I — town autocomplete root cause + form corrections (Jason repro 2026-08-07)
+1. **Town autocomplete was dead because `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is baked at BUILD time and was never added to the greenfield Amplify env** (old frontstage had it; rebuild never got it). No key → `usePlaces` silently does nothing → no console errors. **Fix shipped by Claude: towns now go through OUR Places proxy** — `places.js` suggest accepts `kind=town` (`types: '(cities)'`, denylist skipped, cache keyed per kind); `wizardApi.placesSuggest(q, "town")`; StepArtist no longer uses `usePlaces` at all. Deploy venues-lambda. **Side flag: the gigs-list LocationField still uses the client-side key and is therefore also silently dead in prod** — either add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to the Amplify env, or (better, later) port LocationField to the proxy too; log which you did.
+2. **Act types corrected to match godmode**: multi-select all-that-apply — Originals / Covers / Tribute act / Acoustic (`ACT_TYPES` now `{label, value}` singles; draft sends `actType: string[]`). **Verify stored vocabulary on real artist records** ("tribute"? "Tribute Act"? casing) and align the `value` strings.
+3. **Artist type now REQUIRED** (matches godmode's *): moved out of the accordion into the core form as a dropdown; submit blocked without it. Verify backend persists it on community create.
+4. **Desktop pixel-jump between steps fixed**: back-button slot always rendered (opacity-0 when unavailable) + global `scrollbar-gutter: stable` in skins.css. Verify no layout shift stepping 1→4 on desktop, and that stable gutter causes no visual regression on map/gigs/artists pages.
+5. Accordion renamed "Genres & style" (genres + they-play only) with live summary when collapsed.
+
+### Frontend verification (after B1–B3 deployed)
+1. `npx tsc --noEmit` clean — Claude could not run it; `wizardApi.ts` response parsing is defensive but align it with the real lambda responses you deploy (most likely drift point).
+2. Spec §8 acceptance: 3 entry points prefill + lock; refresh keeps state (sessionStorage `bndy-gig-wizard`); **Ant Hill test** (all 3 candidates with locations, same-region create impossible, cross-region `confirmNew` works); venue via cache + via Places confirm + garbage name → friendly dead-end; dupe gig → "Already listed!"; fresh gig live ≤60s with `needsReview:true`; 390px + desktop; 3 skins (print, bndy-dark, poole).
+3. Addendum checks: calendar on 3 skins; busy dots for Queen's Hotel; clash warnings fire for a known artist+date; default time updates hopping Fri→Sun with untouched time; `/list-a-gig` chromeless end-to-end; each "add another" path lands on the right step with anchor retained.
+4. Known deliberate cuts (don't "fix"): no map-pin venue picker in step 1; success share links /gigs (no per-event pages yet); genres hard-coded per B6.
+5. Commit backend + frontend separately, deploy lambdas (validate + verify-routes first), push bndy-app.
+
+---
+
 # STATUS LOG (agent: append entries here)
 
 | Date | Task | Status | Notes / evidence (hashes, counts, URLs) |

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Mic } from "lucide-react";
 import { useArtistImageMap, useUpcomingGigs } from "@/lib/hooks";
 import { todayISO, formatTime, addDaysISO } from "@/domain/dates";
@@ -47,13 +47,20 @@ export function VenueEvents({ venueId }: { venueId: string }) {
   }, [gigs]);
 
   // Track which months are expanded; default collapsed for months starting 90+ days out
-  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(() => {
-    const expanded = new Set<string>();
-    for (const m of byMonth) {
-      if (m.firstDate < collapse90) expanded.add(m.key);
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
+  // A1 fix: set expanded months AFTER gigs load, not on mount when byMonth is empty
+  useEffect(() => {
+    if (byMonth.length > 0 && !initialized) {
+      const expanded = new Set<string>();
+      for (const m of byMonth) {
+        if (m.firstDate < collapse90) expanded.add(m.key);
+      }
+      setExpandedMonths(expanded);
+      setInitialized(true);
     }
-    return expanded;
-  });
+  }, [byMonth, collapse90, initialized]);
   const toggleMonth = (key: string) => setExpandedMonths((prev) => {
     const next = new Set(prev);
     if (next.has(key)) next.delete(key); else next.add(key);

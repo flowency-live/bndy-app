@@ -42,7 +42,10 @@ export function useToggleFavourite() {
       toggleFavourite(type, id, favourite),
     onMutate: async ({ type, id, favourite }) => {
       await qc.cancelQueries({ queryKey: KEY });
-      const prev = qc.getQueryData<Favourites>(KEY) ?? EMPTY;
+      // A7 fix: only do optimistic update if we have actual cached data
+      // Rolling back to EMPTY when cache is undefined could wipe real favorites
+      const prev = qc.getQueryData<Favourites>(KEY);
+      if (!prev) return { prev: undefined };
       const field = type === "artist" ? "artistIds" : "venueIds";
       const next = favourite
         ? Array.from(new Set([...prev[field], id]))
@@ -59,4 +62,10 @@ export function useToggleFavourite() {
   });
 
   return mutation.mutate;
+}
+
+/** A7 fix: Clear favourites cache on sign-out to prevent next user seeing stale hearts */
+export function useClearFavouritesCache() {
+  const qc = useQueryClient();
+  return useCallback(() => qc.removeQueries({ queryKey: KEY }), [qc]);
 }

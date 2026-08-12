@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ArtistProfile } from "@/features/artists/ArtistProfile";
 import { fetchArtist, fetchArtistGigs, fetchArtistAvailability } from "@/lib/api";
-import { todayISO } from "@/domain/dates";
+import { todayISO, addDaysISO } from "@/domain/dates";
 
 export const revalidate = 300;
 
@@ -27,9 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ artistId:
 export default async function ArtistPage({ params }: { params: Promise<{ artistId: string }> }) {
   const { artistId } = await params;
   const today = todayISO();
-  const endDate = new Date(today);
-  endDate.setDate(endDate.getDate() + 90);
-  const end = endDate.toISOString().split('T')[0];
+  const end = addDaysISO(today, 90); // A9 fix: use helper to avoid UTC/local mixing
 
   const [artist, gigs, availability] = await Promise.all([
     fetchArtist(artistId).catch(() => null),

@@ -59,10 +59,10 @@ export function MapView() {
   const { data: venues = [] } = useVenues();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>("events");
-  // Sync mode from URL param on mount/change
+  // A5 fix: Sync mode from URL param bidirectionally (was only setting venues, not resetting to events)
   useEffect(() => {
     const m = searchParams.get("mode");
-    if (m === "venues") setMode("venues");
+    setMode(m === "venues" ? "venues" : "events");
   }, [searchParams]);
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
   // Favourites filter (backlog feature 3): pins narrow to favourite artists + venues.
@@ -76,6 +76,7 @@ export function MapView() {
   const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [loadingGig, setLoadingGig] = useState(false);
+  const gigRequestId = useRef(0); // A4 fix: track latest request to ignore stale responses
   const [searchQuery, setSearchQuery] = useState("");
   const modeRef = useRef(mode); modeRef.current = mode;
   // When flag off: use full gigs. When flag on: gigById only used for venue sheet fallback.
@@ -247,15 +248,20 @@ export function MapView() {
       const id = (f.properties as { id: string }).id;
       // Whole same-venue stack (soonest first) via batch endpoint — order is preserved server-side
       const ids = stackForRef.current(id);
+      // A4 fix: use request ID to ignore stale responses from race conditions
+      const thisRequest = ++gigRequestId.current;
       setLoadingGig(true);
       fetchEventsBatch(ids.length ? ids : [id])
         .then((gigs) => {
+          if (thisRequest !== gigRequestId.current) return; // stale response, ignore
           if (!gigs.length) return;
           setSelectedStack(gigs.length > 1 ? gigs : null);
           setSelected(gigs[0]);
         })
         .catch(() => {})
-        .finally(() => setLoadingGig(false));
+        .finally(() => {
+          if (thisRequest === gigRequestId.current) setLoadingGig(false);
+        });
     };
     map.on("click", "g-hit", gigClick); map.on("click", "g-core", gigClick);
     const venClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const v = venueByIdRef.current[(f.properties as { id: string }).id]; if (v) { map.easeTo({ center: [v.location.lng, v.location.lat], duration: 500, offset: [0, -120] }); setSelectedVenue(v); } } };

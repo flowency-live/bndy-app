@@ -116,6 +116,19 @@ export function EditVenueSheet({ venue, open, onClose }: { venue: Venue; open: b
     standardTicketUrl: venue.standardTicketUrl ?? "",
     standardTicketInformation: venue.standardTicketInformation ?? "",
   });
+  // A8 fix: reset form when sheet opens or venue changes to prevent stale data
+  useEffect(() => {
+    if (open) {
+      setF({
+        website: venue.website ?? "",
+        facebookUrl: socialOf(venue, "facebook"),
+        instagramUrl: socialOf(venue, "instagram"),
+        standardTicketed: venue.standardTicketed ?? false,
+        standardTicketUrl: venue.standardTicketUrl ?? "",
+        standardTicketInformation: venue.standardTicketInformation ?? "",
+      });
+    }
+  }, [open, venue]);
   const { busy, error, run } = useSubmit("venue", venue.id, onClose);
 
   return (
@@ -173,6 +186,26 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
   const [preds, setPreds] = useState<PlaceSuggestion[]>([]);
   const deb = useRef<number | undefined>(undefined);
   const { busy, error, run } = useSubmit("artist", artist.id, onClose);
+
+  // A8 fix: reset form when sheet opens or artist changes to prevent stale data
+  useEffect(() => {
+    if (open) {
+      const isReg = (REGIONS as readonly string[]).includes(artist.location ?? "");
+      setF({
+        bio: artist.bio ?? "",
+        genres: artist.genres ?? [],
+        facebookUrl: socialOf(artist, "facebook"),
+        instagramUrl: socialOf(artist, "instagram"),
+        websiteUrl: socialOf(artist, "website"),
+      });
+      setLocMode(isReg ? "region" : "town");
+      setRegion(isReg ? artist.location ?? "" : "");
+      setTownQ(isReg ? "" : artist.location ?? "");
+      setTownPicked(isReg ? null : artist.location ?? null);
+      setCoords(null);
+      setPreds([]);
+    }
+  }, [open, artist]);
 
   // Town look-up via bndy's own Places proxy — same source as the wizard.
   useEffect(() => {
@@ -301,6 +334,20 @@ export function EditGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean; 
     ticketUrl: gig.ticketUrl ?? "",
     isOpenMic: gig.isOpenMic ?? false,
   });
+  // A8 fix: reset form when sheet opens or gig changes to prevent stale data
+  useEffect(() => {
+    if (open) {
+      setF({
+        title: gig.title ?? "",
+        date: gig.date,
+        startTime: gig.startTime ?? "",
+        endTime: gig.endTime ?? "",
+        ticketed: gig.ticketed ?? false,
+        ticketUrl: gig.ticketUrl ?? "",
+        isOpenMic: gig.isOpenMic ?? false,
+      });
+    }
+  }, [open, gig]);
   const { busy, error, run } = useSubmit("event", gig.id, onClose);
 
   return (

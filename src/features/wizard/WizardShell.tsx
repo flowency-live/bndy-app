@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Loader2, PartyPopper, RotateCcw, Share2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useArtists, useVenues } from "@/lib/hooks";
 import { formatTime } from "@/domain/dates";
 import { cn } from "@/lib/cn";
@@ -25,6 +26,7 @@ export function WizardShell() {
   const prefillVenueId = params.get("venueId");
   const { data: artists = [] } = useArtists();
   const { data: venues = [] } = useVenues();
+  const queryClient = useQueryClient();
 
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [step, setStep] = useState<StepKey>("venue");
@@ -168,7 +170,12 @@ export function WizardShell() {
         else { lastError = res.error; break; }
       }
       setPhase("idle");
-      if (ok > 0) { setOutcome({ kind: "published", eventId: firstEventId, count: ok, dups }); clearDraft(); }
+      if (ok > 0) {
+        // A2 fix: invalidate gigs cache so the new event appears immediately
+        queryClient.invalidateQueries({ queryKey: ["gigs"] });
+        setOutcome({ kind: "published", eventId: firstEventId, count: ok, dups });
+        clearDraft();
+      }
       else if (dups > 0) { setOutcome({ kind: "duplicate" }); clearDraft(); }
       else setError(lastError ?? "Publishing failed. Nothing was lost, try again.");
     } catch {

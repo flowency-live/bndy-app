@@ -38,8 +38,10 @@ function applySkinAttrs(s: AppSkinId) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [appSkin, setAppSkinState] = useState<AppSkinId>(DEFAULT_SKIN);
   const [skin, setSkinState] = useState<SkinId>("pulse");
+  const [hydrated, setHydrated] = useState(false);
 
-  // hydrate from storage (layout's no-flash script already set the attributes pre-paint)
+  // A3 fix: hydrate from storage FIRST, then set hydrated flag
+  // The layout's no-flash script already set the attributes pre-paint
   useEffect(() => {
     try {
       const a = localStorage.getItem(APP_SKIN_KEY);
@@ -47,13 +49,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const s = localStorage.getItem(MAP_SKIN_KEY) as SkinId | null;
       if (s === "pulse" || s === "aurora" || s === "neon-dot") setSkinState(s);
     } catch { /* ignore */ }
+    setHydrated(true);
   }, []);
 
-  // reflect app skin onto <html> + persist
+  // A3 fix: only apply skin attrs AFTER hydration to prevent flash
   useEffect(() => {
+    if (!hydrated) return; // skip until localStorage read completes
     applySkinAttrs(appSkin);
     try { localStorage.setItem(APP_SKIN_KEY, appSkin); } catch { /* ignore */ }
-  }, [appSkin]);
+  }, [appSkin, hydrated]);
 
   const setAppSkin = useCallback((s: AppSkinId) => setAppSkinState(s), []);
   const mode: ThemeMode = APP_SKINS[appSkin].mode === "dark" ? "dark" : "light";

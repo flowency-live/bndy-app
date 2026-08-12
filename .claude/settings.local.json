@@ -21,7 +21,9 @@
       "Bash(aws dynamodb get-item:*)",
       "Bash(npx tsc:*)",
       "Bash(GIT_CURL_VERBOSE=1 git push:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
