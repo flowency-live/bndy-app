@@ -17,29 +17,43 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
     <button
       onClick={onClick}
       className={cn(
-        "group relative grid w-full grid-cols-[52px_64px_minmax(0,1fr)_18px] items-center gap-3 border-b border-line px-2 py-3 text-left transition-[background-color,transform] duration-150 last:border-b-0 hover:bg-card2 active:scale-[.995] sm:grid-cols-[64px_64px_minmax(0,1fr)_minmax(170px,.8fr)_72px_20px] sm:gap-4 sm:px-4 sm:py-3.5",
-        tonight && !gig.cancelled && "before:absolute before:bottom-3 before:left-0 before:top-3 before:w-[3px] before:rounded-full before:bg-acc",
+        "group relative grid w-full grid-cols-[48px_56px_minmax(0,1fr)_18px] items-center gap-3 border-b border-[color-mix(in_srgb,var(--line)_55%,transparent)] px-2 py-3 text-left transition-[background-color,transform] duration-150 last:border-b-0 hover:bg-card2 active:scale-[.997] lg:grid-cols-[68px_22px_72px_minmax(200px,1fr)_minmax(180px,.68fr)_72px_22px] lg:gap-4 lg:px-0 lg:py-3.5",
+        tonight && !gig.cancelled && "before:absolute before:bottom-3 before:left-0 before:top-3 before:w-[3px] before:rounded-full before:bg-acc lg:before:hidden",
         gig.cancelled && "opacity-50 saturate-50",
       )}
     >
-      <div className="text-right">
-        <div className={cn("tnum text-[15px] font-black uppercase tracking-tight sm:text-[16px]", tonight && !gig.cancelled ? "text-[var(--acc)]" : "text-txt")}>{time}</div>
-        {tonight && !gig.cancelled && <div className="mt-0.5 text-[9px] font-extrabold uppercase tracking-[1.2px] text-[var(--acc)]">Tonight</div>}
+      <div className="text-right lg:pr-1">
+        <div className={cn("tnum text-[14px] font-black uppercase tracking-tight lg:text-[17px]", tonight && !gig.cancelled ? "text-[var(--acc)]" : "text-txt")}>{time}</div>
+        {tonight && !gig.cancelled && <div className="mt-0.5 text-[8.5px] font-extrabold uppercase tracking-[1.1px] text-[var(--acc)]">Tonight</div>}
       </div>
 
-      <div className="transition-transform duration-200 ease-smooth group-hover:scale-[1.035]">
+      <div className="relative hidden h-full items-center justify-center lg:flex" aria-hidden>
+        <span className="absolute inset-y-[-14px] left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_srgb,var(--line)_55%,transparent)] group-first:top-1/2 group-last:bottom-1/2" />
+        <span className={cn(
+          "relative z-[1] h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-dim2 shadow-[0_0_0_1px_color-mix(in_srgb,var(--line)_65%,transparent)] transition-transform duration-150 group-hover:scale-125",
+          tonight && !gig.cancelled && "bg-acc shadow-[0_0_0_1px_var(--acc)]",
+        )} />
+      </div>
+
+      <div className="transition-transform duration-200 ease-smooth group-hover:scale-[1.045]">
         {gig.isOpenMic && !imageUrl ? (
-          <MicTile size={64} radius={15} />
+          <>
+            <div className="lg:hidden"><MicTile size={56} radius={13} /></div>
+            <div className="hidden lg:block"><MicTile size={72} radius={16} /></div>
+          </>
         ) : (
-          <Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={64} radius={15} />
+          <>
+            <div className="lg:hidden"><Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={56} radius={13} /></div>
+            <div className="hidden lg:block"><Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={72} radius={16} /></div>
+          </>
         )}
       </div>
 
-      <div className="min-w-0">
-        <div className="truncate text-[15px] font-extrabold tracking-tight sm:text-[16px]">{gigDisplayName(gig)}</div>
+      <div className="min-w-0 lg:pl-1">
+        <div className="truncate text-[15px] font-extrabold tracking-tight transition-transform duration-150 group-hover:translate-x-0.5 lg:text-[18px]">{gigDisplayName(gig)}</div>
 
-        <div className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-[12px] font-semibold text-dim sm:hidden">
-          <MapPin size={12} className="shrink-0 opacity-70" />
+        <div className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-[11.5px] font-semibold text-dim lg:hidden">
+          <MapPin size={12} className="shrink-0 opacity-65" />
           <span className="truncate">{gig.venueName}{gig.venueCity ? ` · ${gig.venueCity}` : ""}</span>
           {hasDistance && <span className="shrink-0 text-dim2">· {formatDistance(distance)}</span>}
         </div>
@@ -53,19 +67,19 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
         )}
       </div>
 
-      <div className="hidden min-w-0 items-start gap-2 text-[12.5px] font-semibold text-dim sm:flex">
-        <MapPin size={14} className="mt-0.5 shrink-0 opacity-60" />
+      <div className="hidden min-w-0 items-start gap-2 text-[13px] font-semibold text-dim lg:flex">
+        <MapPin size={14} className="mt-0.5 shrink-0 opacity-55" />
         <div className="min-w-0">
-          <div className="truncate text-txt">{gig.venueName}</div>
+          <div className="truncate font-bold text-txt">{gig.venueName}</div>
           {gig.venueCity && <div className="mt-0.5 truncate text-[11.5px] text-dim">{gig.venueCity}</div>}
         </div>
       </div>
 
-      <div className="hidden text-right sm:block">
-        {hasDistance && <span className="tnum text-[12px] font-bold text-dim">{formatDistance(distance)}</span>}
+      <div className="hidden text-right lg:block">
+        {hasDistance && <span className="tnum text-[12px] font-extrabold text-dim">{formatDistance(distance)}</span>}
       </div>
 
-      <ChevronRight size={18} className="shrink-0 text-dim2 transition-[transform,opacity] duration-150 group-hover:translate-x-0.5 sm:opacity-45 sm:group-hover:opacity-100" />
+      <ChevronRight size={18} className="shrink-0 text-dim2 transition-[transform,opacity] duration-150 group-hover:translate-x-1 lg:opacity-35 lg:group-hover:opacity-100" />
     </button>
   );
 });
