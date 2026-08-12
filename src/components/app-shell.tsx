@@ -66,21 +66,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
       </div>
       {/* ---- desktop sidebar ---- */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-line glass px-4 py-5 lg:flex">
-        <Link href="/" className="mb-6 px-2 text-2xl font-black tracking-tight">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
+        <Link href="/" className="mb-6 shrink-0 px-2 text-2xl font-black tracking-tight">
           <span className="text-[var(--acc)] brand-glow">bndy</span>
           <span className="text-txt">.live</span>
         </Link>
-        <div className="mb-6">
+        <div className="mb-6 shrink-0">
           <UserButton variant="sidebar" />
         </div>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {NAV.map(({ key, label, href, icon: Icon }) => (
             <Link
               key={key}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-bold transition-colors",
+                "flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-bold transition-colors",
                 active === key ? "bg-white/10 text-txt" : "text-dim hover:text-txt hover:bg-white/5",
               )}
             >
@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           href="/help"
           className={cn(
-            "mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold transition-colors",
+            "mt-2 flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold transition-colors",
             path.startsWith("/help") ? "bg-white/10 text-txt" : "text-dim hover:bg-white/5 hover:text-txt",
           )}
         >
