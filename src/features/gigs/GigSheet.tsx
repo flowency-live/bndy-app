@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, MapPin, Mic, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
+import { headlineActs, lineupOf } from "@/domain/lineup";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { AddToCalendarButton } from "./AddToCalendarButton";
@@ -101,7 +102,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   return (
     <Sheet open={!!gig} onClose={onClose}>
       {gig && !multi && (
-        <Body gig={liveOf(gig)} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
+        <Body gig={liveOf(gig)} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={headlineActs(gig)[0] ? imgMap.get(headlineActs(gig)[0].id) : undefined} onClose={onClose} />
       )}
       {gig && multi && (
         <>
@@ -129,7 +130,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
                     className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
                     style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
                   >
-                    <Body gig={liveOf(g)} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
+                    <Body gig={liveOf(g)} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={headlineActs(g)[0] ? imgMap.get(headlineActs(g)[0].id) : undefined} onClose={onClose} />
                   </div>
                 );
               })}
@@ -202,7 +203,7 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
+            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(headlineActs(gig)[0]?.id || gig.venueId) }}>
               <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
             </div>
           )}
@@ -244,6 +245,22 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         </span>
       </div>
 
+      {/* Feature 12: the full bill. Headline acts first, then support. Only shown
+          when there is more than one act, so a normal gig is unchanged. */}
+      {lineupOf(gig).length > 1 && (
+        <div className="mt-3 space-y-1">
+          {[...lineupOf(gig)].sort((a, b) => Number(b.headline) - Number(a.headline)).map((a) => (
+            <Link key={a.id} href={`/artists/${a.id}`} onClick={onClose}
+              className="flex items-center gap-2.5 rounded-xl border border-line bg-card px-3 py-2 transition-colors hover:border-line-hi">
+              <span className="min-w-0 flex-1 truncate text-[14px] font-extrabold">{a.name}</span>
+              {!a.headline && (
+                <span className="shrink-0 rounded-md bg-card2 px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wide text-dim">Support</span>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="mb-4 mt-3.5 flex flex-wrap gap-2">
         <Slab label={tonight ? "Tonight" : isToday ? "Today" : dow} value={label} hot={tonight} />
         {time && <Slab label={time.label} value={time.value} />}
@@ -261,8 +278,8 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         <Navigation size={16} /> Directions
       </a>
       <div className="flex gap-2.5">
-        {gig.artistId && (
-          <Link href={`/artists/${gig.artistId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
+        {lineupOf(gig).length === 1 && headlineActs(gig)[0] && (
+          <Link href={`/artists/${headlineActs(gig)[0].id}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
             <User size={16} /> Artist
           </Link>
         )}

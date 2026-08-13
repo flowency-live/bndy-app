@@ -37,6 +37,14 @@ export interface Gig {
   isOpenMic?: boolean;
   /** Feature 7: cancelled gigs stay visible as a ghosted row with a stamp. */
   cancelled?: boolean;
+  /** Feature 12 — the bill, in display order. `artistId` is always artistIds[0].
+   *  Absent on a single-act gig and on every gig created before feature 12. */
+  artistIds?: string[];
+  /** Names parallel to `artistIds`. The backend denormalises these. */
+  artistNames?: string[];
+  /** Which acts are BILLED as headline. Every other act on the bill is support.
+   *  Absent means [artistId] — so a legacy gig reads as one headline act. */
+  headlineArtistIds?: string[];
 }
 
 /** A performing act. An artist plays many gigs; act qualifiers live on the gig title. */

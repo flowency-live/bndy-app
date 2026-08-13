@@ -1,27 +1,36 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, MapPin, Mic, Music, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, MapPin, Mic, Music, Plus, Search, X } from "lucide-react";
 import { useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
 import { Avatar } from "@/components/ui/Avatar";
 import { distanceMiles } from "@/domain/geo";
 import { cn } from "@/lib/cn";
-import { ACT_TYPES, ARTIST_TYPES, GENRES, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
+import { ACT_TYPES, ARTIST_TYPES, GENRES, MAX_ACTS, NEW_ACT_ID, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
  *  acts are distinguishable by place, and same-region duplicates are impossible
  *  (not offered here, rejected server-side regardless). When the venue is already
  *  chosen, same-named acts nearest the venue rank first (gig-footprint proximity). */
-export function StepArtist({ venueId, venueCity, initialOpenMic, onPickExisting, onPickNew, onPickOpenMic }: {
+export function StepArtist({ venueId, venueCity, initialOpenMic, bill, headlineIds, initialMultiAct, onPickExisting, onPickNew, onPickOpenMic, onBillChange, onBillDone }: {
   venueId?: string;
   venueCity?: string;
   /** resume state: the draft is already an open mic */
   initialOpenMic?: boolean;
+  /** feature 12: the bill so far, act 1 first. Empty on a fresh gig. */
+  bill?: { id: string; name: string }[];
+  headlineIds?: string[];
+  initialMultiAct?: boolean;
+
   onPickExisting: (a: { id: string; name: string }) => void;
   onPickNew: (draft: NewArtistDraft) => void;
   /** item 13: open mic night — no headline act; optional host already on bndy */
   onPickOpenMic: (host?: { id: string; name: string }) => void;
+  /** feature 12: replace the whole bill and the headline set */
+  onBillChange?: (acts: { id: string; name: string }[], headlineIds: string[], multiAct: boolean) => void;
+  /** feature 12: leave the step once a bill is assembled */
+  onBillDone?: () => void;
 }) {
   const { data: artists = [] } = useArtists();
   const { data: gigs = [] } = useUpcomingGigs();
@@ -53,13 +62,38 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, onPickExisting,
   // item 13, Jason fix 2026-08-11: open mic is a VISIBLE TOGGLE on this step,
   // not a hidden sub-page. With it on, picking an act means "this act hosts it".
   const [openMic, setOpenMic] = useState(!!initialOpenMic);
+  // Feature 12. OFF by default and that is the whole point: with the box clear,
+  // pick() still auto-advances and a single-act gig is byte-for-byte unchanged.
+  const [multiAct, setMultiAct] = useState(!!initialMultiAct || (bill?.length ?? 0) > 1);
+  const acts = bill ?? [];
+  const heads = headlineIds?.length ? headlineIds : acts.slice(0, 1).map((a) => a.id);
+  const full = acts.length >= MAX_ACTS;
   const ranked = useMemo(() => rankArtists(q, artists, 8, { venueCity, distById }), [q, artists, venueCity, distById]);
 
   if (adding) {
     return <NewArtistForm initialName={q.trim()} onBack={() => setAdding(false)} onPickExisting={onPickExisting} onDone={onPickNew} />;
   }
 
-  const pick = (a: { id: string; name: string }) => (openMic ? onPickOpenMic(a) : onPickExisting(a));
+  const pick = (a: { id: string; name: string }) => {
+    if (openMic) return onPickOpenMic(a);
+    if (!multiAct) return onPickExisting(a);          // unchanged fast path
+    if (acts.some((x) => x.id === a.id) || full) return;
+    // Act 1 defaults to headline. Acts 2 to 4 default to support.
+    const next = [...acts, a];
+    onBillChange?.(next, next.length === 1 ? [a.id] : heads, true);
+    setQ("");
+  };
+  const removeAct = (id: string) => {
+    const next = acts.filter((a) => a.id !== id);
+    const nextHeads = heads.filter((h) => h !== id);
+    // Removing act 1 promotes act 2, and a bill always keeps one headliner.
+    onBillChange?.(next, nextHeads.length ? nextHeads : next.slice(0, 1).map((a) => a.id), true);
+  };
+  const toggleHeadline = (id: string) => {
+    const on = heads.includes(id);
+    const next = on ? heads.filter((h) => h !== id) : [...heads, id];
+    onBillChange?.(acts, next.length ? next : [id], true);   // never leave zero headliners
+  };
 
   return (
     <div>
@@ -67,7 +101,7 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, onPickExisting,
 
       {/* item 13: explicit toggle — the state is always visible */}
       <button
-        onClick={() => setOpenMic((v) => !v)}
+        onClick={() => setOpenMic((v) => { if (!v) setMultiAct(false); return !v; })}
         aria-pressed={openMic}
         title={openMic ? "Switch back to a normal gig" : "List this as an open mic night"}
         className={cn(
@@ -85,21 +119,68 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, onPickExisting,
         </span>
       </button>
 
+      {/* Feature 12. Deliberately smaller than the open mic toggle: that toggle
+          changes what the gig IS, this one only changes how the step behaves. */}
+      {!openMic && (
+        <button
+          onClick={() => { const v = !multiAct; setMultiAct(v); onBillChange?.(v ? acts : acts.slice(0, 1), acts.slice(0, v ? undefined : 1).map((a) => a.id), v); }}
+          aria-pressed={multiAct}
+          title="Add more than one act to this gig"
+          className="mt-2.5 flex items-center gap-2.5 text-left text-[13px] font-bold text-dim transition-colors hover:text-txt"
+        >
+          <span className={cn("flex h-4 w-4 shrink-0 items-center justify-center rounded border", multiAct ? "border-transparent bg-acc text-on-acc" : "border-line-hi")}>
+            {multiAct && <Check size={10} strokeWidth={3.5} />}
+          </span>
+          Several acts on this bill
+        </button>
+      )}
+
+      {/* the bill so far */}
+      {!openMic && acts.length > 0 && (multiAct || acts.length > 1) && (
+        <div className="mt-3 space-y-1.5">
+          {acts.map((a) => (
+            <div key={a.id} className="flex items-center gap-2.5 rounded-xl border border-line bg-card px-3 py-2">
+              <Avatar id={a.id} name={a.name} src={artists.find((x) => x.id === a.id)?.profileImageUrl ?? undefined} size={30} radius={9} />
+              <span className="min-w-0 flex-1 truncate text-[14px] font-extrabold">
+                {a.name}
+                {a.id === NEW_ACT_ID && (
+                  <span className="ml-1.5 rounded bg-card2 px-1 py-0.5 align-middle text-[9px] font-extrabold uppercase tracking-wide text-dim2">New</span>
+                )}
+              </span>
+              <button onClick={() => toggleHeadline(a.id)} aria-pressed={heads.includes(a.id)}
+                title={heads.includes(a.id) ? "Billed as headline. Tap to make it support." : "Billed as support. Tap to make it headline."}
+                className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wide transition-colors",
+                  heads.includes(a.id) ? "bg-acc/20 text-[var(--acc)]" : "bg-card2 text-dim hover:text-txt")}>
+                {heads.includes(a.id) ? "Headline" : "Support"}
+              </button>
+              <button onClick={() => removeAct(a.id)} aria-label={`Remove ${a.name}`} title={`Remove ${a.name}`}
+                className="shrink-0 text-dim2 transition-colors hover:text-txt">
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {full ? (
+        <p className="mt-3 text-[12.5px] font-semibold text-dim2">4 acts is the limit. A bigger bill is a festival.</p>
+      ) : (
       <div className="relative mt-3">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder={openMic ? "Host act (optional)…" : "Artist or band name…"}
+          placeholder={openMic ? "Host act (optional)…" : multiAct && acts.length ? "Add another act…" : "Artist or band name…"}
           aria-label={openMic ? "Search for the host act" : "Search for an artist"}
           autoFocus
           className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
         />
       </div>
+      )}
 
       {ranked.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          {ranked.map(({ artist: a }) => (
+          {ranked.filter(({ artist: a }) => !acts.some((x) => x.id === a.id)).map(({ artist: a }) => (
             <button key={a.id} onClick={() => pick({ id: a.id, name: a.name })}
               className="flex w-full items-center gap-3 rounded-xl border border-line bg-card px-3.5 py-2.5 text-left transition-colors hover:border-line-hi">
               <Avatar id={a.id} name={a.name} src={a.profileImageUrl ?? undefined} size={38} radius={10} />
@@ -127,6 +208,19 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, onPickExisting,
             className="bndy-btn mt-4 flex w-full items-center justify-center gap-2 py-3.5 text-[14px]">
             <Mic size={16} /> Continue{q.trim() ? " without a host" : ", no host"}
           </button>
+        </>
+      ) : multiAct && acts.length > 0 ? (
+        <>
+          {/* A new act must be act 1, so the location prompt and the duplicate
+              checks run. Deliberate: no "add a new act" from bill mode. */}
+          {q.trim().length >= 2 && ranked.length === 0 && (
+            <p className="mt-3 text-[12.5px] font-semibold text-dim2">Not on bndy yet. Add the gig, then a curator can add this act to the bill.</p>
+          )}
+          {acts.length > 0 && (
+            <button onClick={() => onBillDone?.()} className="bndy-btn mt-4 flex w-full items-center justify-center gap-2 py-3.5 text-[14px]">
+              Next
+            </button>
+          )}
         </>
       ) : (
         q.trim().length >= 2 && (

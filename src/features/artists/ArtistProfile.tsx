@@ -106,13 +106,13 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
         {artist?.publishAvailability ? (
           <>
             {activeTab === 'events' ? (
-              <ArtistEvents gigs={gigs} />
+              <ArtistEvents gigs={gigs} artistId={id} />
             ) : (
               <ArtistAvailability artist={artist} availability={availability} />
             )}
           </>
         ) : (
-          <ArtistEvents gigs={gigs} />
+          <ArtistEvents gigs={gigs} artistId={id} />
         )}
       </div>
     </div>

@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { formatTime } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
 import { gigDisplayName } from "@/domain/gigName";
+import { headlineActs, supportChipLabel } from "@/domain/lineup";
 import { MicTile } from "@/features/shared/MicTile";
 import { cn } from "@/lib/cn";
 import { TicketStub } from "@/components/TicketStub";
@@ -12,6 +13,10 @@ import type { Gig } from "@/domain/types";
 export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight, onClick }: { gig: Gig; imageUrl?: string; distance?: number; tonight: boolean; onClick: () => void }) {
   const hasDistance = distance !== undefined && isFinite(distance);
   const time = gig.startTime ? formatTime(gig.startTime) : "TBC";
+  // Feature 12: the card image belongs to the first HEADLINE act, which is not
+  // always artistId — artistId is act 1 in display order, nothing more.
+  const lead = headlineActs(gig)[0];
+  const support = supportChipLabel(gig);
 
   return (
     <button
@@ -43,8 +48,8 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
           </>
         ) : (
           <>
-            <div className="lg:hidden"><Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={56} radius={13} /></div>
-            <div className="hidden lg:block"><Avatar id={gig.artistId || gig.venueId} name={gig.artistName || gig.venueName} src={imageUrl} size={72} radius={16} /></div>
+            <div className="lg:hidden"><Avatar id={lead?.id || gig.venueId} name={lead?.name || gig.venueName} src={imageUrl} size={56} radius={13} /></div>
+            <div className="hidden lg:block"><Avatar id={lead?.id || gig.venueId} name={lead?.name || gig.venueName} src={imageUrl} size={72} radius={16} /></div>
           </>
         )}
       </div>
@@ -58,10 +63,12 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
           {hasDistance && <span className="shrink-0 text-dim2">· {formatDistance(distance)}</span>}
         </div>
 
-        {(gig.cancelled || gig.isOpenMic || gig.ticketed) && (
+        {(gig.cancelled || gig.isOpenMic || gig.ticketed || support) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             {gig.cancelled && <Status tone="cancelled">CANCELLED</Status>}
             {gig.isOpenMic && <Status tone="mic"><Mic size={10} strokeWidth={2.75} /> OPEN MIC</Status>}
+            {/* feature 12: support acts are a count, never part of the name */}
+            {support && <Status tone="bill">{support}</Status>}
             {gig.ticketed && <TicketStub onCard price={gig.ticketing?.price} />}
           </div>
         )}
@@ -87,6 +94,7 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
 const TONE: Record<string, string> = {
   cancelled: "bg-red-500/20 text-red-400 uppercase tracking-wide",
   mic: "bg-[color-mix(in_srgb,var(--acc2)_18%,transparent)] text-[var(--acc2)] uppercase tracking-wide",
+  bill: "bg-card2 text-dim",
 };
 
 function Status({ tone, children }: { tone: keyof typeof TONE; children: React.ReactNode }) {

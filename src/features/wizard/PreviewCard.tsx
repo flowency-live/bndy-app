@@ -6,7 +6,7 @@ import { useArtistImageMap } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, DOW, MON } from "@/domain/dates";
 import { cn } from "@/lib/cn";
-import type { Draft } from "./lib";
+import { draftActs, type Draft } from "./lib";
 function dateParts(iso: string): { dow: string; label: string } {
   const [y, m, d] = iso.split("-").map(Number);
   return { dow: DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()], label: `${d} ${MON[m - 1]}` };
@@ -25,6 +25,11 @@ function Slab({ label, value }: { label: string; value: string }) {
  *  Empty slots render as ghost placeholders so users see what's still to come. */
 export function PreviewCard({ draft, compact }: { draft: Draft; compact?: boolean }) {
   const imgMap = useArtistImageMap();
+  // Feature 12: the hero belongs to the first HEADLINE act, and the support acts
+  // read as a quiet line under the title. They never enter the title itself.
+  const acts = draftActs(draft);
+  const heads = draft.headlineIds?.length ? draft.headlineIds : acts.slice(0, 1).map((a) => a.id);
+  const support = acts.filter((a) => !heads.includes(a.id));
   const artistName = draft.artistName ?? draft.newArtist?.name;
   const src = draft.artistId ? imgMap.get(draft.artistId) : undefined;
   const seed = draft.artistId ?? artistName ?? draft.venueId ?? "bndy";
@@ -54,6 +59,11 @@ export function PreviewCard({ draft, compact }: { draft: Draft; compact?: boolea
         <div className={cn("text-[17px] font-black leading-tight tracking-tight", !artistName && !draft.isOpenMic && "text-dim2")}>
           {draft.title || artistName || "Who's playing?"}
         </div>
+        {support.length > 0 && (
+          <div className="mt-1 truncate text-[12.5px] font-bold text-dim2">
+            with {support.map((a) => a.name).join(", ")}
+          </div>
+        )}
         <div className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-dim">
           <MapPin size={12} className="shrink-0 opacity-70" />
           {draft.venueName ? (

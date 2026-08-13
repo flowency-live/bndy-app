@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import { TicketStub } from "@/components/TicketStub";
 import { gigDisplayName } from "@/domain/gigName";
+import { headlineActs, supportChipLabel } from "@/domain/lineup";
 import { MicTile } from "@/features/shared/MicTile";
 import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
@@ -112,6 +113,10 @@ export function VenueEvents({ venueId }: { venueId: string }) {
 function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap: Map<string, string>; onClick: () => void }) {
   const [, m, d] = g.date.split("-").map(Number);
   const dow = new Date(Date.UTC(Number(g.date.slice(0, 4)), m - 1, d)).getUTCDay();
+  // Feature 12: the row image belongs to the first HEADLINE act, not to artistId.
+  const head = headlineActs(g)[0];
+  const lead = head ? { id: head.id, src: imgMap.get(head.id) } : undefined;
+  const support = supportChipLabel(g);
   return (
     <button onClick={onClick} className={cn("group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]", g.cancelled && "opacity-50 saturate-50")}>
       <div className="w-12 shrink-0 leading-none">
@@ -119,10 +124,10 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
         <div className="my-0.5 text-[22px] font-black">{d}</div>
         <div className="text-[10px] font-extrabold uppercase text-dim">{MON[m - 1]}</div>
       </div>
-      {g.isOpenMic && !(g.artistId && imgMap.get(g.artistId)) ? (
+      {g.isOpenMic && !lead?.src ? (
         <MicTile size={40} radius={12} />
       ) : (
-        <Avatar id={g.artistId || g.id} name={gigDisplayName(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} size={40} radius={12} />
+        <Avatar id={lead?.id || g.id} name={gigDisplayName(g)} src={lead?.src} size={40} radius={12} />
       )}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -133,6 +138,7 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
               <Mic size={9} strokeWidth={2.75} /> Open mic
             </span>
           )}
+          {support && <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-dim">{support}</span>}
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>

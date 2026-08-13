@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, ChevronDown, Repeat } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Info, Repeat } from "lucide-react";
 import { useUpcomingGigs } from "@/lib/hooks";
 import { todayISO, addDaysISO } from "@/domain/dates";
 import { describeRepeat, maxUntilIso, seriesDates, type RepeatPattern } from "@/domain/recurrence";
@@ -133,22 +133,39 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
     return s;
   }, [gigs, draft.venueId]);
 
-  /** proactive conflict warnings from the cached gig list (server gate still has final say) */
+  /** Proactive notes from the cached gig list. The server gate still has final say.
+   *
+   *  Three tones, and the difference matters:
+   *   block — the server gate WILL bounce this. Same act, same venue, same date.
+   *   warn  — probably a mistake. Same act, same date, a different venue.
+   *   info  — allowed and normal. Another act at the same venue that night.
+   *
+   *  The info case used to render as a warning with a caution triangle. It reads
+   *  as a refusal, but two gigs at one venue on one night have always been legal:
+   *  the gate keys on (venue | artist | date), one key per act. Feature 12. */
   const clashes = useMemo(() => {
     if (!date) return [];
     const artistName = draft.artistName ?? draft.newArtist?.name ?? "This artist";
-    const out: { hard: boolean; text: string }[] = [];
+    const out: { tone: "block" | "warn" | "info"; text: string }[] = [];
     if (draft.artistId) {
-      const c = gigs.find((g) => g.artistId === draft.artistId && g.date === date);
+      // Match the whole bill, not just the headliner. An act listed as SUPPORT on
+      // an existing gig at this venue that night is still a gate bounce.
+      const onBill = (g: (typeof gigs)[number]) =>
+        g.artistId === draft.artistId || !!g.artistIds?.includes(draft.artistId!);
+      const c = gigs.find((g) => onBill(g) && g.date === date);
       if (c) {
         out.push(c.venueId === draft.venueId
-          ? { hard: true, text: `${artistName} is already listed at ${draft.venueName} that night. This gig may already be on bndy.` }
-          : { hard: false, text: `${artistName} already has a gig that night at ${c.venueName}. Double-check your date.` });
+          ? { tone: "block", text: `${artistName} is already listed at ${draft.venueName} that night. This gig may already be on bndy.` }
+          : { tone: "warn", text: `${artistName} already has a gig that night at ${c.venueName}. Double-check your date.` });
       }
     }
     if (draft.venueId) {
       const c = gigs.find((g) => g.venueId === draft.venueId && g.date === date && g.artistId !== draft.artistId);
-      if (c) out.push({ hard: false, text: `${draft.venueName} already has ${c.artistName ?? "another act"} listed that night.` });
+      if (c) {
+        const who = c.artistName ?? "another act";
+        const when = c.startTime ? ` at ${c.startTime}` : "";
+        out.push({ tone: "info", text: `${draft.venueName} also has ${who}${when} that night. That is fine. Two gigs at one venue on one night are allowed.` });
+      }
     }
     return out;
   }, [date, gigs, draft.artistId, draft.venueId, draft.venueName, draft.artistName, draft.newArtist]);
@@ -190,8 +207,10 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
       </div>
 
       {clashes.map((c, i) => (
-        <div key={i} className={cn("mt-2.5 flex items-start gap-2.5 rounded-xl px-3.5 py-3 text-[13px] font-bold", c.hard ? "bg-acc/15 text-txt" : "bg-card2 text-dim")}>
-          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[var(--hl)]" />
+        <div key={i} className={cn("mt-2.5 flex items-start gap-2.5 rounded-xl px-3.5 py-3 text-[13px] font-bold", c.tone === "block" ? "bg-acc/15 text-txt" : "bg-card2 text-dim")}>
+          {c.tone === "info"
+            ? <Info size={15} className="mt-0.5 shrink-0 text-dim" />
+            : <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[var(--hl)]" />}
           {c.text}
         </div>
       ))}

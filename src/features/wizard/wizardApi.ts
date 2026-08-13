@@ -114,6 +114,11 @@ export interface EventResult {
 export async function createCommunityEvent(payload: {
   /** optional for open mics (artist-less events; the backend requires isOpenMic instead) */
   artistId?: string;
+  /** feature 12 — the whole bill in display order, act 1 first. Sent ONLY when
+   *  there is more than one act, so a single-act publish is unchanged. */
+  artistIds?: string[];
+  /** feature 12 — which acts are billed as headline. Absent means [artistIds[0]]. */
+  headlineArtistIds?: string[];
   isOpenMic?: boolean;
   venueId: string;
   date: string;

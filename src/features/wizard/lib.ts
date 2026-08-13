@@ -1,6 +1,7 @@
 // Gig wizard domain helpers — spec: Projects/bndy/GIG-WIZARD-SPEC.md
 import type { Artist } from "@/domain/types";
 import type { RepeatPattern } from "@/domain/recurrence";
+import { billTitle } from "@/domain/lineup";
 
 /** Canonical genre enum — MUST mirror bndy-serverless-api/artists-lambda/lib/genres.js
  *  (free-text genres are rejected server-side with 400 INVALID_GENRES). */
@@ -94,11 +95,39 @@ export function defaultStartTime(dateISO: string): string {
   return "20:00";
 }
 
-export function inferTitle(artistName?: string, venueName?: string, isOpenMic?: boolean): string {
+/** Mirrors the server rule in ACTION-21 so the preview matches what is saved.
+ *  One headliner plus support reads as the headliner alone; a co-headline bill
+ *  joins the headliners. Support acts never enter the title. */
+export function inferTitle(
+  artistName?: string,
+  venueName?: string,
+  isOpenMic?: boolean,
+  bill?: { acts: { id: string; name: string }[]; headlineIds?: string[] },
+): string {
   if (isOpenMic) return venueName ? `Open Mic @ ${venueName}` : "Open Mic";
+  if (bill && bill.acts.length > 1 && venueName) {
+    return billTitle(bill.acts, venueName, bill.headlineIds);
+  }
   if (artistName && venueName) return `${artistName} @ ${venueName}`;
   return "";
 }
+
+/** Every act on the draft bill, in display order. Act 1 first. */
+export function draftActs(d: Draft): { id: string; name: string }[] {
+  const first = d.artistId && d.artistName
+    ? [{ id: d.artistId, name: d.artistName }]
+    : d.newArtist?.name
+      ? [{ id: NEW_ACT_ID, name: d.newArtist.name }]
+      : [];
+  return [...first, ...(d.extraActs ?? [])];
+}
+
+export const MAX_ACTS = 4;
+
+/** Act 1 can be a brand new act that has no id until publish resolves it. It
+ *  still needs a stable handle so it can sit on the bill and carry a billing
+ *  chip. WizardShell swaps it for the real id at publish. */
+export const NEW_ACT_ID = "__new__";
 
 /** Wizard draft — persisted to sessionStorage so refresh never loses work. */
 export interface NewArtistDraft {
@@ -123,6 +152,14 @@ export interface Draft {
   artistId?: string;
   artistName?: string;
   newArtist?: NewArtistDraft;
+  /** Feature 12 — the rest of the bill. Act 1 stays in artistId/artistName, so
+   *  every existing path (resume, ?artistId= prefill, single-act publish) is
+   *  untouched. Cap of 4 acts total is enforced in StepArtist and server-side. */
+  extraActs?: { id: string; name: string }[];
+  /** ids billed as headline. Absent means [act 1]. Every act may be headline. */
+  headlineIds?: string[];
+  /** the step 1 checkbox, kept in the draft so a refresh restores bill mode */
+  multiAct?: boolean;
   /** open mic night — artist optional (the host), repeats allowed */
   isOpenMic?: boolean;
   repeat?: RepeatRule;

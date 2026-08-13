@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { supportingLabel } from "@/domain/lineup";
 import { ChevronDown, ChevronRight, MapPin, Mic } from "lucide-react";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles, formatDistance } from "@/domain/geo";
@@ -13,7 +14,7 @@ import { cn } from "@/lib/cn";
 import type { Gig } from "@/domain/types";
 type View = "date" | "distance" | "map";
 
-export function ArtistEvents({ gigs }: { gigs: Gig[] }) {
+export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: string }) {
   const { location, located } = useGeolocation();
   const today = todayISO();
   const collapse90 = addDaysISO(today, 90); // anything starting at or after this date defaults to collapsed
@@ -88,7 +89,7 @@ export function ArtistEvents({ gigs }: { gigs: Gig[] }) {
         bands.map((b) => (
           <div key={b.label} className="mb-6">
             <SectionHeader label={b.label} count={b.items.length} />
-            {b.items.map((x) => <EventRow key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
+            {b.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
           </div>
         ))
       ) : (
@@ -110,7 +111,7 @@ export function ArtistEvents({ gigs }: { gigs: Gig[] }) {
                 </button>
                 {isExpanded && (
                   <div className="mt-1">
-                    {m.items.map((x) => <EventRow key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
+                    {m.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
                   </div>
                 )}
               </div>
@@ -133,7 +134,10 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
   );
 }
 
-function EventRow({ g, dist, today, onClick }: { g: Gig; dist: number; today: string; onClick: () => void }) {
+function EventRow({ g, dist, today, artistId, onClick }: { g: Gig; dist: number; today: string; artistId?: string; onClick: () => void }) {
+  // Feature 12: on a bill, say who this artist is supporting. Empty when they
+  // headline, and empty on a single-act gig, so a normal row is unchanged.
+  const supporting = artistId ? supportingLabel(g, artistId) : "";
   const [, m, d] = g.date.split("-").map(Number);
   const dow = new Date(Date.UTC(Number(g.date.slice(0, 4)), m - 1, d)).getUTCDay();
   return (
@@ -155,6 +159,7 @@ function EventRow({ g, dist, today, onClick }: { g: Gig; dist: number; today: st
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>
+        {supporting && <div className="mt-0.5 truncate text-[12.5px] font-bold text-dim2">{supporting}</div>}
         <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-dim">
           <MapPin size={12} className="opacity-60" />
           {g.venueCity ? `${g.venueCity} · ` : ""}

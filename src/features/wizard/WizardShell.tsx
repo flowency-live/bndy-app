@@ -9,7 +9,7 @@ import { useArtists, useVenues } from "@/lib/hooks";
 import { formatTime } from "@/domain/dates";
 import { cn } from "@/lib/cn";
 import { seriesDates } from "@/domain/recurrence";
-import { clearDraft, EMPTY_DRAFT, inferTitle, loadDraft, saveDraft, type Draft } from "./lib";
+import { clearDraft, draftActs, EMPTY_DRAFT, inferTitle, loadDraft, NEW_ACT_ID, saveDraft, type Draft } from "./lib";
 import { createCommunityEvent, resolveArtist } from "./wizardApi";
 import { PreviewCard } from "./PreviewCard";
 import { StepVenue } from "./StepVenue";
@@ -69,7 +69,11 @@ export function WizardShell() {
 
   const patch = (p: Partial<Draft>) => setDraft((d) => {
     const next = { ...d, ...p };
-    if (!next.titleTouched) next.title = inferTitle(next.artistName ?? next.newArtist?.name, next.venueName, next.isOpenMic);
+    if (!next.titleTouched) {
+      const acts = draftActs(next);
+      next.title = inferTitle(next.artistName ?? next.newArtist?.name, next.venueName, next.isOpenMic,
+        acts.length > 1 ? { acts, headlineIds: next.headlineIds } : undefined);
+    }
     return next;
   });
 
@@ -141,7 +145,21 @@ export function WizardShell() {
       // 2) create the gig — or the whole series for a repeating open mic (item 13):
       //    each date is its own event; the server dedup gate absorbs re-runs.
       setPhase("event");
-      const title = draft.titleTouched && draft.title ? draft.title : inferTitle(artistName, draft.venueName, draft.isOpenMic);
+      // Feature 12: act 1 may have been resolved just now, so rebuild the bill
+      // from the resolved id rather than the pre-resolve draft.
+      const acts = artistId && artistName
+        ? [{ id: artistId, name: artistName }, ...(draft.extraActs ?? [])]
+        : draftActs(draft);
+      // The draft may bill the unresolved sentinel as headline. Map it to the id
+      // resolveArtist just returned, then drop anything not on the bill.
+      const headlineIds = draft.headlineIds?.length
+        ? draft.headlineIds
+            .map((h) => (h === NEW_ACT_ID && artistId ? artistId : h))
+            .filter((h) => acts.some((a) => a.id === h))
+        : acts.slice(0, 1).map((a) => a.id);
+      const title = draft.titleTouched && draft.title
+        ? draft.title
+        : inferTitle(artistName, draft.venueName, draft.isOpenMic, acts.length > 1 ? { acts, headlineIds } : undefined);
       const dates = draft.isOpenMic && draft.repeat
         ? seriesDates(draft.date, draft.repeat.pattern, draft.repeat.until)
         : [draft.date];
@@ -151,6 +169,10 @@ export function WizardShell() {
       for (const date of dates) {
         const res = await createCommunityEvent({
           artistId,
+          // Only sent for a real bill. A single-act gig posts exactly what it
+          // always did, so nothing about the 80% path changes on the wire.
+          artistIds: acts.length > 1 ? acts.map((a) => a.id) : undefined,
+          headlineArtistIds: acts.length > 1 ? (headlineIds.length ? headlineIds : undefined) : undefined,
           isOpenMic: draft.isOpenMic || undefined,
           venueId: draft.venueId,
           date,
@@ -322,9 +344,36 @@ export function WizardShell() {
               venueId={draft.venueId}
               venueCity={draft.venueCity}
               initialOpenMic={!!draft.isOpenMic}
-              onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined, isOpenMic: undefined, repeat: undefined }); setStep("when"); }}
-              onPickNew={(na) => { patch({ newArtist: na, artistId: undefined, artistName: undefined, isOpenMic: undefined, repeat: undefined }); setStep("when"); }}
-              onPickOpenMic={(host) => { patch({ isOpenMic: true, artistId: host?.id, artistName: host?.name, newArtist: undefined }); setStep("when"); }}
+              bill={draftActs(draft)}
+              headlineIds={draft.headlineIds}
+              initialMultiAct={draft.multiAct}
+              onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined, isOpenMic: undefined, repeat: undefined, extraActs: undefined, headlineIds: undefined, multiAct: undefined }); setStep("when"); }}
+              onPickNew={(na) => {
+                // In bill mode a NEW act stays as act 1 and the step holds, so
+                // support acts can be added to it. Publish resolves it to a real
+                // id and swaps the sentinel out. Outside bill mode: unchanged.
+                const keepBill = !!draft.multiAct;
+                patch(keepBill
+                  ? { newArtist: na, artistId: undefined, artistName: undefined, isOpenMic: undefined, repeat: undefined }
+                  : { newArtist: na, artistId: undefined, artistName: undefined, isOpenMic: undefined, repeat: undefined, extraActs: undefined, headlineIds: undefined, multiAct: undefined });
+                if (!keepBill) setStep("when");
+              }}
+              onPickOpenMic={(host) => { patch({ isOpenMic: true, artistId: host?.id, artistName: host?.name, newArtist: undefined, extraActs: undefined, headlineIds: undefined, multiAct: undefined }); setStep("when"); }}
+              onBillChange={(list, heads, multiAct) => {
+                // Act 1 may be the unresolved NEW_ACT_ID sentinel. Keep newArtist
+                // in that case and leave artistId empty; publish fills it in.
+                const pending = list[0]?.id === NEW_ACT_ID;
+                patch({
+                  artistId: pending ? undefined : list[0]?.id,
+                  artistName: pending ? undefined : list[0]?.name,
+                  ...(pending ? {} : { newArtist: undefined }),
+                  extraActs: list.slice(1),
+                  headlineIds: heads.length ? heads : undefined,
+                  multiAct: multiAct || undefined,
+                  isOpenMic: undefined, repeat: undefined,
+                });
+              }}
+              onBillDone={() => setStep("when")}
             />
           )}
           {step === "when" && <StepWhen draft={draft} onDone={(p) => { patch(p); setStep("review"); }} />}

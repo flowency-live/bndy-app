@@ -48,6 +48,8 @@ interface GigDTO {
   ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean; cancelled?: boolean;
   /** community-created open mics carry type 'open-mic' rather than an isOpenMic attribute */
   type?: string;
+  /** feature 12 — the bill. Denormalised by the backend; absent on a single-act gig. */
+  artistIds?: string[]; artistNames?: string[]; headlineArtistIds?: string[];
 }
 export function toGig(e: GigDTO): Gig | null {
   if (typeof e.geoLat !== "number" || typeof e.geoLng !== "number") return null;
@@ -83,6 +85,12 @@ export function toGig(e: GigDTO): Gig | null {
     ticketing: resolved,
     isOpenMic: e.isOpenMic || e.type === "open-mic" || undefined,
     cancelled: !!e.cancelled,
+    // Feature 12. Only carried when the endpoint denormalises a bill. A single-act
+    // gig, and every gig created before feature 12, leaves all three undefined and
+    // domain/lineup falls back to artistId. Never synthesise them here.
+    artistIds: e.artistIds?.length ? e.artistIds : undefined,
+    artistNames: e.artistNames?.length ? e.artistNames : undefined,
+    headlineArtistIds: e.headlineArtistIds?.length ? e.headlineArtistIds : undefined,
   };
 }
 
