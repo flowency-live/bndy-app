@@ -81,11 +81,15 @@ export function WizardShell() {
   const artistDone = !!draft.artistId || !!draft.newArtist || !!draft.isOpenMic;
   const whenDone = !!draft.date && !!draft.startTime;
 
-  // auto-advance to the first incomplete step on load/prefill
+  // auto-advance to the first incomplete step on load/prefill.
+  // In multi-act mode, stay on the artist step — the user clicks "Next" to advance.
   useEffect(() => {
-    setStep(!venueDone ? "venue" : !artistDone ? "artist" : !whenDone ? "when" : "review");
+    setStep((prev) => {
+      if (draft.multiAct && prev === "artist") return prev;
+      return !venueDone ? "venue" : !artistDone ? "artist" : !whenDone ? "when" : "review";
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [venueDone, artistDone]);
+  }, [venueDone, artistDone, draft.multiAct]);
 
   const steps: { key: StepKey; label: string; done: boolean; locked: boolean }[] = [
     { key: "venue", label: "Where", done: venueDone, locked: !!prefillVenueId && venueDone },
