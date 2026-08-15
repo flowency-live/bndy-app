@@ -1,7 +1,7 @@
 "use client";
 
-// Stamp-in splash — once per session. Prototype: bndy-skins-v4.html splash.
 import { useEffect, useState } from "react";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const KEY = "bndy-splashed";
 
@@ -28,8 +28,11 @@ export function Splash() {
       onClick={() => { setLeaving(true); window.setTimeout(() => setShow(false), 500); }}
       role="presentation"
     >
-      <div className="bndy-splash-logo" aria-label="bndy">
-        <span>b</span><span>n</span><span>d</span><span>y</span><span>.</span>
+      <div className="bndy-splash-logo">
+        <BrandWordmark
+          className="h-16 w-auto text-[var(--txt)]"
+          title="bndy"
+        />
       </div>
       <div className="bndy-splash-stamp">
         Keeping <b>LIVE</b> music <b>ALIVE</b>!
