@@ -32,6 +32,7 @@ export function ArtistsBrowse() {
 
   const present = useMemo(() => new Set(groups.map((g) => g.key)), [groups]);
   const jump = (k: string) => document.getElementById(`grp-${k}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // Keep mobile header count aligned with the gigs page; desktop retains its descriptive subtitle.
 
   return (
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
