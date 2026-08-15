@@ -22,7 +22,7 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
     <button
       onClick={onClick}
       className={cn(
-        "group relative grid w-full grid-cols-[48px_56px_minmax(0,1fr)_18px] items-center gap-3 border-b border-[color-mix(in_srgb,var(--line)_55%,transparent)] px-2 py-3 text-left transition-[background-color,transform] duration-150 last:border-b-0 hover:bg-card2 active:scale-[.997] lg:grid-cols-[68px_22px_72px_minmax(200px,1fr)_minmax(180px,.68fr)_72px_22px] lg:gap-4 lg:px-0 lg:py-3.5",
+        "bndy-gig-row group relative grid w-full grid-cols-[48px_56px_minmax(0,1fr)_18px] items-center gap-3 border-b border-[color-mix(in_srgb,var(--line)_55%,transparent)] px-2 py-3 text-left transition-[background-color,transform] duration-150 last:border-b-0 hover:bg-card2 active:scale-[.997] lg:grid-cols-[68px_22px_72px_minmax(200px,1fr)_minmax(180px,.68fr)_72px_22px] lg:gap-4 lg:px-0 lg:py-3.5",
         tonight && !gig.cancelled && "before:absolute before:bottom-3 before:left-0 before:top-3 before:w-[3px] before:rounded-full before:bg-acc lg:before:hidden",
         gig.cancelled && "opacity-50 saturate-50",
       )}
