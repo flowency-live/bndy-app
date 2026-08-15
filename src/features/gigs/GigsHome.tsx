@@ -99,8 +99,17 @@ export function GigsHome() {
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
       <div className="mb-6 lg:grid lg:grid-cols-[250px_minmax(0,1fr)] lg:items-end lg:gap-x-8 lg:gap-y-4 lg:mb-8">
         <header className="mb-5 lg:mb-0">
-          <h1 className="font-disp text-[29px] font-black tracking-tight lg:text-[38px] lg:leading-none">Gigs near you</h1>
-          <p className="mt-1.5 text-[12.5px] font-semibold text-dim lg:text-[13px]">
+          <div className="flex items-start justify-between gap-4 lg:block">
+            <h1 className="font-disp text-[29px] font-black tracking-tight lg:text-[38px] lg:leading-none">Gigs near you</h1>
+            <div
+              className="mt-0.5 shrink-0 rounded-[var(--rad)] border border-line px-3 py-2 text-right lg:hidden"
+              style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
+            >
+              <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : total}</div>
+              <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Gigs</div>
+            </div>
+          </div>
+          <p className="mt-1.5 hidden text-[12.5px] font-semibold text-dim lg:block lg:text-[13px]">
             {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label}`}
             {usingCurrent && !located ? " · allow location for near-you results" : ""}
           </p>
