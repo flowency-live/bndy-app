@@ -29,7 +29,6 @@ function activeKey(path: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const active = activeKey(path);
-  const isMapPage = path === "/map";
 
   // Standalone branded webform — no app chrome, shareable straight into FB groups etc.
   if (path.startsWith("/list-a-gig")) {
@@ -56,18 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh]">
       <Splash />
       <LiveTicker />
-      {/* ---- mobile account control. Keep it out of the map filter row; the map
-           gets a bottom-left utility button beside the skin selector instead. ---- */}
-      {!isMapPage && (
-        <div
-          className="fixed right-3 z-30 lg:hidden"
-          style={{ top: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}
-        >
-          <span className="block rounded-xl glass">
-            <UserButton variant="top" />
-          </span>
-        </div>
-      )}
+
       {/* ---- desktop sidebar ---- */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
         <Link href="/" className="mb-6 shrink-0 px-2 text-2xl font-black tracking-tight">
@@ -128,16 +116,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         ))}
       </nav>
 
-      {/* Map mobile utilities: skin + account stay together bottom-left, leaving
-          bottom-right exclusively for MapLibre location/zoom controls. */}
-      {isMapPage && (
-        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden">
-          <UserButton variant="map" />
-        </div>
-      )}
-
-      {/* map page: fab moves bottom-left — bottom-right is maplibre zoom + locate */}
-      <SkinControl variant="fab" side={active === "map" ? "left" : "right"} />
+      {/* Mobile utilities are deliberately identical on every app view: skin on
+          the far left, account immediately beside it. Account menu opens upward. */}
+      <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden">
+        <UserButton variant="map" />
+      </div>
+      <SkinControl variant="fab" side="left" />
 
       <Disclaimer />
     </div>
