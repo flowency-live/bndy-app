@@ -13,7 +13,7 @@ function displayName(name?: string | null, email?: string | null, username?: str
   return name || username || email || "Account";
 }
 
-export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top" }) {
+export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top" | "map" }) {
   const { user, isAuthenticated, isLoading, signOut, role, isCurator } = useAuth();
   const [open, setOpen] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -27,12 +27,11 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
         aria-label="Login or Register"
         className={cn(
           "flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-[13.5px] font-extrabold text-txt transition-colors hover:bg-white/5",
-          variant === "top" && "border-0 px-2",
+          (variant === "top" || variant === "map") && "border-0 px-2",
         )}
       >
         <UserRound size={18} className="text-[var(--acc)]" />
-        {/* mobile top pill is icon-only — the name/label was covering page controls */}
-        <span className={cn(variant === "top" && "hidden sm:inline")}>Login or Register</span>
+        <span className={cn(variant === "top" && "hidden sm:inline", variant === "map" && "hidden")}>Login or Register</span>
       </Link>
     );
   }
@@ -44,17 +43,21 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[13.5px] font-extrabold text-txt transition-colors hover:bg-white/5",
-          variant === "top" && "px-2",
+          (variant === "top" || variant === "map") && "px-2",
         )}
       >
         <UserRound size={18} className="text-[var(--acc)]" />
-        <span className={cn("truncate", variant === "top" && "hidden sm:inline")}>{displayName(user?.displayName, user?.email, user?.username)}</span>
+        <span className={cn("truncate", variant === "top" && "hidden sm:inline", variant === "map" && "hidden")}>{displayName(user?.displayName, user?.email, user?.username)}</span>
       </button>
       {open && (
         <div
           className={cn(
             "absolute z-40 w-48 rounded-xl border border-line glass-hi p-2 shadow-xl",
-            variant === "top" ? "right-0 top-full mt-2" : "left-0 top-full mt-2",
+            variant === "top"
+              ? "right-0 top-full mt-2"
+              : variant === "map"
+                ? "bottom-full left-0 mb-2"
+                : "left-0 top-full mt-2",
           )}
         >
           <p className="truncate px-2 pb-1 pt-0.5 text-[12.5px] font-extrabold text-txt">
