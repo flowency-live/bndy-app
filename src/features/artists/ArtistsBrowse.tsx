@@ -36,8 +36,17 @@ export function ArtistsBrowse() {
   return (
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
       <header className="mb-4">
-        <h1 className="text-[26px] font-black tracking-tight lg:text-4xl">Artists</h1>
-        <p className="mt-1 text-[13px] font-semibold text-dim lg:text-[15px]">
+        <div className="flex items-start justify-between gap-4 lg:block">
+          <h1 className="text-[26px] font-black tracking-tight lg:text-4xl">Artists</h1>
+          <div
+            className="mt-0.5 shrink-0 rounded-[var(--rad)] border border-line px-3 py-2 text-right lg:hidden"
+            style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
+          >
+            <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : artists.length}</div>
+            <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Artists</div>
+          </div>
+        </div>
+        <p className="mt-1 hidden text-[13px] font-semibold text-dim lg:block lg:text-[15px]">
           {isLoading ? "Loading…" : `${artists.length} artists gigging on bndy`}
         </p>
       </header>
