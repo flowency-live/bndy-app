@@ -23,18 +23,51 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
 
   return (
     <div className="pb-24 lg:pb-12">
-      {/* ---- header (Jason 2026-08-11): no landscape hero, ever. One compact
-           layout — a LARGE square avatar on the left (the profile image when
-           there is one), name block beside it, controls on the right. ---- */}
+      {/* ---- header (Jason 2026-08-11): no landscape hero, ever. A LARGE square
+           avatar on the left (the profile image when there is one), name block
+           beside it.
+           2026-08-15: split into mobile and desktop, matching VenueProfile.
+           On mobile the three action buttons shared the row with the name and
+           left it about 116px, so "Grant & Paul Matthews" truncated to "Gra...".
+           The name now owns the full content column and the actions sit
+           beneath it. ---- */}
       <div className="mx-auto max-w-content px-4 pt-3 lg:px-8 lg:pt-5">
         <div className="flex items-center justify-between">
           <HeroBack inline />
           <HeroSocials socials={artist?.socials} name={name} inline />
         </div>
-        <div className="mt-4 flex items-start gap-4">
+        {/* Mobile identity */}
+        <div className="mt-4 grid grid-cols-[96px_minmax(0,1fr)] items-start gap-4 lg:hidden">
+          <Avatar id={id} name={name} src={img} size={96} radius={22} />
+
+          <div className="min-w-0 pt-1">
+            {type && (
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--acc)] bg-card2 px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-[var(--acc)]">
+                <Music2 size={11} /> {type}
+              </span>
+            )}
+
+            <h1 className="mt-2 text-[28px] font-black leading-[0.98] tracking-tight [overflow-wrap:anywhere]">{name}</h1>
+
+            {artist?.location && (
+              <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] font-bold text-cyan">
+                <MapPin size={13} className="shrink-0" />
+                <span className="min-w-0 truncate">{artist.location}</span>
+              </div>
+            )}
+
+            <div className="mt-3 flex items-center gap-2">
+              <AvatarUpload type="artist" id={id} className="h-9 w-9 rounded-xl" />
+              <FavouriteButton type="artist" id={id} name={name} size={18} className="h-9 w-9 rounded-xl" />
+              <FlagButton type="artist" id={id} name={name} size={17} className="h-9 w-9 rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop identity */}
+        <div className="mt-4 hidden items-start gap-4 lg:flex">
           <div className="shrink-0">
-            <span className="hidden lg:block"><Avatar id={id} name={name} src={img} size={132} radius={26} /></span>
-            <span className="lg:hidden"><Avatar id={id} name={name} src={img} size={96} radius={22} /></span>
+            <Avatar id={id} name={name} src={img} size={132} radius={26} />
           </div>
           <div className="min-w-0 pt-1">
             {type && (
@@ -42,10 +75,11 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
                 <Music2 size={11} /> {type}
               </span>
             )}
-            <h1 className="truncate text-[26px] font-black leading-none tracking-tight lg:text-4xl">{name}</h1>
+            <h1 className="text-4xl font-black leading-none tracking-tight [overflow-wrap:anywhere]">{name}</h1>
             {artist?.location && (
-              <div className="mt-1.5 flex items-center gap-1 text-[13px] font-bold text-cyan">
-                <MapPin size={13} /> {artist.location}
+              <div className="mt-1.5 flex min-w-0 items-center gap-1 text-[13px] font-bold text-cyan">
+                <MapPin size={13} className="shrink-0" />
+                <span className="min-w-0 truncate">{artist.location}</span>
               </div>
             )}
           </div>

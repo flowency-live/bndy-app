@@ -4,7 +4,7 @@
 // The server enforces the role again on every call.
 
 import { useState } from "react";
-import { CalendarX, EyeOff, Pencil, RotateCcw } from "lucide-react";
+import { CalendarX, EyeOff, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { CancelGigSheet } from "./CancelGigSheet";
 import { EditArtistSheet, EditGigSheet, EditVenueSheet, HideSheet } from "./CuratorSheets";
@@ -44,9 +44,15 @@ export function CuratorBar({ target, className, onHidden }: { target: Target; cl
             : <><CalendarX size={13} className="text-amber-400" /> Cancel</>}
         </button>
       )}
-      <button type="button" onClick={() => setHiding(true)} className={btn}>
-        <EyeOff size={13} className="text-red-400" /> Hide
-      </button>
+      {target.kind === "gig" ? (
+        <button type="button" onClick={() => setHiding(true)} className={btn}>
+          <Trash2 size={13} className="text-red-400" /> Delete
+        </button>
+      ) : (
+        <button type="button" onClick={() => setHiding(true)} className={btn}>
+          <EyeOff size={13} className="text-red-400" /> Hide
+        </button>
+      )}
 
       {target.kind === "artist" && <EditArtistSheet artist={target.artist} open={editing} onClose={() => setEditing(false)} />}
       {target.kind === "venue" && <EditVenueSheet venue={target.venue} open={editing} onClose={() => setEditing(false)} />}

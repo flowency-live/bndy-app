@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Loader2, MapPin, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { curatorApi, useCuratorInvalidate, type CuratorEntity } from "@/lib/curator";
-import { GENRES, REGIONS } from "@/features/wizard/lib";
+import { ACT_TYPES, ARTIST_TYPES, GENRES, REGIONS } from "@/features/wizard/lib";
 import { placesSuggest, placesDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { cn } from "@/lib/cn";
 import type { Artist, Gig, Venue } from "@/domain/types";
@@ -167,6 +167,8 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
   const [f, setF] = useState({
     bio: artist.bio ?? "",
     genres: artist.genres ?? [],
+    artistType: artist.artistType ?? "",
+    actType: artist.actType ?? [] as string[],
     facebookUrl: socialOf(artist, "facebook"),
     instagramUrl: socialOf(artist, "instagram"),
     websiteUrl: socialOf(artist, "website"),
@@ -177,6 +179,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
   const [townPicked, setTownPicked] = useState<string | null>(isRegion ? null : artist.location ?? null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [preds, setPreds] = useState<PlaceSuggestion[]>([]);
+  const [genresOpen, setGenresOpen] = useState(false);
   const deb = useRef<number | undefined>(undefined);
   const { busy, error, run } = useSubmit("artist", artist.id, onClose);
 
@@ -187,6 +190,8 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
       setF({
         bio: artist.bio ?? "",
         genres: artist.genres ?? [],
+        artistType: artist.artistType ?? "",
+        actType: artist.actType ?? [],
         facebookUrl: socialOf(artist, "facebook"),
         instagramUrl: socialOf(artist, "instagram"),
         websiteUrl: socialOf(artist, "website"),
@@ -197,6 +202,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
       setTownPicked(isReg ? null : artist.location ?? null);
       setCoords(null);
       setPreds([]);
+      setGenresOpen(false);
     }
   }, [open, artist]);
 
@@ -223,6 +229,8 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
   const location = locMode === "town" ? (townPicked ?? townQ.trim()) : region;
   const toggleGenre = (g: string) =>
     setF((prev) => ({ ...prev, genres: prev.genres.includes(g) ? prev.genres.filter((x) => x !== g) : [...prev.genres, g] }));
+  const toggleAct = (v: string) =>
+    setF((prev) => ({ ...prev, actType: prev.actType.includes(v) ? prev.actType.filter((x) => x !== v) : [...prev.actType, v] }));
 
   const payload = useMemo(() => ({
     bio: f.bio,
@@ -231,6 +239,8 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
     ...(locMode === "town" && coords ? { locationLat: coords.lat, locationLng: coords.lng } : {}),
     ...(locMode === "region" ? { locationLat: null, locationLng: null } : {}),
     genres: f.genres,
+    artistType: f.artistType || null,
+    actType: f.actType.length ? f.actType : null,
     facebookUrl: f.facebookUrl.trim(),
     instagramUrl: f.instagramUrl.trim(),
     websiteUrl: f.websiteUrl.trim(),
@@ -283,18 +293,50 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
         </div>
       </div>
 
-      <label className={label}>Bio</label>
-      <textarea className={field} rows={4} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} />
+      <label className={label}>They are</label>
+      <div className="relative">
+        <select value={f.artistType} onChange={(e) => setF({ ...f, artistType: e.target.value })} className={cn(field, "appearance-none")}>
+          <option value="">Not set</option>
+          {ARTIST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
+      </div>
 
-      <label className={label}>Genres</label>
+      <label className={label}>They play</label>
       <div className="flex flex-wrap gap-1.5">
-        {GENRES.map((g) => (
-          <button key={g} type="button" onClick={() => toggleGenre(g)}
-            className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", f.genres.includes(g) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
-            {g}
+        {ACT_TYPES.map((t) => (
+          <button key={t.value} type="button" onClick={() => toggleAct(t.value)}
+            className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", f.actType.includes(t.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
+            {t.label}
           </button>
         ))}
       </div>
+
+      <div className="mt-4 overflow-hidden rounded-2xl border border-line">
+        <button type="button" onClick={() => setGenresOpen((v) => !v)} aria-expanded={genresOpen}
+          className="flex w-full items-center justify-between px-4 py-3 text-left">
+          <span className="text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">
+            Genres
+            {f.genres.length > 0 && <span className="ml-2 normal-case tracking-normal text-txt">{f.genres.slice(0, 3).join(", ")}{f.genres.length > 3 ? ` +${f.genres.length - 3}` : ""}</span>}
+          </span>
+          <ChevronDown size={15} className={cn("text-dim transition-transform", genresOpen && "rotate-180")} />
+        </button>
+        {genresOpen && (
+          <div className="border-t border-line px-4 pb-4 pt-3">
+            <div className="flex flex-wrap gap-1.5">
+              {GENRES.map((g) => (
+                <button key={g} type="button" onClick={() => toggleGenre(g)}
+                  className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", f.genres.includes(g) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <label className={label}>Bio</label>
+      <textarea className={field} rows={4} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} />
 
       <label className={label}>Facebook</label>
       <input className={field} value={f.facebookUrl} onChange={(e) => setF({ ...f, facebookUrl: e.target.value })} placeholder="https://facebook.com/…" inputMode="url" />
@@ -412,24 +454,28 @@ export function HideSheet({
   const [reason, setReason] = useState("");
   const { busy, error, run } = useSubmit(type, id, onClose);
 
+  const isGig = type === "event";
   return (
     <Sheet open={open} onClose={onClose}>
       <SheetHeader
-        title={`Hide ${name}?`}
-        sub="This removes it from every public page. Nothing is destroyed. bndy staff can restore it from godmode."
+        title={isGig ? "Delete this gig?" : `Hide ${name}?`}
+        sub={isGig
+          ? "This removes the gig completely — it won't appear anywhere. Use Cancel instead if punters need to know it was called off."
+          : "This removes it from every public page. Nothing is destroyed. bndy staff can restore it from godmode."
+        }
       />
       <label className={label}>Reason</label>
       <input
         className={field}
         value={reason}
         onChange={(e) => setReason(e.target.value)}
-        placeholder="Duplicate, closed down, wrong listing…"
+        placeholder={isGig ? "Listed by mistake, duplicate entry…" : "Duplicate, closed down, wrong listing…"}
       />
       <ErrorLine error={error} />
       <SheetFooter
         busy={busy}
         disabled={!reason.trim()}
-        saveLabel="Hide it"
+        saveLabel={isGig ? "Delete it" : "Hide it"}
         tone="red"
         onCancel={onClose}
         onSave={() => run(() => curatorApi.hide(type, id, reason.trim()))}

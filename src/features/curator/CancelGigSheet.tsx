@@ -4,6 +4,7 @@
 // the gig stays visible as a ghosted row with a CANCELLED stamp.
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/Sheet";
 import { curatorApi, useCuratorInvalidate } from "@/lib/curator";
 import { SheetFooter, SheetHeader } from "./CuratorSheets";
@@ -13,6 +14,7 @@ const field =
   "w-full rounded-2xl border border-line glass px-4 py-3 text-[14.5px] font-semibold text-txt outline-none placeholder:text-dim2 focus:border-orange/55";
 
 export function CancelGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean; onClose: () => void }) {
+  const router = useRouter();
   const invalidate = useCuratorInvalidate();
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -24,6 +26,7 @@ export function CancelGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean
     try {
       await fn();
       await invalidate("event", gig.id);
+      router.refresh();
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed. Try again.");
@@ -55,6 +58,10 @@ export function CancelGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean
             onChange={(e) => setReason(e.target.value)}
             placeholder="Venue closed that night, band pulled out…"
           />
+          <p className="mt-3 text-[12px] text-dim">
+            <strong className="text-amber-400">Cancel</strong> keeps the gig visible with a "Cancelled" stamp — punters who saw it will know it's off.
+            Use <strong className="text-red-400">Delete</strong> instead if the gig was listed by mistake.
+          </p>
           <SheetFooter busy={busy} saveLabel="Cancel gig" tone="amber" onCancel={onClose} onSave={() => run(() => curatorApi.cancelEvent(gig.id, reason.trim() || undefined))} />
         </>
       )}
