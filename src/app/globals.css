@@ -76,6 +76,37 @@ body {
 .maplibregl-ctrl-group button + button { border-top: 1px solid var(--line) !important; }
 .dark .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg) brightness(1.6) opacity(0.8); }
 
+/* Mobile map chrome. Keep the first row for mode + search, move the two
+   map filters onto the date row, and lift MapLibre controls above bottom nav. */
+@media (max-width: 1023px) {
+  .bndy-map-page > div > div:nth-child(2) {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.5rem;
+  }
+
+  .bndy-map-page > div > div:nth-child(2) > div:nth-child(2) {
+    min-width: 0;
+  }
+
+  .bndy-map-page > div > div:nth-child(2) > button[aria-label="Show favourites only"] {
+    position: absolute;
+    right: 2.75rem;
+    top: calc(100% + 0.625rem);
+  }
+
+  .bndy-map-page > div > div:nth-child(2) > button[aria-label$="open mics"] {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.625rem);
+  }
+
+  .bndy-map-page .maplibregl-ctrl-bottom-right {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
