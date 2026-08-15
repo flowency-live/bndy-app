@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Download, Share2, Smartphone, X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 type InstallChoice = { outcome: "accepted" | "dismissed"; platform: string };
 
@@ -117,25 +118,22 @@ export function InstallPrompt() {
     <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] z-50 px-3 lg:hidden">
       <div
         role="dialog"
-        aria-label="Install bndy"
+        aria-label="Install app"
         className="mx-auto max-w-md overflow-hidden rounded-[22px] border border-[color-mix(in_srgb,var(--acc)_48%,var(--line))] bg-[color-mix(in_srgb,var(--card)_94%,transparent)] shadow-[0_16px_50px_rgba(0,0,0,.48)] backdrop-blur-xl"
       >
         <div className="flex items-start gap-3 p-4 pb-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0F1729] shadow-[0_0_0_1px_rgba(255,255,255,.08)]">
-            <span className="relative text-[31px] font-black leading-none text-[#F97316]">
-              b
-              <span className="absolute -bottom-0.5 -right-1.5 h-1.5 w-1.5 rounded-full bg-[#06B6D4]" />
-            </span>
+            <BrandWordmark className="w-9 text-[#F97316]" title="bndy" />
           </div>
 
           <div className="min-w-0 flex-1 pt-0.5">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-[15px] font-black leading-tight text-txt">Add bndy to your Home Screen</p>
+                <p className="text-[15px] font-black leading-tight text-txt">Add to your Home Screen</p>
                 <p className="mt-1 text-[11.5px] font-semibold leading-snug text-dim">
                   {ios
-                    ? "Keep bndy one tap away and open it like an app."
-                    : "Keep bndy one tap away and open it full-screen like an app."}
+                    ? "Keep live music one tap away and open it like an app."
+                    : "Keep live music one tap away and open it full-screen like an app."}
                 </p>
               </div>
               <button onClick={dismiss} aria-label="Not now" className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-dim transition-colors hover:bg-card2 hover:text-txt">
@@ -166,7 +164,7 @@ export function InstallPrompt() {
           ) : (
             <button onClick={install} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-white shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)] transition-transform active:scale-[.97]">
               <Download size={15} strokeWidth={2.7} />
-              Install bndy
+              Install app
             </button>
           )}
         </div>
