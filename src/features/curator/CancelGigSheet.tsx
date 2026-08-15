@@ -59,7 +59,7 @@ export function CancelGigSheet({ gig, open, onClose }: { gig: Gig; open: boolean
             placeholder="Venue closed that night, band pulled out…"
           />
           <p className="mt-3 text-[12px] text-dim">
-            <strong className="text-amber-400">Cancel</strong> keeps the gig visible with a "Cancelled" stamp — punters who saw it will know it's off.
+            <strong className="text-amber-400">Cancel</strong> keeps the gig visible with a &quot;Cancelled&quot; stamp — punters who saw it will know it&apos;s off.
             Use <strong className="text-red-400">Delete</strong> instead if the gig was listed by mistake.
           </p>
           <SheetFooter busy={busy} saveLabel="Cancel gig" tone="amber" onCancel={onClose} onSave={() => run(() => curatorApi.cancelEvent(gig.id, reason.trim() || undefined))} />

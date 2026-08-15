@@ -54,7 +54,7 @@ export function MapView() {
   // Data fetching: geo endpoint for map pins, full gigs for venue sheet
   const { data: gigs = [] } = useUpcomingGigs();
   const { data: geoData } = useGigsInView(bbox, today, geoEndDate);
-  const lightEvents = geoData?.events ?? [];
+  const lightEvents = useMemo(() => geoData?.events ?? [], [geoData]);
 
   const { data: venues = [] } = useVenues();
   const searchParams = useSearchParams();
