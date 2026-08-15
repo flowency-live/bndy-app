@@ -15,13 +15,12 @@ export function ArtistsBrowse() {
   const { data: gigs = [] } = useUpcomingGigs();
   const gigging = useMemo(() => new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)), [gigs]);
   const [q, setQ] = useState("");
-  // Favourites filter (backlog feature 3)
   const { isAuthenticated } = useAuth();
   const { artistSet: favArtists } = useFavourites();
   const [favOnly, setFavOnly] = useState(false);
   const favActive = favOnly && isAuthenticated;
 
-  const dq = useDeferredValue(q); // keystrokes stay responsive; filter runs at low priority
+  const dq = useDeferredValue(q);
   const groups = useMemo(() => {
     const query = dq.trim().toLowerCase();
     let list = [...artists].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
@@ -32,27 +31,53 @@ export function ArtistsBrowse() {
 
   const present = useMemo(() => new Set(groups.map((g) => g.key)), [groups]);
   const jump = (k: string) => document.getElementById(`grp-${k}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  // Keep mobile header count aligned with the gigs page; desktop retains its descriptive subtitle.
 
   return (
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
-      <header className="mb-4">
-        <div className="flex items-start justify-between gap-4 lg:block">
-          <h1 className="text-[26px] font-black tracking-tight lg:text-4xl">Artists</h1>
-          <div
-            className="mt-0.5 shrink-0 rounded-[var(--rad)] border border-line px-3 py-2 text-right lg:hidden"
-            style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
-          >
-            <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : artists.length}</div>
-            <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Artists</div>
-          </div>
-        </div>
-        <p className="mt-1 hidden text-[13px] font-semibold text-dim lg:block lg:text-[15px]">
+      <header className="mb-4 hidden lg:block">
+        <h1 className="text-4xl font-black tracking-tight">Artists</h1>
+        <p className="mt-1 text-[15px] font-semibold text-dim">
           {isLoading ? "Loading…" : `${artists.length} artists gigging on bndy`}
         </p>
       </header>
 
-      <div className="mb-2 flex items-center gap-2 lg:max-w-md">
+      <div className="mb-3 flex items-stretch gap-2 lg:hidden">
+        <div className="relative min-w-0 flex-1">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Search artists by name or genre"
+            placeholder="Search artists or genres…"
+            className={cn(
+              "h-full w-full rounded-2xl border border-line glass py-3 pl-4 text-left text-[15px] font-semibold outline-none placeholder:text-left placeholder:text-dim focus:border-[var(--acc)]",
+              isAuthenticated ? "pr-12" : "pr-4",
+            )}
+          />
+          {isAuthenticated && (
+            <button
+              onClick={() => setFavOnly((v) => !v)}
+              aria-pressed={favOnly}
+              aria-label="Show favourite artists only"
+              style={favOnly ? { background: "color-mix(in srgb, var(--acc) 18%, transparent)" } : undefined}
+              className={cn(
+                "absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition-colors",
+                favOnly ? "text-[var(--acc)]" : "text-dim",
+              )}
+            >
+              <Heart size={18} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />
+            </button>
+          )}
+        </div>
+        <div
+          className="flex w-[76px] shrink-0 flex-col items-center justify-center rounded-[var(--rad)] border border-line px-2 py-2 text-center"
+          style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
+        >
+          <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : artists.length}</div>
+          <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Artists</div>
+        </div>
+      </div>
+
+      <div className="mb-2 hidden items-center gap-2 lg:flex lg:max-w-md">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
           <input
@@ -96,7 +121,6 @@ export function ArtistsBrowse() {
             </section>
           ))}
 
-          {/* A–Z jump rail */}
           <nav aria-label="Jump to letter" className="fixed right-1 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-px rounded-full border border-line glass px-1 py-2">
             {ALPHA_INDEX.map((k) => {
               const on = present.has(k);
