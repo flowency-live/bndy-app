@@ -10,6 +10,7 @@
 // - Every sheet has a visible close button and a Cancel action.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Loader2, MapPin, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { curatorApi, useCuratorInvalidate, type CuratorEntity } from "@/lib/curator";
@@ -23,6 +24,7 @@ const field =
 const label = "mb-1.5 mt-4 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim";
 
 function useSubmit(type: CuratorEntity, id: string, onDone: () => void) {
+  const router = useRouter();
   const invalidate = useCuratorInvalidate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,7 @@ function useSubmit(type: CuratorEntity, id: string, onDone: () => void) {
     try {
       await fn();
       await invalidate(type, id);
+      router.refresh(); // Re-run server component to show updated data
       onDone();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed. Try again.");
