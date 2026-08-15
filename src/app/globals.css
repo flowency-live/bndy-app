@@ -107,6 +107,138 @@ body {
   }
 }
 
+/* Mobile gigs listing: preserve the desktop editorial/timeline character
+   instead of collapsing into a stack of rounded cards. Desktop is untouched. */
+@media (max-width: 1023px) {
+  .bndy-gigs-page h1 {
+    max-width: 11rem;
+    font-size: 2.15rem;
+    line-height: 0.92;
+    letter-spacing: -0.045em;
+  }
+
+  .bndy-gigs-page section {
+    margin-top: 2.15rem;
+  }
+
+  .bndy-gigs-page section:first-of-type {
+    margin-top: 0;
+  }
+
+  .bndy-gigs-page section > button {
+    gap: 0.75rem;
+    padding-bottom: 0.7rem;
+  }
+
+  .bndy-gigs-page section > button > span:first-child {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+  }
+
+  .bndy-gigs-page section > button > span:nth-child(2) {
+    background: color-mix(in srgb, var(--acc) 28%, var(--line));
+  }
+
+  .bndy-gigs-page section > button > span:last-child {
+    font-size: 0.58rem;
+    letter-spacing: 0.11em;
+  }
+
+  .bndy-gigs-page section > div {
+    margin-top: 0.7rem;
+  }
+
+  /* Existing mobile day pill becomes a flat editorial day rule. */
+  .bndy-gigs-page section > div > div.min-w-0 > div:first-child {
+    margin-bottom: 0 !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--acc) 35%, var(--line)) !important;
+    background: transparent !important;
+    color: var(--txt) !important;
+    padding: 0.4rem 0 0.65rem !important;
+  }
+
+  .bndy-gigs-page section > div > div.min-w-0 > div:first-child > span:first-child {
+    color: var(--acc) !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.16em !important;
+  }
+
+  .bndy-gigs-page section > div > div.min-w-0 > div:first-child > span:last-child {
+    color: var(--dim2) !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Strip the soft outer card away. The rows and spine are the structure. */
+  .bndy-gigs-page section > div > div.min-w-0 > div:nth-child(2) > div {
+    overflow: visible !important;
+    border: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .bndy-gigs-page .bndy-gig-row {
+    grid-template-columns: 3.15rem 0.9rem 3.5rem minmax(0, 1fr) 0.9rem !important;
+    gap: 0.55rem !important;
+    padding: 0.95rem 0 !important;
+    border-color: color-mix(in srgb, var(--line) 72%, transparent) !important;
+    background: transparent;
+  }
+
+  .bndy-gigs-page .bndy-gig-row::before {
+    display: none !important;
+  }
+
+  /* Bring the desktop timeline onto mobile. */
+  .bndy-gigs-page .bndy-gig-row > div:nth-child(2) {
+    display: flex !important;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > div:nth-child(2) > span:first-child {
+    top: -0.95rem !important;
+    bottom: -0.95rem !important;
+    background: color-mix(in srgb, var(--acc) 20%, var(--line)) !important;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > div:nth-child(2) > span:last-child {
+    width: 0.5rem !important;
+    height: 0.5rem !important;
+    border-width: 2px !important;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > div:first-child > div:first-child {
+    font-size: 0.98rem !important;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > div:first-child > div:last-child:not(:first-child) {
+    margin-top: 0.35rem;
+    font-size: 0.47rem !important;
+    letter-spacing: 0.14em !important;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > div:nth-child(4) > div:first-child {
+    font-size: 1rem !important;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > div:nth-child(4) > div:nth-child(2) {
+    margin-top: 0.4rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .bndy-gigs-page .bndy-gig-row > svg:last-child {
+    width: 1rem;
+    height: 1rem;
+    opacity: 0.55;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
