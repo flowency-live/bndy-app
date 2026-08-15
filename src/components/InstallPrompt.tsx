@@ -76,6 +76,7 @@ export function InstallPrompt() {
     if (!mode || wasRecentlyDismissed()) return;
 
     const tryShow = () => {
+      if (wasRecentlyDismissed()) return;
       try {
         if (sessionStorage.getItem(DISCLAIMER_KEY) !== "1") return;
       } catch {
@@ -91,6 +92,8 @@ export function InstallPrompt() {
 
   const dismiss = () => {
     setOpen(false);
+    setMode(null);
+    setDeferredPrompt(null);
     try { localStorage.setItem(DISMISSED_KEY, String(Date.now())); } catch { /* ignore */ }
   };
 
@@ -157,11 +160,11 @@ export function InstallPrompt() {
             Not now
           </button>
           {ios ? (
-            <button onClick={() => setOpen(false)} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-[var(--acc-fg,#fff)] shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)]">
+            <button onClick={dismiss} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-white shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)]">
               Got it
             </button>
           ) : (
-            <button onClick={install} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-[var(--acc-fg,#fff)] shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)] transition-transform active:scale-[.97]">
+            <button onClick={install} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-white shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)] transition-transform active:scale-[.97]">
               <Download size={15} strokeWidth={2.7} />
               Install bndy
             </button>
