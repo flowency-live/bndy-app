@@ -5,6 +5,7 @@ import "./skins.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/app-shell";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const archivoBlack = Archivo_Black({ weight: "400", subsets: ["latin"], variable: "--font-archivo-black", display: "swap" });
@@ -19,9 +20,16 @@ const FONT_VARS = `${inter.variable} ${archivoBlack.variable} ${archivo.variable
 export const metadata: Metadata = {
   title: "bndy · live music near you",
   description: "Find live music: gigs, artists and venues near you.",
-  // 3b: OG images resolve against this. Today's live origin; switch via env
-  // (NEXT_PUBLIC_SITE_URL) when map.bndy.co.uk goes canonical.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gigmap.bndy.co.uk"),
+  manifest: "/manifest.webmanifest",
+  icons: {
+    apple: [{ url: "/pwa-icon-192", sizes: "192x192", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "bndy",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -44,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased">
         <Providers>
           <AppShell>{children}</AppShell>
+          <InstallPrompt />
         </Providers>
       </body>
     </html>
