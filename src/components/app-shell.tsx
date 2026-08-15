@@ -6,6 +6,7 @@ import { CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-r
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
+import { BrandWordmark } from "@/components/BrandWordmark";
 import { UserButton } from "@/features/auth/UserButton";
 import { cn } from "@/lib/cn";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -35,8 +36,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-[100dvh]">
         <header className="mx-auto flex max-w-5xl items-center justify-between px-4 pb-1 lg:px-8" style={{ paddingTop: `calc(1.25rem + env(safe-area-inset-top, 0px))` }}>
-          <span className="text-2xl font-black tracking-tight">
-            <span className="text-[var(--acc)] brand-glow">bndy</span>
+          <span className="flex items-center gap-1 text-2xl font-black tracking-tight">
+            <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
             <span className="text-txt">.live</span>
           </span>
           <div className="flex items-center gap-3">
@@ -58,8 +59,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ---- desktop sidebar ---- */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
-        <Link href="/" className="mb-6 shrink-0 px-2 text-2xl font-black tracking-tight">
-          <span className="text-[var(--acc)] brand-glow">bndy</span>
+        <Link href="/" className="mb-6 flex shrink-0 items-center gap-1 px-2 text-2xl font-black tracking-tight">
+          <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
           <span className="text-txt">.live</span>
         </Link>
         <div className="mb-6 shrink-0">
