@@ -9,7 +9,9 @@ const MapView = dynamic(() => import("@/features/map/MapView").then((m) => m.Map
 export default function MapPage() {
   return (
     <Suspense>
-      <MapView />
+      <div className="bndy-map-page contents">
+        <MapView />
+      </div>
     </Suspense>
   );
 }
