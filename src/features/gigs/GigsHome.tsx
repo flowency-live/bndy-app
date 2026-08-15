@@ -98,25 +98,33 @@ export function GigsHome() {
   return (
     <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
       <div className="mb-6 lg:grid lg:grid-cols-[250px_minmax(0,1fr)] lg:items-end lg:gap-x-8 lg:gap-y-4 lg:mb-8">
-        <header className="mb-5 lg:mb-0">
-          <div className="flex items-start justify-between gap-4 lg:block">
-            <h1 className="font-disp text-[29px] font-black tracking-tight lg:text-[38px] lg:leading-none">Gigs near you</h1>
-            <div
-              className="mt-0.5 shrink-0 rounded-[var(--rad)] border border-line px-3 py-2 text-right lg:hidden"
-              style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
-            >
-              <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : total}</div>
-              <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Gigs</div>
-            </div>
-          </div>
-          <p className="mt-1.5 hidden text-[12.5px] font-semibold text-dim lg:block lg:text-[13px]">
+        <header className="mb-5 hidden lg:block lg:mb-0">
+          <h1 className="font-disp text-[38px] font-black leading-none tracking-tight">Gigs near you</h1>
+          <p className="mt-1.5 text-[13px] font-semibold text-dim">
             {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label}`}
             {usingCurrent && !located ? " · allow location for near-you results" : ""}
           </p>
         </header>
 
+        <div className="mb-3 flex items-stretch gap-2 lg:hidden">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Search gigs by artist or venue"
+            placeholder="Search artists or venues…"
+            className="min-w-0 flex-1 rounded-[var(--rad)] border border-line glass px-4 py-3 text-left text-[14px] font-semibold outline-none transition-colors placeholder:text-left placeholder:text-dim focus:border-[var(--acc)]"
+          />
+          <div
+            className="flex w-[76px] shrink-0 flex-col items-center justify-center rounded-[var(--rad)] border border-line px-2 py-2 text-center"
+            style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
+          >
+            <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : total}</div>
+            <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Gigs</div>
+          </div>
+        </div>
+
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(260px,1fr)_auto_minmax(230px,.72fr)] lg:items-center">
-          <div className="relative">
+          <div className="relative hidden lg:block">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dim" />
             <input
               value={q}
