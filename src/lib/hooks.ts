@@ -1,17 +1,30 @@
 "use client";
 
-import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
-import type { Artist } from "@/domain/types";
+import type { Artist, Gig } from "@/domain/types";
 import { todayISO, addDaysISO } from "@/domain/dates";
+import { artistMap, matchesMyGigFilter, useMyGigFilter } from "@/lib/myGigFilter";
 
 const MIN = 60 * 1000;
 
-export function useUpcomingGigs() {
+function useUpcomingGigsRaw() {
   const today = todayISO();
   const endDate = addDaysISO(today, 730); // ~2 years — some endpoints window out far-future gigs without an explicit endDate
   return useQuery({ queryKey: ["gigs", "upcoming", today, endDate], queryFn: () => fetchGigs({ startDate: today, endDate }), staleTime: 5 * MIN, gcTime: 30 * MIN });
+}
+
+export function useUpcomingGigs() {
+  const query = useUpcomingGigsRaw();
+  const { data: artists = [] } = useArtists();
+  const { filter, isActive } = useMyGigFilter();
+  const artistsById = useMemo(() => artistMap(artists), [artists]);
+  const data = useMemo(
+    () => isActive ? (query.data ?? []).filter((gig) => matchesMyGigFilter(gig, artistsById, filter)) : query.data,
+    [query.data, isActive, artistsById, filter],
+  );
+  return { ...query, data };
 }
 
 export function useVenues() {
@@ -56,10 +69,12 @@ function roundBBox(bbox: BBox): BBox {
   };
 }
 
-/** Fetch gigs within a viewport bbox (geo endpoint). */
+/** Fetch gigs within a viewport bbox (geo endpoint). My gigs is applied here too,
+ * using the full upcoming-gig cache as the metadata fallback because the geo GSI
+ * deliberately returns a very small event projection. */
 export function useGigsInView(bbox: BBox | null, startDate: string, endDate: string) {
   const rounded = bbox ? roundBBox(bbox) : null;
-  return useQuery({
+  const query = useQuery({
     queryKey: ["gigs", "geo", rounded?.west, rounded?.south, rounded?.east, rounded?.north, startDate, endDate],
     queryFn: () => fetchGigsInView(rounded!, startDate, endDate),
     enabled: !!rounded,
@@ -67,4 +82,24 @@ export function useGigsInView(bbox: BBox | null, startDate: string, endDate: str
     gcTime: 5 * MIN,
     placeholderData: keepPreviousData,
   });
+
+  const fullQuery = useUpcomingGigsRaw();
+  const { data: artists = [] } = useArtists();
+  const { filter, isActive } = useMyGigFilter();
+  const artistsById = useMemo(() => artistMap(artists), [artists]);
+  const fullById = useMemo(() => new Map((fullQuery.data ?? []).map((gig: Gig) => [gig.id, gig])), [fullQuery.data]);
+
+  const data = useMemo(() => {
+    if (!query.data || !isActive) return query.data;
+    return {
+      ...query.data,
+      events: query.data.events.filter((event) => {
+        const full = fullById.get(event.id);
+        const candidate = full ?? ({ artistId: event.artistId } as Pick<Gig, "artistId" | "artistIds" | "isOpenMic">);
+        return matchesMyGigFilter(candidate, artistsById, filter);
+      }),
+    };
+  }, [query.data, isActive, fullById, artistsById, filter]);
+
+  return { ...query, data };
 }
