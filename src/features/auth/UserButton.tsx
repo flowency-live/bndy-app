@@ -4,9 +4,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CircleHelp, History, LogOut, Settings, UserRound, X } from "lucide-react";
+import { CircleHelp, History, LogOut, Settings, SlidersHorizontal, UserRound, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/cn";
+import { openGigFilterPreferences } from "@/features/gigs/MyGigTools";
 import { ProfileSetup } from "./ProfileSetup";
 
 function displayName(name?: string | null, email?: string | null, username?: string | null): string {
@@ -52,7 +53,7 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
       {open && (
         <div
           className={cn(
-            "absolute z-40 w-48 rounded-xl border border-line glass-hi p-2 shadow-xl",
+            "absolute z-40 w-52 rounded-xl border border-line glass-hi p-2 shadow-xl",
             variant === "top"
               ? "right-0 top-full mt-2"
               : variant === "map"
@@ -76,6 +77,17 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
           >
             <Settings size={16} />
             Edit Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              openGigFilterPreferences();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"
+          >
+            <SlidersHorizontal size={16} className="text-[#e93d94]" />
+            My gig preferences
           </button>
           {isCurator && (
             <Link
