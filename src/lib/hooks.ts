@@ -3,7 +3,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
-import type { Artist, Gig } from "@/domain/types";
+import type { Gig } from "@/domain/types";
 import { todayISO, addDaysISO } from "@/domain/dates";
 import { artistMap, matchesMyGigFilter, useMyGigFilter } from "@/lib/myGigFilter";
 
@@ -87,7 +87,10 @@ export function useGigsInView(bbox: BBox | null, startDate: string, endDate: str
   const { data: artists = [] } = useArtists();
   const { filter, isActive } = useMyGigFilter();
   const artistsById = useMemo(() => artistMap(artists), [artists]);
-  const fullById = useMemo(() => new Map((fullQuery.data ?? []).map((gig: Gig) => [gig.id, gig])), [fullQuery.data]);
+  const fullById = useMemo(
+    () => new Map<string, Gig>((fullQuery.data ?? []).map((gig): [string, Gig] => [gig.id, gig])),
+    [fullQuery.data],
+  );
 
   const data = useMemo(() => {
     if (!query.data || !isActive) return query.data;
