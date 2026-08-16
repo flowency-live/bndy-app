@@ -124,14 +124,28 @@ export async function toggleFavourite(type: FavouriteType, id: string, favourite
 
 /* ---------- saved My gigs preference ---------- */
 
-export async function fetchGigFilter(): Promise<GigFilter> {
+type GigFilterProfile = { user?: { gigFilter?: unknown; [key: string]: unknown } };
+
+async function fetchGigFilterProfile(): Promise<GigFilterProfile> {
   const res = await fetch(`${BASE}/users/profile`, { credentials: "include", cache: "no-store" });
   if (!res.ok) throw new Error(`GET /users/profile → ${res.status}`);
-  const data = (await res.json()) as { user?: { gigFilter?: unknown } };
+  return (await res.json()) as GigFilterProfile;
+}
+
+export async function fetchGigFilter(): Promise<GigFilter> {
+  const data = await fetchGigFilterProfile();
   return normaliseGigFilter(data.user?.gigFilter ?? EMPTY_GIG_FILTER);
 }
 
 export async function updateGigFilter(gigFilter: GigFilter): Promise<GigFilter> {
+  // Rollout guard: the old profile PUT treats unknown partial bodies as a normal
+  // profile update. Only send {gigFilter} once GET /users/profile explicitly
+  // exposes the new field, so a frontend/API deployment race cannot blank a profile.
+  const profile = await fetchGigFilterProfile();
+  if (!profile.user || !Object.prototype.hasOwnProperty.call(profile.user, "gigFilter")) {
+    throw new Error("Gig preferences are still being enabled. Please try again in a moment.");
+  }
+
   const res = await fetch(`${BASE}/users/profile`, {
     method: "PUT",
     credentials: "include",
