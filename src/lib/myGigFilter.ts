@@ -64,7 +64,14 @@ export function useToggleMyGigFilter() {
 
 export function artistMap(artists: Artist[]) { return new Map(artists.map((artist) => [artist.id, artist])); }
 
-/** Values within a category match any selected value; selected categories all apply. Open Mic is additive. */
+/**
+ * Values within a category match any selected value; selected categories all
+ * apply. Open Mic is additive.
+ *
+ * Compatibility note: saved filters historically stored `acoustic` inside the
+ * actTypes array. We keep that wire/storage shape for now, but interpret it
+ * correctly against artist.acoustic. Acoustic is NOT an Artist actType.
+ */
 export function matchesMyGigFilter(
   gig: Pick<Gig, "artistId" | "artistIds" | "isOpenMic">,
   artistsById: Map<string, Artist>,
@@ -72,19 +79,25 @@ export function matchesMyGigFilter(
 ) {
   if (!hasGigFilterCriteria(filter)) return true;
   if (filter.includeOpenMic && gig.isOpenMic) return true;
-  const needsArtistMatch = filter.genres.length > 0 || filter.actTypes.length > 0 || filter.artistTypes.length > 0;
-  if (!needsArtistMatch) return false;
-  const ids = gig.artistIds?.length ? gig.artistIds : gig.artistId ? [gig.artistId] : [];
+
   const wantedGenres = new Set(filter.genres.map((g) => g.toLowerCase()));
-  const wantedActs = new Set(filter.actTypes.map((a) => a.toLowerCase()));
+  const actValues = filter.actTypes.map((a) => a.toLowerCase());
+  const wantsAcoustic = actValues.includes("acoustic");
+  const wantedActs = new Set(actValues.filter((a) => a !== "acoustic"));
   const wantedArtistTypes = new Set(filter.artistTypes.map((a) => a.toLowerCase()));
+
+  const needsArtistMatch = wantedGenres.size > 0 || wantedActs.size > 0 || wantsAcoustic || wantedArtistTypes.size > 0;
+  if (!needsArtistMatch) return false;
+
+  const ids = gig.artistIds?.length ? gig.artistIds : gig.artistId ? [gig.artistId] : [];
   return ids.some((id) => {
     const artist = artistsById.get(id);
     if (!artist) return false;
     const genresOk = wantedGenres.size === 0 || (artist.genres ?? []).some((g) => wantedGenres.has(g.toLowerCase()));
     const actsOk = wantedActs.size === 0 || (artist.actType ?? []).some((a) => wantedActs.has(a.toLowerCase()));
+    const acousticOk = !wantsAcoustic || artist.acoustic === true;
     const artistTypeOk = wantedArtistTypes.size === 0 || (!!artist.artistType && wantedArtistTypes.has(artist.artistType.toLowerCase()));
-    return genresOk && actsOk && artistTypeOk;
+    return genresOk && actsOk && acousticOk && artistTypeOk;
   });
 }
 
