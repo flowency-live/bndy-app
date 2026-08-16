@@ -71,15 +71,15 @@ export function MyGigsQuickControl() {
       onClick={onClick}
       disabled={isLoading || isPending}
       aria-pressed={isActive}
-      aria-label={hasCriteria ? `My gigs filter ${isActive ? "on" : "off"}` : "Set up My gigs filter"}
-      title={hasCriteria ? `My gigs: ${isActive ? "on" : "off"}. Edit in your profile menu.` : "Set up My gigs"}
+      aria-label={hasCriteria ? `My Filters ${isActive ? "on" : "off"}` : "Set up My Filters"}
+      title={hasCriteria ? `My Filters: ${isActive ? "on" : "off"}. Edit in your profile menu.` : "Set up My Filters"}
       className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[8.25rem] z-40 flex h-12 min-w-[82px] items-center justify-center gap-1.5 rounded-full border px-3 shadow-[var(--shadow)] transition-[background-color,border-color,box-shadow,transform] active:scale-95 disabled:opacity-50 lg:hidden"
       style={isActive
         ? { background: pink, borderColor: pink, color: ink, boxShadow: `0 0 0 1px color-mix(in srgb, ${pink} 32%, transparent), 0 0 20px color-mix(in srgb, ${pink} 34%, transparent)` }
         : { background: `color-mix(in srgb, ${pink} 8%, var(--glass-hi))`, borderColor: `color-mix(in srgb, ${pink} 46%, var(--line))`, color: pink }}
     >
       <SlidersHorizontal size={17} strokeWidth={2.5} />
-      <span className="text-[10.5px] font-black whitespace-nowrap">My gigs</span>
+      <span className="text-[10.5px] font-black whitespace-nowrap">My Filters</span>
       {criteriaCount > 0 && (
         <span
           className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-ink px-1 text-[8px] font-black tnum"
@@ -105,8 +105,8 @@ export function MyGigsInlineControl({ compact = false, className }: { compact?: 
       onClick={onClick}
       disabled={isLoading || isPending}
       aria-pressed={isActive}
-      aria-label={hasCriteria ? `My gigs filter ${isActive ? "on" : "off"}` : "Set up My gigs filter"}
-      title={hasCriteria ? `My gigs: ${isActive ? "on" : "off"}. Edit in your profile menu.` : "Set up My gigs"}
+      aria-label={hasCriteria ? `My Filters ${isActive ? "on" : "off"}` : "Set up My Filters"}
+      title={hasCriteria ? `My Filters: ${isActive ? "on" : "off"}. Edit in your profile menu.` : "Set up My Filters"}
       className={cn(
         "relative hidden shrink-0 items-center justify-center border font-extrabold transition-[background-color,border-color,box-shadow,transform] active:scale-[.98] disabled:opacity-50 lg:flex",
         compact ? "gap-1.5 rounded-2xl px-3 py-2.5 text-[11px]" : "gap-2 rounded-[var(--rad)] px-3.5 py-2 text-[12px]",
@@ -117,7 +117,7 @@ export function MyGigsInlineControl({ compact = false, className }: { compact?: 
         : { background: `color-mix(in srgb, ${pink} 7%, var(--glass))`, borderColor: `color-mix(in srgb, ${pink} 46%, var(--line))`, color: pink }}
     >
       <SlidersHorizontal size={compact ? 15 : 14} strokeWidth={2.5} />
-      <span className="whitespace-nowrap">My gigs</span>
+      <span className="whitespace-nowrap">My Filters</span>
       {criteriaCount > 0 && (
         <span
           className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[7.5px] font-black tnum"
@@ -185,7 +185,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
             <SlidersHorizontal size={19} />
           </span>
           <div>
-            <h2 className="text-[20px] font-black tracking-tight text-txt">My gig preferences</h2>
+            <h2 className="text-[20px] font-black tracking-tight text-txt">My Filters</h2>
             <p className="mt-0.5 text-[11.5px] font-semibold text-dim">Saved to your account · used on Map and Gigs</p>
           </div>
         </div>
@@ -275,7 +275,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
           className="flex-1 rounded-2xl px-4 py-3 text-[13.5px] font-black transition-opacity disabled:opacity-40"
           style={{ background: pink, color: pinkText }}
         >
-          {save.isPending ? "Saving…" : "Save & use My gigs"}
+          {save.isPending ? "Saving…" : "Save & use My Filters"}
         </button>
       </div>
     </Sheet>
