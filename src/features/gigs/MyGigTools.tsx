@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Mic, SlidersHorizontal } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { GENRES, ACT_TYPES, ARTIST_TYPES } from "@/features/wizard/lib";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/cn";
 import {
@@ -24,7 +24,6 @@ export function openGigFilterPreferences() {
 }
 
 function myGigsColour(mode: "light" | "dark") {
-  // Semantic pink: same identity on every skin, tuned for contrast by light/dark family.
   return mode === "dark" ? "#ff5ca8" : "#c026d3";
 }
 
@@ -92,8 +91,6 @@ export function MyGigsQuickControl() {
   );
 }
 
-/** Desktop counterpart to the mobile floating control. Inline so each discovery
- * surface can place it naturally in its own toolbar without duplicating state logic. */
 export function MyGigsInlineControl({ compact = false, className }: { compact?: boolean; className?: string }) {
   const { isAuthenticated, hasCriteria, isActive, criteriaCount, isLoading, isPending, pink, ink, onClick } = useMyGigsControl();
 
@@ -134,6 +131,7 @@ export function MyGigsInlineControl({ compact = false, className }: { compact?: 
 
 function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { mode } = useTheme();
+  const { data: taxonomy } = useArtistTaxonomy();
   const pink = myGigsColour(mode);
   const pinkText = onPink(mode);
   const { filter } = useMyGigFilter();
@@ -161,10 +159,21 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
     ...prev,
     actTypes: prev.actTypes.includes(actType) ? prev.actTypes.filter((x) => x !== actType) : [...prev.actTypes, actType],
   }));
-  const toggleArtistType = (artistType: string) => setDraft((prev) => ({
-    ...prev,
-    artistTypes: prev.artistTypes.includes(artistType) ? prev.artistTypes.filter((x) => x !== artistType) : [...prev.artistTypes, artistType],
-  }));
+  const artistTypeIsSelected = (value: string, label: string) => draft.artistTypes.some((x) => {
+    const key = x.toLowerCase();
+    return key === value.toLowerCase() || key === label.toLowerCase();
+  });
+  const toggleArtistType = (value: string, label: string) => setDraft((prev) => {
+    const aliases = new Set([value.toLowerCase(), label.toLowerCase()]);
+    const selected = prev.artistTypes.some((x) => aliases.has(x.toLowerCase()));
+    const withoutAliases = prev.artistTypes.filter((x) => !aliases.has(x.toLowerCase()));
+    return { ...prev, artistTypes: selected ? withoutAliases : [...withoutAliases, value] };
+  });
+
+  const acoustic = taxonomy.performanceCapabilities.find((capability) => capability.value === "acoustic");
+  // Storage compatibility: `acoustic` remains in the saved actTypes array for
+  // now, but matching reads it as artist.acoustic rather than artist.actType.
+  const acousticSelected = draft.actTypes.some((x) => x.toLowerCase() === "acoustic");
 
   const hasCriteria = hasGigFilterCriteria(draft);
   const summary = useMemo(() => describeGigFilter(draft), [draft]);
@@ -193,9 +202,15 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
       <FilterSection title="They are" sub="Artist type">
         <div className="flex flex-wrap gap-1.5">
-          {ARTIST_TYPES.map((type) => (
-            <ChoiceChip key={type} selected={draft.artistTypes.includes(type)} colour={pink} selectedText={pinkText} onClick={() => toggleArtistType(type)}>
-              {type}
+          {taxonomy.artistTypes.map((type) => (
+            <ChoiceChip
+              key={type.value}
+              selected={artistTypeIsSelected(type.value, type.label)}
+              colour={pink}
+              selectedText={pinkText}
+              onClick={() => toggleArtistType(type.value, type.label)}
+            >
+              {type.label}
             </ChoiceChip>
           ))}
         </div>
@@ -203,13 +218,23 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
       <FilterSection title="They play" sub="Act type">
         <div className="flex flex-wrap gap-1.5">
-          {ACT_TYPES.map((type) => (
+          {taxonomy.actTypes.map((type) => (
             <ChoiceChip key={type.value} selected={draft.actTypes.includes(type.value)} colour={pink} selectedText={pinkText} onClick={() => toggleAct(type.value)}>
               {type.label}
             </ChoiceChip>
           ))}
         </div>
       </FilterSection>
+
+      {acoustic && (
+        <FilterSection title="They can perform" sub="Performance capability">
+          <div className="flex flex-wrap gap-1.5">
+            <ChoiceChip selected={acousticSelected} colour={pink} selectedText={pinkText} onClick={() => toggleAct("acoustic")}>
+              Acoustic
+            </ChoiceChip>
+          </div>
+        </FilterSection>
+      )}
 
       <section className="mt-5 overflow-hidden rounded-2xl border border-line">
         <button
@@ -227,7 +252,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
         {genresOpen && (
           <div className="border-t border-line px-4 pb-4 pt-3">
             <div className="flex flex-wrap gap-1.5">
-              {GENRES.map((genre) => (
+              {taxonomy.genres.map((genre) => (
                 <ChoiceChip key={genre} selected={draft.genres.includes(genre)} colour={pink} selectedText={pinkText} onClick={() => toggleGenre(genre)}>
                   {genre}
                 </ChoiceChip>
