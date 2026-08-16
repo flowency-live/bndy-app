@@ -6,16 +6,16 @@ import type { Artist, Gig } from "@/domain/types";
 import { fetchGigFilter, updateGigFilter, type GigFilter } from "@/lib/auth/authApi";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-export const EMPTY_GIG_FILTER: GigFilter = { genres: [], actTypes: [], includeOpenMic: false, enabled: false };
+export const EMPTY_GIG_FILTER: GigFilter = { genres: [], actTypes: [], artistTypes: [], includeOpenMic: false, enabled: false };
 
 function keyFor(userId?: string | null) { return ["my-gig-filter", userId ?? "signed-out"] as const; }
 
 export function hasGigFilterCriteria(filter: GigFilter) {
-  return filter.genres.length > 0 || filter.actTypes.length > 0 || filter.includeOpenMic;
+  return filter.genres.length > 0 || filter.actTypes.length > 0 || filter.artistTypes.length > 0 || filter.includeOpenMic;
 }
 
 export function gigFilterCriteriaCount(filter: GigFilter) {
-  return filter.genres.length + filter.actTypes.length + (filter.includeOpenMic ? 1 : 0);
+  return filter.genres.length + filter.actTypes.length + filter.artistTypes.length + (filter.includeOpenMic ? 1 : 0);
 }
 
 export function useMyGigFilter() {
@@ -64,7 +64,7 @@ export function useToggleMyGigFilter() {
 
 export function artistMap(artists: Artist[]) { return new Map(artists.map((artist) => [artist.id, artist])); }
 
-/** Values within a category are ORed; categories are ANDed; Open Mic is additive. */
+/** Values within a category match any selected value; selected categories all apply. Open Mic is additive. */
 export function matchesMyGigFilter(
   gig: Pick<Gig, "artistId" | "artistIds" | "isOpenMic">,
   artistsById: Map<string, Artist>,
@@ -72,27 +72,30 @@ export function matchesMyGigFilter(
 ) {
   if (!hasGigFilterCriteria(filter)) return true;
   if (filter.includeOpenMic && gig.isOpenMic) return true;
-  const needsArtistMatch = filter.genres.length > 0 || filter.actTypes.length > 0;
+  const needsArtistMatch = filter.genres.length > 0 || filter.actTypes.length > 0 || filter.artistTypes.length > 0;
   if (!needsArtistMatch) return false;
   const ids = gig.artistIds?.length ? gig.artistIds : gig.artistId ? [gig.artistId] : [];
   const wantedGenres = new Set(filter.genres.map((g) => g.toLowerCase()));
   const wantedActs = new Set(filter.actTypes.map((a) => a.toLowerCase()));
+  const wantedArtistTypes = new Set(filter.artistTypes.map((a) => a.toLowerCase()));
   return ids.some((id) => {
     const artist = artistsById.get(id);
     if (!artist) return false;
     const genresOk = wantedGenres.size === 0 || (artist.genres ?? []).some((g) => wantedGenres.has(g.toLowerCase()));
     const actsOk = wantedActs.size === 0 || (artist.actType ?? []).some((a) => wantedActs.has(a.toLowerCase()));
-    return genresOk && actsOk;
+    const artistTypeOk = wantedArtistTypes.size === 0 || (!!artist.artistType && wantedArtistTypes.has(artist.artistType.toLowerCase()));
+    return genresOk && actsOk && artistTypeOk;
   });
 }
 
 export function describeGigFilter(filter: GigFilter) {
   const parts: string[] = [];
-  if (filter.genres.length) parts.push(filter.genres.join(" / "));
+  if (filter.artistTypes.length) parts.push(filter.artistTypes.join(" / "));
   if (filter.actTypes.length) {
     const labels: Record<string, string> = { originals: "Originals", covers: "Covers", tribute: "Tribute", acoustic: "Acoustic" };
     parts.push(filter.actTypes.map((x) => labels[x] ?? x).join(" / "));
   }
-  if (filter.includeOpenMic) parts.push("+ Open Mic");
+  if (filter.genres.length) parts.push(filter.genres.join(" / "));
+  if (filter.includeOpenMic) parts.push("Open Mic");
   return parts.join(" · ") || "No preferences selected";
 }
