@@ -8,17 +8,19 @@ export type UserRole = "user" | "curator" | "owner" | "staff";
 export interface GigFilter {
   genres: string[];
   actTypes: string[];
+  artistTypes: string[];
   includeOpenMic: boolean;
   enabled: boolean;
 }
 
-const EMPTY_GIG_FILTER: GigFilter = { genres: [], actTypes: [], includeOpenMic: false, enabled: false };
+const EMPTY_GIG_FILTER: GigFilter = { genres: [], actTypes: [], artistTypes: [], includeOpenMic: false, enabled: false };
 
 function normaliseGigFilter(value: unknown): GigFilter {
   const f = (value && typeof value === "object" ? value : {}) as Partial<GigFilter>;
   return {
     genres: Array.isArray(f.genres) ? f.genres.filter((x): x is string => typeof x === "string") : [],
     actTypes: Array.isArray(f.actTypes) ? f.actTypes.filter((x): x is string => typeof x === "string") : [],
+    artistTypes: Array.isArray(f.artistTypes) ? f.artistTypes.filter((x): x is string => typeof x === "string") : [],
     includeOpenMic: f.includeOpenMic === true,
     enabled: f.enabled === true,
   };
