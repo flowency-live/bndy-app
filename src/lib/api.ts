@@ -116,14 +116,14 @@ export function toVenue(v: VenueDTO): Venue | null {
 
 interface ArtistDTO {
   id: string; name: string; genres?: string[]; artist_type?: string; artistType?: string;
-  actType?: string[]; location?: string; profileImageUrl?: string | null; bio?: string;
+  actType?: string[]; acoustic?: boolean; location?: string; profileImageUrl?: string | null; bio?: string;
   socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string; websiteUrl?: string; spotifyUrl?: string;
   publishAvailability?: boolean; // A6 fix: was missing, Availability tab never showed
 }
 export function toArtist(a: ArtistDTO): Artist {
   return {
     id: a.id, name: a.name, genres: a.genres, artistType: a.artistType || a.artist_type,
-    actType: a.actType, location: a.location, profileImageUrl: a.profileImageUrl, bio: a.bio,
+    actType: a.actType, acoustic: a.acoustic, location: a.location, profileImageUrl: a.profileImageUrl, bio: a.bio,
     socials: toSocials(a as unknown as Record<string, unknown>),
     publishAvailability: a.publishAvailability, // A6 fix
   };
