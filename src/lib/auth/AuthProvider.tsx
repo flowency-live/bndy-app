@@ -42,7 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await apiSignOut();
     qc.setQueryData(["auth", "me"], null);
-    qc.removeQueries({ queryKey: ["favourites"] }); // A7 fix: clear favourites on sign-out
+    qc.removeQueries({ queryKey: ["favourites"] });
+    qc.removeQueries({ queryKey: ["my-gig-filter"] });
   };
 
   const value: AuthContextValue = {
