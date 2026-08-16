@@ -14,8 +14,9 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Loader2, MapPin, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { curatorApi, useCuratorInvalidate, type CuratorEntity } from "@/lib/curator";
-import { ACT_TYPES, ARTIST_TYPES, GENRES, REGIONS } from "@/features/wizard/lib";
+import { REGIONS } from "@/features/wizard/lib";
 import { placesSuggest, placesDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
+import { canonicalArtistType, useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { cn } from "@/lib/cn";
 import type { Artist, Gig, Venue } from "@/domain/types";
 
@@ -163,12 +164,14 @@ export function EditVenueSheet({ venue, open, onClose }: { venue: Venue; open: b
 type LocMode = "town" | "region";
 
 export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; open: boolean; onClose: () => void }) {
+  const { data: taxonomy } = useArtistTaxonomy();
   const isRegion = (REGIONS as readonly string[]).includes(artist.location ?? "");
   const [f, setF] = useState({
     bio: artist.bio ?? "",
     genres: artist.genres ?? [],
-    artistType: artist.artistType ?? "",
+    artistType: canonicalArtistType(artist.artistType) ?? artist.artistType ?? "",
     actType: artist.actType ?? [] as string[],
+    acoustic: artist.acoustic ?? false,
     facebookUrl: socialOf(artist, "facebook"),
     instagramUrl: socialOf(artist, "instagram"),
     websiteUrl: socialOf(artist, "website"),
@@ -190,8 +193,9 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
       setF({
         bio: artist.bio ?? "",
         genres: artist.genres ?? [],
-        artistType: artist.artistType ?? "",
+        artistType: canonicalArtistType(artist.artistType) ?? artist.artistType ?? "",
         actType: artist.actType ?? [],
+        acoustic: artist.acoustic ?? false,
         facebookUrl: socialOf(artist, "facebook"),
         instagramUrl: socialOf(artist, "instagram"),
         websiteUrl: socialOf(artist, "website"),
@@ -231,6 +235,9 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
     setF((prev) => ({ ...prev, genres: prev.genres.includes(g) ? prev.genres.filter((x) => x !== g) : [...prev.genres, g] }));
   const toggleAct = (v: string) =>
     setF((prev) => ({ ...prev, actType: prev.actType.includes(v) ? prev.actType.filter((x) => x !== v) : [...prev.actType, v] }));
+  // Keep retired values visible/removable on existing records without offering
+  // them to artists who do not already have them.
+  const genreChoices = [...new Set([...f.genres, ...taxonomy.genres])];
 
   const payload = useMemo(() => ({
     bio: f.bio,
@@ -241,6 +248,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
     genres: f.genres,
     artistType: f.artistType || null,
     actType: f.actType.length ? f.actType : null,
+    acoustic: f.acoustic,
     facebookUrl: f.facebookUrl.trim(),
     instagramUrl: f.instagramUrl.trim(),
     websiteUrl: f.websiteUrl.trim(),
@@ -297,20 +305,34 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
       <div className="relative">
         <select value={f.artistType} onChange={(e) => setF({ ...f, artistType: e.target.value })} className={cn(field, "appearance-none")}>
           <option value="">Not set</option>
-          {ARTIST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          {taxonomy.artistTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
         <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
       </div>
 
       <label className={label}>They play</label>
       <div className="flex flex-wrap gap-1.5">
-        {ACT_TYPES.map((t) => (
+        {taxonomy.actTypes.map((t) => (
           <button key={t.value} type="button" onClick={() => toggleAct(t.value)}
             className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", f.actType.includes(t.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
             {t.label}
           </button>
         ))}
       </div>
+
+      <label className={label}>They can perform</label>
+      <button
+        type="button"
+        onClick={() => setF((prev) => ({ ...prev, acoustic: !prev.acoustic }))}
+        aria-pressed={f.acoustic}
+        className="flex items-center gap-2.5 rounded-full border border-line px-3 py-1.5 text-[12.5px] font-bold text-dim transition-colors hover:text-txt"
+        style={f.acoustic ? { background: "var(--acc)", color: "var(--on-acc)", borderColor: "transparent" } : undefined}
+      >
+        <span className={cn("flex h-4 w-4 items-center justify-center rounded border", f.acoustic ? "border-transparent bg-white/15" : "border-line-hi")}>
+          {f.acoustic && <Check size={10} strokeWidth={3.5} />}
+        </span>
+        Acoustic
+      </button>
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-line">
         <button type="button" onClick={() => setGenresOpen((v) => !v)} aria-expanded={genresOpen}
@@ -324,7 +346,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
         {genresOpen && (
           <div className="border-t border-line px-4 pb-4 pt-3">
             <div className="flex flex-wrap gap-1.5">
-              {GENRES.map((g) => (
+              {genreChoices.map((g) => (
                 <button key={g} type="button" onClick={() => toggleGenre(g)}
                   className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", f.genres.includes(g) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
                   {g}
