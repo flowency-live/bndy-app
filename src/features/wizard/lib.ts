@@ -2,7 +2,7 @@
 import type { Artist } from "@/domain/types";
 import type { RepeatPattern } from "@/domain/recurrence";
 import { billTitle } from "@/domain/lineup";
-import { FALLBACK_ARTIST_TAXONOMY } from "@/lib/artistTaxonomy";
+import { FALLBACK_ARTIST_TAXONOMY } from "@/lib/artistTaxonomyCore";
 
 /**
  * Compatibility exports for wizard code still being moved to useArtistTaxonomy().
