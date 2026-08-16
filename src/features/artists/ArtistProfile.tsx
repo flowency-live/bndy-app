@@ -12,13 +12,15 @@ import { CuratorBar } from "@/features/curator/CuratorBar";
 import { AvatarUpload } from "@/features/curator/AvatarUpload";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
+import { artistTypeLabel, useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
 
 export function ArtistProfile({ id, artist, gigs, availability }: { id: string; artist: Artist | null; gigs: Gig[]; availability: AvailabilityDate[] }) {
   const [activeTab, setActiveTab] = useState<'events' | 'availability'>('events');
+  const { data: taxonomy } = useArtistTaxonomy();
   const name = artist?.name || gigs[0]?.artistName || "Artist";
   const img = artist?.profileImageUrl || undefined;
-  const type = artist?.artistType;
+  const type = artistTypeLabel(artist?.artistType, taxonomy);
   const genres = artist?.genres ?? [];
 
   return (
