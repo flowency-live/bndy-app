@@ -8,7 +8,7 @@ import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { UserButton } from "@/features/auth/UserButton";
-import { MyGigFilterHost, MyGigsQuickControl } from "@/features/gigs/MyGigTools";
+import { MyGigFilterHost, MyGigsInlineControl, MyGigsQuickControl } from "@/features/gigs/MyGigTools";
 import { cn } from "@/lib/cn";
 import { Disclaimer } from "@/components/Disclaimer";
 import type { ReactNode } from "react";
@@ -66,9 +66,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
           <span className="text-txt">.live</span>
         </Link>
-        <div className="mb-6 shrink-0">
+        <div className="mb-3 shrink-0">
           <UserButton variant="sidebar" />
         </div>
+        {gigDiscoveryView && (
+          <div className="mb-5 shrink-0 px-1">
+            <MyGigsInlineControl className="w-full" />
+          </div>
+        )}
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {NAV.map(({ key, label, href, icon: Icon }) => (
             <Link
