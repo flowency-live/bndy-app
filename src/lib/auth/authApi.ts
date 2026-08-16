@@ -5,6 +5,25 @@ const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
 
 export type UserRole = "user" | "curator" | "owner" | "staff";
 
+export interface GigFilter {
+  genres: string[];
+  actTypes: string[];
+  includeOpenMic: boolean;
+  enabled: boolean;
+}
+
+const EMPTY_GIG_FILTER: GigFilter = { genres: [], actTypes: [], includeOpenMic: false, enabled: false };
+
+function normaliseGigFilter(value: unknown): GigFilter {
+  const f = (value && typeof value === "object" ? value : {}) as Partial<GigFilter>;
+  return {
+    genres: Array.isArray(f.genres) ? f.genres.filter((x): x is string => typeof x === "string") : [],
+    actTypes: Array.isArray(f.actTypes) ? f.actTypes.filter((x): x is string => typeof x === "string") : [],
+    includeOpenMic: f.includeOpenMic === true,
+    enabled: f.enabled === true,
+  };
+}
+
 export interface AuthUser {
   id: string;
   cognitoId: string;
@@ -101,6 +120,27 @@ export async function fetchFavourites(): Promise<Favourites> {
 
 export async function toggleFavourite(type: FavouriteType, id: string, favourite: boolean) {
   return post<{ success: boolean }>("/users/favourites/toggle", { type, id, favourite });
+}
+
+/* ---------- saved My gigs preference ---------- */
+
+export async function fetchGigFilter(): Promise<GigFilter> {
+  const res = await fetch(`${BASE}/users/profile`, { credentials: "include", cache: "no-store" });
+  if (!res.ok) throw new Error(`GET /users/profile → ${res.status}`);
+  const data = (await res.json()) as { user?: { gigFilter?: unknown } };
+  return normaliseGigFilter(data.user?.gigFilter ?? EMPTY_GIG_FILTER);
+}
+
+export async function updateGigFilter(gigFilter: GigFilter): Promise<GigFilter> {
+  const res = await fetch(`${BASE}/users/profile`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gigFilter }),
+  });
+  const data = await res.json().catch(() => ({})) as { error?: string; user?: { gigFilter?: unknown } };
+  if (!res.ok) throw new Error(data.error || `PUT /users/profile → ${res.status}`);
+  return normaliseGigFilter(data.user?.gigFilter ?? gigFilter);
 }
 
 export async function requestPhoneOtp(phone: string) {
