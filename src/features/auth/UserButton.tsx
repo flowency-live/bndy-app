@@ -87,7 +87,7 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
             className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"
           >
             <SlidersHorizontal size={16} className="text-[#e93d94]" />
-            My gig preferences
+            My Filters
           </button>
           {isCurator && (
             <Link
