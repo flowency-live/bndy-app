@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, Mic, SlidersHorizontal } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { GENRES, ACT_TYPES } from "@/features/wizard/lib";
@@ -28,6 +28,10 @@ function myGigsColour(mode: "light" | "dark") {
   return mode === "dark" ? "#ff5ca8" : "#c026d3";
 }
 
+function onPink(mode: "light" | "dark") {
+  return mode === "dark" ? "#240914" : "#ffffff";
+}
+
 export function MyGigFilterHost() {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
@@ -48,6 +52,7 @@ export function MyGigsQuickControl() {
   const { hasCriteria, isActive, criteriaCount, isLoading } = useMyGigFilter();
   const { toggle, isPending } = useToggleMyGigFilter();
   const pink = myGigsColour(mode);
+  const ink = onPink(mode);
 
   if (!isAuthenticated) return null;
 
@@ -64,16 +69,17 @@ export function MyGigsQuickControl() {
       aria-pressed={isActive}
       aria-label={hasCriteria ? `My gigs filter ${isActive ? "on" : "off"}` : "Set up My gigs filter"}
       title={hasCriteria ? `My gigs: ${isActive ? "on" : "off"}. Edit in your profile menu.` : "Set up My gigs"}
-      className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[8.25rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border shadow-[var(--shadow)] transition-[background-color,border-color,box-shadow,transform] active:scale-95 disabled:opacity-50 lg:hidden"
+      className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[8.25rem] z-40 flex h-12 min-w-[82px] items-center justify-center gap-1.5 rounded-full border px-3 shadow-[var(--shadow)] transition-[background-color,border-color,box-shadow,transform] active:scale-95 disabled:opacity-50 lg:hidden"
       style={isActive
-        ? { background: pink, borderColor: pink, color: mode === "dark" ? "#240914" : "#ffffff", boxShadow: `0 0 0 1px color-mix(in srgb, ${pink} 32%, transparent), 0 0 20px color-mix(in srgb, ${pink} 34%, transparent)` }
+        ? { background: pink, borderColor: pink, color: ink, boxShadow: `0 0 0 1px color-mix(in srgb, ${pink} 32%, transparent), 0 0 20px color-mix(in srgb, ${pink} 34%, transparent)` }
         : { background: `color-mix(in srgb, ${pink} 8%, var(--glass-hi))`, borderColor: `color-mix(in srgb, ${pink} 46%, var(--line))`, color: pink }}
     >
-      <SlidersHorizontal size={20} strokeWidth={2.4} />
+      <SlidersHorizontal size={17} strokeWidth={2.5} />
+      <span className="text-[10.5px] font-black whitespace-nowrap">My gigs</span>
       {criteriaCount > 0 && (
         <span
           className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-ink px-1 text-[8px] font-black tnum"
-          style={{ background: pink, color: mode === "dark" ? "#240914" : "#fff" }}
+          style={{ background: pink, color: ink }}
         >
           {criteriaCount > 9 ? "9+" : criteriaCount}
         </span>
@@ -85,6 +91,7 @@ export function MyGigsQuickControl() {
 function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { mode } = useTheme();
   const pink = myGigsColour(mode);
+  const pinkText = onPink(mode);
   const { filter } = useMyGigFilter();
   const save = useSaveMyGigFilter();
   const [draft, setDraft] = useState<GigFilter>(EMPTY_GIG_FILTER);
@@ -127,7 +134,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
       <FilterSection title="Genres" sub="Pick one or more · matches any selected genre">
         <div className="flex flex-wrap gap-1.5">
           {GENRES.map((genre) => (
-            <ChoiceChip key={genre} selected={draft.genres.includes(genre)} colour={pink} onClick={() => toggleGenre(genre)}>
+            <ChoiceChip key={genre} selected={draft.genres.includes(genre)} colour={pink} selectedText={pinkText} onClick={() => toggleGenre(genre)}>
               {genre}
             </ChoiceChip>
           ))}
@@ -137,7 +144,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
       <FilterSection title="I want to see" sub="How the artist or band performs">
         <div className="flex flex-wrap gap-1.5">
           {ACT_TYPES.map((type) => (
-            <ChoiceChip key={type.value} selected={draft.actTypes.includes(type.value)} colour={pink} onClick={() => toggleAct(type.value)}>
+            <ChoiceChip key={type.value} selected={draft.actTypes.includes(type.value)} colour={pink} selectedText={pinkText} onClick={() => toggleAct(type.value)}>
               {type.label}
             </ChoiceChip>
           ))}
@@ -181,7 +188,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
           onClick={saveAndClose}
           disabled={save.isPending || !hasCriteria}
           className="flex-1 rounded-2xl px-4 py-3 text-[13.5px] font-black transition-opacity disabled:opacity-40"
-          style={{ background: pink, color: mode === "dark" ? "#240914" : "#ffffff" }}
+          style={{ background: pink, color: pinkText }}
         >
           {save.isPending ? "Saving…" : "Save & use My gigs"}
         </button>
@@ -190,7 +197,7 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
   );
 }
 
-function FilterSection({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
+function FilterSection({ title, sub, children }: { title: string; sub: string; children: ReactNode }) {
   return (
     <section className="mt-5">
       <div className="mb-2">
@@ -202,7 +209,7 @@ function FilterSection({ title, sub, children }: { title: string; sub: string; c
   );
 }
 
-function ChoiceChip({ selected, colour, onClick, children }: { selected: boolean; colour: string; onClick: () => void; children: React.ReactNode }) {
+function ChoiceChip({ selected, colour, selectedText, onClick, children }: { selected: boolean; colour: string; selectedText: string; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -210,7 +217,7 @@ function ChoiceChip({ selected, colour, onClick, children }: { selected: boolean
       aria-pressed={selected}
       className={cn("flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11.5px] font-bold transition-colors", !selected && "text-dim hover:text-txt")}
       style={selected
-        ? { background: colour, borderColor: colour, color: "#fff" }
+        ? { background: colour, borderColor: colour, color: selectedText }
         : { borderColor: `color-mix(in srgb, ${colour} 24%, var(--line))`, background: `color-mix(in srgb, ${colour} 3%, var(--glass))` }}
     >
       {children}{selected && <Check size={12} strokeWidth={3} />}
