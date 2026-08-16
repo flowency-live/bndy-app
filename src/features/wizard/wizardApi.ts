@@ -74,7 +74,7 @@ export interface ArtistResolution {
   message?: string;
 }
 export async function resolveArtist(
-  input: { name: string; location: string; facebookUrl?: string; genres?: string[]; artistType?: string; actType?: string[] },
+  input: { name: string; location: string; facebookUrl?: string; genres?: string[]; artistType?: string; actType?: string[]; acoustic?: boolean },
   opts?: { dryRun?: boolean; confirmNew?: boolean; resolveTo?: string },
 ): Promise<ArtistResolution> {
   const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/artists/find-or-create", {
