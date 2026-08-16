@@ -53,7 +53,10 @@ export interface Artist {
   name: string;
   genres?: string[];
   artistType?: string;
+  /** Originals / covers / tribute. Acoustic is deliberately NOT an act type. */
   actType?: string[];
+  /** Performance capability: this artist can perform acoustically. */
+  acoustic?: boolean;
   location?: string;
   profileImageUrl?: string | null;
   bio?: string;
