@@ -6,7 +6,8 @@ import { useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
 import { Avatar } from "@/components/ui/Avatar";
 import { distanceMiles } from "@/domain/geo";
 import { cn } from "@/lib/cn";
-import { ACT_TYPES, ARTIST_TYPES, GENRES, MAX_ACTS, NEW_ACT_ID, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
+import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
+import { MAX_ACTS, NEW_ACT_ID, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
@@ -261,6 +262,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   onPickExisting: (a: { id: string; name: string }) => void;
   onDone: (draft: NewArtistDraft) => void;
 }) {
+  const { data: taxonomy } = useArtistTaxonomy();
   const [name, setName] = useState(initialName);
   const [locMode, setLocMode] = useState<"town" | "region">("town");
   const [townQ, setTownQ] = useState("");
@@ -272,6 +274,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [actType, setActType] = useState<string[]>([]);
+  const [acoustic, setAcoustic] = useState(false);
   const [checking, setChecking] = useState(false);
   const [candidates, setCandidates] = useState<ArtistCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -301,7 +304,8 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
 
   const extrasSummary = [
     genres.length ? genres.join(", ") : null,
-    actType.length ? actType.map((v) => ACT_TYPES.find((t) => t.value === v)?.label ?? v).join(", ") : null,
+    actType.length ? actType.map((v) => taxonomy.actTypes.find((t) => t.value === v)?.label ?? v).join(", ") : null,
+    acoustic ? "Acoustic" : null,
   ].filter(Boolean).join(" · ");
 
   const draft = (confirmNew: boolean): NewArtistDraft => ({
@@ -310,6 +314,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     facebookUrl: facebookUrl.trim() || undefined,
     genres,
     actType: actType.length ? actType : undefined,
+    acoustic: acoustic || undefined,
     artistType: artistType || undefined,
     confirmNew: confirmNew || undefined,
   });
@@ -422,7 +427,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
           <div className="relative">
             <select value={artistType} onChange={(e) => setArtistType(e.target.value)} className={selectCls}>
               <option value="">Choose one…</option>
-              {ARTIST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {taxonomy.artistTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
             <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
           </div>
@@ -446,7 +451,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
             <div className="space-y-4 border-t border-line px-4 pb-4 pt-3.5">
               <Field label="Genres" optional hint={genres.length >= 3 ? "That's the limit of 3." : "Pick up to 3."}>
                 <div className="flex flex-wrap gap-1.5">
-                  {GENRES.map((g) => (
+                  {taxonomy.genres.map((g) => (
                     <button key={g} onClick={() => toggleGenre(g)}
                       className={cn("rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors", genres.includes(g) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
                       {g}
@@ -456,13 +461,29 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
               </Field>
               <Field label="They play" optional hint="Pick all that apply.">
                 <div className="flex flex-wrap gap-1.5">
-                  {ACT_TYPES.map((t) => (
+                  {taxonomy.actTypes.map((t) => (
                     <button key={t.value} onClick={() => toggleAct(t.value)}
                       className={cn("rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors", actType.includes(t.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt")}>
                       {t.label}
                     </button>
                   ))}
                 </div>
+              </Field>
+              <Field label="They can perform" optional hint="A capability, separate from originals / covers / tribute.">
+                <button
+                  type="button"
+                  onClick={() => setAcoustic((v) => !v)}
+                  aria-pressed={acoustic}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors",
+                    acoustic ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt",
+                  )}
+                >
+                  <span className={cn("flex h-4 w-4 items-center justify-center rounded border", acoustic ? "border-transparent bg-on-acc/15" : "border-line-hi")}>
+                    {acoustic && <Check size={10} strokeWidth={3.5} />}
+                  </span>
+                  Acoustic
+                </button>
               </Field>
             </div>
           )}
