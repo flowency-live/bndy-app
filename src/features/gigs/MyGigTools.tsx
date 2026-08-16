@@ -46,20 +46,24 @@ export function MyGigFilterHost() {
   return <MyGigFilterSheet open={open} onClose={() => setOpen(false)} />;
 }
 
-export function MyGigsQuickControl() {
+function useMyGigsControl() {
   const { isAuthenticated } = useAuth();
   const { mode } = useTheme();
   const { hasCriteria, isActive, criteriaCount, isLoading } = useMyGigFilter();
   const { toggle, isPending } = useToggleMyGigFilter();
   const pink = myGigsColour(mode);
   const ink = onPink(mode);
-
-  if (!isAuthenticated) return null;
-
   const onClick = () => {
     if (!hasCriteria) openGigFilterPreferences();
     else toggle();
   };
+  return { isAuthenticated, hasCriteria, isActive, criteriaCount, isLoading, isPending, pink, ink, onClick };
+}
+
+export function MyGigsQuickControl() {
+  const { isAuthenticated, hasCriteria, isActive, criteriaCount, isLoading, isPending, pink, ink, onClick } = useMyGigsControl();
+
+  if (!isAuthenticated) return null;
 
   return (
     <button
@@ -80,6 +84,46 @@ export function MyGigsQuickControl() {
         <span
           className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-ink px-1 text-[8px] font-black tnum"
           style={{ background: pink, color: ink }}
+        >
+          {criteriaCount > 9 ? "9+" : criteriaCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Desktop counterpart to the mobile floating control. Inline so each discovery
+ * surface can place it naturally in its own toolbar without duplicating state logic. */
+export function MyGigsInlineControl({ compact = false, className }: { compact?: boolean; className?: string }) {
+  const { isAuthenticated, hasCriteria, isActive, criteriaCount, isLoading, isPending, pink, ink, onClick } = useMyGigsControl();
+
+  if (!isAuthenticated) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isLoading || isPending}
+      aria-pressed={isActive}
+      aria-label={hasCriteria ? `My gigs filter ${isActive ? "on" : "off"}` : "Set up My gigs filter"}
+      title={hasCriteria ? `My gigs: ${isActive ? "on" : "off"}. Edit in your profile menu.` : "Set up My gigs"}
+      className={cn(
+        "relative hidden shrink-0 items-center justify-center border font-extrabold transition-[background-color,border-color,box-shadow,transform] active:scale-[.98] disabled:opacity-50 lg:flex",
+        compact ? "gap-1.5 rounded-2xl px-3 py-2.5 text-[11px]" : "gap-2 rounded-[var(--rad)] px-3.5 py-2 text-[12px]",
+        className,
+      )}
+      style={isActive
+        ? { background: pink, borderColor: pink, color: ink, boxShadow: `0 0 0 1px color-mix(in srgb, ${pink} 28%, transparent), 0 0 16px color-mix(in srgb, ${pink} 22%, transparent)` }
+        : { background: `color-mix(in srgb, ${pink} 7%, var(--glass))`, borderColor: `color-mix(in srgb, ${pink} 46%, var(--line))`, color: pink }}
+    >
+      <SlidersHorizontal size={compact ? 15 : 14} strokeWidth={2.5} />
+      <span className="whitespace-nowrap">My gigs</span>
+      {criteriaCount > 0 && (
+        <span
+          className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[7.5px] font-black tnum"
+          style={isActive
+            ? { background: ink, color: pink }
+            : { background: pink, color: ink }}
         >
           {criteriaCount > 9 ? "9+" : criteriaCount}
         </span>
