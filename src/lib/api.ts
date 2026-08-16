@@ -1,6 +1,7 @@
 // bndy API client + DTO→domain transforms. All I/O lives here.
 
 import type { Artist, AvailabilityDate, Gig, ResolvedTicketing, SocialLink, SocialPlatform, Venue } from "@/domain/types";
+import { canonicalActTypes, canonicalArtistType } from "@/lib/artistTaxonomy";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
 
@@ -121,9 +122,17 @@ interface ArtistDTO {
   publishAvailability?: boolean; // A6 fix: was missing, Availability tab never showed
 }
 export function toArtist(a: ArtistDTO): Artist {
+  const legacyActs = canonicalActTypes(a.actType);
   return {
-    id: a.id, name: a.name, genres: a.genres, artistType: a.artistType || a.artist_type,
-    actType: a.actType, acoustic: a.acoustic, location: a.location, profileImageUrl: a.profileImageUrl, bio: a.bio,
+    id: a.id,
+    name: a.name,
+    genres: a.genres,
+    artistType: canonicalArtistType(a.artistType || a.artist_type) ?? a.artistType ?? a.artist_type,
+    actType: legacyActs.actTypes,
+    acoustic: a.acoustic === true || legacyActs.acousticFromLegacy,
+    location: a.location,
+    profileImageUrl: a.profileImageUrl,
+    bio: a.bio,
     socials: toSocials(a as unknown as Record<string, unknown>),
     publishAvailability: a.publishAvailability, // A6 fix
   };
