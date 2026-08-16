@@ -1,11 +1,10 @@
 "use client";
 
 import { useDeferredValue, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, Heart, Mic, MicOff, Ticket } from "lucide-react";
+import { Search, ChevronDown, Heart, Mic, Ticket } from "lucide-react";
 import { useUpcomingGigs, useArtistImageMap } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
-import { useOpenMicPref } from "@/lib/openMicPref";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles } from "@/domain/geo";
 import { DOW, MON, inWhenRange, isTonight, parseISO, todayISO, type WhenRange } from "@/domain/dates";
@@ -25,6 +24,12 @@ const WHENS: { k: WhenRange; l: string }[] = [
   { k: "week", l: "7 days" },
 ];
 
+const FACET_COLOURS = {
+  favourites: { accent: "#ef4444", onText: "#ffffff" },
+  openMic: { accent: "#facc15", onText: "#171717" },
+  tickets: { accent: "#22c55e", onText: "#052e16" },
+} as const;
+
 export function GigsHome() {
   const { data: gigs = [], isLoading } = useUpcomingGigs();
   const { location: geo, located } = useGeolocation();
@@ -36,13 +41,13 @@ export function GigsHome() {
   const [when, setWhen] = useState<WhenRange>("all");
   const [dateSel, setDateSel] = useState<DateSel | null>(null);
   const [whenMenuOpen, setWhenMenuOpen] = useState(false);
-  const [showTicketed, setShowTicketed] = useState(false);
+  const [ticketOnly, setTicketOnly] = useState(false);
+  const [openMicOnly, setOpenMicOnly] = useState(false);
   const [q, setQ] = useState("");
   const { isAuthenticated } = useAuth();
   const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
   const [favOnly, setFavOnly] = useState(false);
   const favActive = favOnly && isAuthenticated;
-  const { showOpenMics, toggleOpenMics } = useOpenMicPref();
   const [selected, setSelected] = useState<Gig | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(["later"]));
 
@@ -57,12 +62,12 @@ export function GigsHome() {
   const eligible = useMemo(() => {
     const query = dq.trim().toLowerCase();
     let out = gigs.filter((g) => g.date >= today);
-    if (!showTicketed) out = out.filter((g) => !g.ticketed);
-    if (!showOpenMics) out = out.filter((g) => !g.isOpenMic);
+    if (ticketOnly) out = out.filter((g) => g.ticketed);
+    if (openMicOnly) out = out.filter((g) => g.isOpenMic);
     if (favActive) out = out.filter((g) => (g.artistId && favArtists.has(g.artistId)) || favVenues.has(g.venueId));
     if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title}`.toLowerCase().includes(query));
     return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= dRadius);
-  }, [gigs, showTicketed, showOpenMics, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
+  }, [gigs, ticketOnly, openMicOnly, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
 
   const dayCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -173,26 +178,26 @@ export function GigsHome() {
                   on={favOnly}
                   onClick={() => setFavOnly((v) => !v)}
                   label="Favourites"
-                  accent="var(--acc)"
+                  {...FACET_COLOURS.favourites}
                   icon={<Heart size={13} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.4} />}
                 />
               )}
 
               <FacetToggle
                 compact
-                on={showOpenMics}
-                onClick={toggleOpenMics}
+                on={openMicOnly}
+                onClick={() => setOpenMicOnly((v) => !v)}
                 label="Open Mic"
-                accent="var(--acc2)"
-                icon={showOpenMics ? <Mic size={13} strokeWidth={2.4} /> : <MicOff size={13} strokeWidth={2.4} />}
+                {...FACET_COLOURS.openMic}
+                icon={<Mic size={13} strokeWidth={2.4} />}
               />
 
               <FacetToggle
                 compact
-                on={showTicketed}
-                onClick={() => setShowTicketed((v) => !v)}
+                on={ticketOnly}
+                onClick={() => setTicketOnly((v) => !v)}
                 label="Tickets"
-                accent="var(--acc2)"
+                {...FACET_COLOURS.tickets}
                 icon={<Ticket size={13} strokeWidth={2.4} />}
               />
             </div>
@@ -241,23 +246,23 @@ export function GigsHome() {
                 on={favOnly}
                 onClick={() => setFavOnly((v) => !v)}
                 label="Favourites"
-                accent="var(--acc)"
+                {...FACET_COLOURS.favourites}
                 icon={<Heart size={14} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />}
               />
             )}
             <FacetToggle
-              on={showOpenMics}
-              onClick={toggleOpenMics}
+              on={openMicOnly}
+              onClick={() => setOpenMicOnly((v) => !v)}
               label="Open Mic"
-              accent="var(--acc2)"
-              icon={showOpenMics ? <Mic size={14} strokeWidth={2.5} /> : <MicOff size={14} strokeWidth={2.5} />}
+              {...FACET_COLOURS.openMic}
+              icon={<Mic size={14} strokeWidth={2.5} />}
             />
             <FacetToggle
               className="ml-auto"
-              on={showTicketed}
-              onClick={() => setShowTicketed((v) => !v)}
+              on={ticketOnly}
+              onClick={() => setTicketOnly((v) => !v)}
               label="Tickets"
-              accent="var(--acc2)"
+              {...FACET_COLOURS.tickets}
               icon={<Ticket size={14} strokeWidth={2.5} />}
             />
           </div>
@@ -362,12 +367,13 @@ function Chip({ on, onClick, accent, children }: { on: boolean; onClick: () => v
   );
 }
 
-function FacetToggle({ on, onClick, label, icon, accent, compact, className }: {
+function FacetToggle({ on, onClick, label, icon, accent, onText, compact, className }: {
   on: boolean;
   onClick: () => void;
   label: string;
   icon: React.ReactNode;
   accent: string;
+  onText: string;
   compact?: boolean;
   className?: string;
 }) {
@@ -375,15 +381,26 @@ function FacetToggle({ on, onClick, label, icon, accent, compact, className }: {
     <button
       onClick={onClick}
       aria-pressed={on}
-      style={on ? { borderColor: `color-mix(in srgb, ${accent} 60%, transparent)`, background: `color-mix(in srgb, ${accent} 20%, var(--glass))` } : undefined}
+      aria-label={`${label} only`}
+      style={on
+        ? {
+            borderColor: accent,
+            background: accent,
+            color: onText,
+            boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 28%, transparent), 0 0 16px color-mix(in srgb, ${accent} 18%, transparent)`,
+          }
+        : {
+            borderColor: `color-mix(in srgb, ${accent} 48%, var(--line))`,
+            background: `color-mix(in srgb, ${accent} 7%, var(--glass))`,
+          }}
       className={cn(
-        "flex min-w-0 shrink-0 items-center border border-line glass font-extrabold transition-colors",
-        compact ? "justify-center gap-1 rounded-[var(--rad)] px-1.5 py-2.5 text-[10.5px]" : "gap-2 rounded-[var(--rad)] px-3.5 py-2 text-[12px]",
-        on ? "text-txt" : "text-dim",
+        "flex min-w-0 shrink-0 items-center border font-extrabold transition-[background-color,border-color,box-shadow,transform] active:scale-[.98]",
+        compact ? "justify-center gap-1 rounded-[var(--rad)] px-1 py-2.5 text-[9.5px]" : "gap-2 rounded-[var(--rad)] px-3.5 py-2 text-[12px]",
+        on ? "" : "text-txt",
         className,
       )}
     >
-      <span className="shrink-0" style={on ? { color: accent } : undefined}>{icon}</span>
+      <span className="shrink-0" style={{ color: on ? onText : accent }}>{icon}</span>
       <span className="min-w-0 truncate whitespace-nowrap">{label}</span>
     </button>
   );
