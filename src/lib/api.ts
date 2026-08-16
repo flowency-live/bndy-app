@@ -1,7 +1,7 @@
 // bndy API client + DTO→domain transforms. All I/O lives here.
 
 import type { Artist, AvailabilityDate, Gig, ResolvedTicketing, SocialLink, SocialPlatform, Venue } from "@/domain/types";
-import { canonicalActTypes, canonicalArtistType } from "@/lib/artistTaxonomy";
+import { canonicalActTypes, canonicalArtistType } from "@/lib/artistTaxonomyCore";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
 
