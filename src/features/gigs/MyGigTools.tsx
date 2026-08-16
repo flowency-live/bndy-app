@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Check, Mic, SlidersHorizontal } from "lucide-react";
+import { Check, ChevronDown, Mic, SlidersHorizontal } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { GENRES, ACT_TYPES } from "@/features/wizard/lib";
+import { GENRES, ACT_TYPES, ARTIST_TYPES } from "@/features/wizard/lib";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/cn";
@@ -95,9 +95,18 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const { filter } = useMyGigFilter();
   const save = useSaveMyGigFilter();
   const [draft, setDraft] = useState<GigFilter>(EMPTY_GIG_FILTER);
+  const [genresOpen, setGenresOpen] = useState(false);
 
   useEffect(() => {
-    if (open) setDraft({ ...filter, genres: [...filter.genres], actTypes: [...filter.actTypes] });
+    if (open) {
+      setDraft({
+        ...filter,
+        genres: [...filter.genres],
+        actTypes: [...filter.actTypes],
+        artistTypes: [...filter.artistTypes],
+      });
+      setGenresOpen(false);
+    }
   }, [open, filter]);
 
   const toggleGenre = (genre: string) => setDraft((prev) => ({
@@ -108,9 +117,16 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
     ...prev,
     actTypes: prev.actTypes.includes(actType) ? prev.actTypes.filter((x) => x !== actType) : [...prev.actTypes, actType],
   }));
+  const toggleArtistType = (artistType: string) => setDraft((prev) => ({
+    ...prev,
+    artistTypes: prev.artistTypes.includes(artistType) ? prev.artistTypes.filter((x) => x !== artistType) : [...prev.artistTypes, artistType],
+  }));
 
   const hasCriteria = hasGigFilterCriteria(draft);
   const summary = useMemo(() => describeGigFilter(draft), [draft]);
+  const genreSummary = draft.genres.length === 0
+    ? "Any genre"
+    : `${draft.genres.slice(0, 3).join(", ")}${draft.genres.length > 3 ? ` +${draft.genres.length - 3}` : ""}`;
 
   const saveAndClose = () => {
     const next = { ...draft, enabled: hasCriteria };
@@ -131,17 +147,17 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
       </div>
 
-      <FilterSection title="Genres" sub="Pick one or more · matches any selected genre">
+      <FilterSection title="They are" sub="Artist type">
         <div className="flex flex-wrap gap-1.5">
-          {GENRES.map((genre) => (
-            <ChoiceChip key={genre} selected={draft.genres.includes(genre)} colour={pink} selectedText={pinkText} onClick={() => toggleGenre(genre)}>
-              {genre}
+          {ARTIST_TYPES.map((type) => (
+            <ChoiceChip key={type} selected={draft.artistTypes.includes(type)} colour={pink} selectedText={pinkText} onClick={() => toggleArtistType(type)}>
+              {type}
             </ChoiceChip>
           ))}
         </div>
       </FilterSection>
 
-      <FilterSection title="I want to see" sub="How the artist or band performs">
+      <FilterSection title="They play" sub="Act type">
         <div className="flex flex-wrap gap-1.5">
           {ACT_TYPES.map((type) => (
             <ChoiceChip key={type.value} selected={draft.actTypes.includes(type.value)} colour={pink} selectedText={pinkText} onClick={() => toggleAct(type.value)}>
@@ -151,7 +167,33 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
       </FilterSection>
 
-      <FilterSection title="Also show" sub="Additive · open mics can have no artist attached">
+      <section className="mt-5 overflow-hidden rounded-2xl border border-line">
+        <button
+          type="button"
+          onClick={() => setGenresOpen((v) => !v)}
+          aria-expanded={genresOpen}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        >
+          <span className="min-w-0">
+            <span className="block text-[12px] font-black text-txt">Genres</span>
+            <span className="mt-0.5 block truncate text-[10.5px] font-semibold text-dim">{genreSummary}</span>
+          </span>
+          <ChevronDown size={16} className={cn("shrink-0 text-dim transition-transform", genresOpen && "rotate-180")} />
+        </button>
+        {genresOpen && (
+          <div className="border-t border-line px-4 pb-4 pt-3">
+            <div className="flex flex-wrap gap-1.5">
+              {GENRES.map((genre) => (
+                <ChoiceChip key={genre} selected={draft.genres.includes(genre)} colour={pink} selectedText={pinkText} onClick={() => toggleGenre(genre)}>
+                  {genre}
+                </ChoiceChip>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <FilterSection title="Also show">
         <button
           type="button"
           onClick={() => setDraft((prev) => ({ ...prev, includeOpenMic: !prev.includeOpenMic }))}
@@ -169,7 +211,6 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
       <div className="mt-5 rounded-2xl border border-line bg-card/60 px-4 py-3">
         <div className="font-meta text-[9px] font-extrabold uppercase tracking-[1.5px] text-dim2">Your filter</div>
         <p className="mt-1.5 text-[12.5px] font-bold leading-relaxed text-txt">{summary}</p>
-        <p className="mt-1 text-[10.5px] font-semibold text-dim">Genres are ORed. Genre and performance choices are ANDed. Open Mic is added alongside them.</p>
       </div>
 
       {save.isError && <p className="mt-3 text-[12px] font-bold text-red-400">Couldn’t save your preferences. Please try again.</p>}
@@ -197,12 +238,12 @@ function MyGigFilterSheet({ open, onClose }: { open: boolean; onClose: () => voi
   );
 }
 
-function FilterSection({ title, sub, children }: { title: string; sub: string; children: ReactNode }) {
+function FilterSection({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
     <section className="mt-5">
       <div className="mb-2">
         <h3 className="text-[12px] font-black text-txt">{title}</h3>
-        <p className="text-[10.5px] font-semibold text-dim2">{sub}</p>
+        {sub && <p className="text-[10.5px] font-semibold text-dim2">{sub}</p>}
       </div>
       {children}
     </section>
