@@ -116,6 +116,7 @@ export function WizardShell() {
             genres: draft.newArtist.genres,
             artistType: draft.newArtist.artistType,
             actType: draft.newArtist.actType,
+            acoustic: draft.newArtist.acoustic,
           },
           { confirmNew: draft.newArtist.confirmNew },
         );
