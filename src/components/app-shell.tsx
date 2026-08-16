@@ -8,6 +8,7 @@ import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { UserButton } from "@/features/auth/UserButton";
+import { MyGigFilterHost, MyGigsQuickControl } from "@/features/gigs/MyGigTools";
 import { cn } from "@/lib/cn";
 import { Disclaimer } from "@/components/Disclaimer";
 import type { ReactNode } from "react";
@@ -30,6 +31,7 @@ function activeKey(path: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const active = activeKey(path);
+  const gigDiscoveryView = path.startsWith("/map") || path.startsWith("/gigs");
 
   // Standalone branded webform — no app chrome, shareable straight into FB groups etc.
   if (path.startsWith("/list-a-gig")) {
@@ -48,6 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <p className="mx-auto max-w-5xl px-4 pb-4 text-[12px] font-bold uppercase tracking-[1.5px] text-dim2 lg:px-8">Keeping live music alive</p>
         <main>{children}</main>
         <SkinControl variant="fab" />
+        <MyGigFilterHost />
       </div>
     );
   }
@@ -118,11 +121,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       </nav>
 
       {/* Mobile utilities are deliberately identical on every app view: skin on
-          the far left, account immediately beside it. Account menu opens upward. */}
+          the far left, account immediately beside it. My gigs joins the cluster
+          only on discovery views and only renders for a signed-in user. */}
       <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden">
         <UserButton variant="map" />
       </div>
       <SkinControl variant="fab" side="left" />
+      {gigDiscoveryView && <MyGigsQuickControl />}
+      <MyGigFilterHost />
 
       <Disclaimer />
     </div>
