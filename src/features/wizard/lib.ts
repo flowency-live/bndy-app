@@ -2,31 +2,18 @@
 import type { Artist } from "@/domain/types";
 import type { RepeatPattern } from "@/domain/recurrence";
 import { billTitle } from "@/domain/lineup";
+import { FALLBACK_ARTIST_TAXONOMY } from "@/lib/artistTaxonomy";
 
-/** Canonical genre enum — MUST mirror bndy-serverless-api/artists-lambda/lib/genres.js
- *  (free-text genres are rejected server-side with 400 INVALID_GENRES). */
-export const GENRES = [
-  "Rock", "Rock n Roll", "Grunge", "Metal", "Punk", "Hardcore", "Alternative", "New Wave",
-  "Pop", "Indie", "Britpop", "Mod",
-  "Blues", "R&B", "Country", "Americana",
-  "Folk", "Irish", "Soul", "Funk", "Motown", "Disco",
-  "Electronic", "Dance",
-  "Jazz", "Classical", "Reggae", "Ska", "Latin",
-  "50s", "60s", "70s", "80s", "90s", "00s",
-  "Other",
-] as const;
-
-/** Act type options — MUST mirror the godmode edit screen (multi-select, all that apply).
- *  NEVER silently defaulted (runbook §0.18/§2A.2: blank beats wrong). */
-export const ACT_TYPES: { label: string; value: string }[] = [
-  { label: "Originals", value: "originals" },
-  { label: "Covers", value: "covers" },
-  { label: "Tribute act", value: "tribute" },
-  { label: "Acoustic", value: "acoustic" },
-];
-
-/** Artist type options, mirroring the godmode edit screen's enum. Optional in the wizard. */
-export const ARTIST_TYPES = ["Band", "Solo Act", "Duo", "Trio", "Group", "DJ", "Collective"] as const;
+/**
+ * Compatibility exports for wizard code still being moved to useArtistTaxonomy().
+ * There is no independently-maintained list here: these all derive from the
+ * app's runtime-taxonomy resilience snapshot.
+ */
+export const GENRES = FALLBACK_ARTIST_TAXONOMY.genres;
+export const ACT_TYPES = FALLBACK_ARTIST_TAXONOMY.actTypes;
+export const ARTIST_TYPE_OPTIONS = FALLBACK_ARTIST_TAXONOMY.artistTypes;
+/** @deprecated Prefer ARTIST_TYPE_OPTIONS or useArtistTaxonomy().artistTypes. */
+export const ARTIST_TYPES = FALLBACK_ARTIST_TAXONOMY.artistTypes.map((option) => option.label);
 
 /** The 13 canonical bndy regions (runbook §1A.1) for acts based across a wide area.
  *  A town is always preferred; regions are for genuinely regional/national acts. */
@@ -135,7 +122,10 @@ export interface NewArtistDraft {
   location: string;
   facebookUrl?: string;
   genres: string[];
+  /** Originals / covers / tribute. */
   actType?: string[];
+  /** Separate performance capability; never stored inside actType. */
+  acoustic?: boolean;
   artistType?: string;
   /** user explicitly confirmed "mine is a different act" after seeing candidates */
   confirmNew?: boolean;
