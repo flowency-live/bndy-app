@@ -1,0 +1,93 @@
+/* ============================================================
+   VIBE — Congleton Vibe-inspired dark neon skin
+   ------------------------------------------------------------
+   Keeps the legacy `openair` theme id for stored-preference
+   compatibility, but replaces that skin visually and in the UI.
+   ============================================================ */
+
+html[data-theme="openair"] {
+  --ink-rgb: 5 5 13;
+  --surface: #05050D;
+  --card: #0D0D19;
+  --card2: #17172A;
+
+  --txt: #F8F7FF;
+  --dim: #A7A2BE;
+  --dim2: #68637F;
+
+  --line: #28263E;
+  --line-hi: #3B3856;
+  --bw: 1px;
+  --rad: 18px;
+  --rad-lg: 24px;
+
+  --glass: rgba(10, 10, 22, 0.78);
+  --glass-hi: rgba(8, 8, 18, 0.93);
+
+  --sh: 0 8px 24px rgba(0, 0, 0, .42);
+  --sh-lg: 0 18px 46px rgba(0, 0, 0, .5);
+  --sh-hover: 0 0 0 1px rgba(25, 217, 243, .35), 0 12px 34px rgba(25, 217, 243, .16), 0 0 30px rgba(255, 43, 194, .08);
+  --shadow: var(--sh);
+
+  /* Congleton Vibe reference: cyan navigation + magenta neon + violet detail. */
+  --acc: #19D9F3;
+  --on-acc: #031014;
+  --acc2: #FF2BC2;
+  --on-acc2: #180013;
+  --hl: #8B5CF6;
+  --on-hl: #FFFFFF;
+
+  --disp: var(--font-chakra), var(--font-grotesk), sans-serif;
+  --disp-wt: 700;
+  --disp-case: none;
+  --ui: var(--font-grotesk), var(--font-inter), sans-serif;
+  --meta: var(--font-space-mono), monospace;
+  --ital: var(--font-grotesk), var(--font-inter), sans-serif;
+
+  --tick-bg: #080812;
+  --tick-fg: #A7A2BE;
+  --tick-hl: #19D9F3;
+
+  --dayhead-bg: #111120;
+  --dayhead-fg: #B9B4CE;
+  --dayhead-hot-bg: #102A31;
+  --dayhead-hot-fg: #55E8FA;
+
+  --stub-bg: #FF2BC2;
+  --stub-fg: #FFFFFF;
+
+  --m-bg: #070711;
+  --m-block: #10101D;
+  --m-road1: #25233A;
+  --m-road2: #1A192A;
+  --m-river: #0B2430;
+  --m-park: #101B1B;
+  --m-lab: #716B8B;
+
+  --pin-bd: rgba(255, 255, 255, .9);
+  --pin-sh: 0 0 10px rgba(25, 217, 243, .95), 0 0 28px rgba(25, 217, 243, .5);
+  --pin2-sh: 0 0 10px rgba(255, 43, 194, .9), 0 0 28px rgba(255, 43, 194, .45);
+  --pin-stem: rgba(255, 255, 255, .48);
+}
+
+/* Give the skin the luminous edge seen in Congleton Vibe without
+   changing component structure or behaviour. */
+html[data-theme="openair"] .brand-glow {
+  filter: drop-shadow(0 0 7px rgba(25, 217, 243, .72)) drop-shadow(0 0 16px rgba(255, 43, 194, .22));
+}
+
+html[data-theme="openair"] .glass,
+html[data-theme="openair"] .glass-hi {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+
+html[data-theme="openair"] input:focus,
+html[data-theme="openair"] button:focus-visible,
+html[data-theme="openair"] a:focus-visible {
+  outline-color: #19D9F3;
+}
+
+html[data-theme="openair"] ::selection {
+  background: rgba(255, 43, 194, .72);
+  color: #FFFFFF;
+}
