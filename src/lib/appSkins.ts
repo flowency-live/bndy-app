@@ -38,9 +38,9 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     pal: [["#F97316", "#C2410C"], ["#06B6D4", "#0E7490"], ["#F97316", "#DB2777"], ["#8B5CF6", "#06B6D4"], ["#10B981", "#F97316"]],
   },
   openair: {
-    key: "openair", name: "Open Air", desc: "Mint daylight · park sessions", family: "soft", mode: "light",
-    dots: ["#0FA88F", "#FF6B9D", "#F2FAF6"],
-    pal: [["#0FA88F", "#0B7A68"], ["#FF6B9D", "#C2447A"], ["#3E9BD6", "#0FA88F"], ["#FFB020", "#FF6B9D"], ["#7A5FC7", "#3E9BD6"]],
+    key: "openair", name: "Vibe", desc: "Congleton neon · cyan, magenta & violet", family: "soft", mode: "dark",
+    dots: ["#19D9F3", "#FF2BC2", "#8B5CF6"],
+    pal: [["#19D9F3", "#086F86"], ["#FF2BC2", "#8A176B"], ["#8B5CF6", "#4C2FA3"], ["#19D9F3", "#FF2BC2"], ["#6D5DFB", "#19D9F3"]],
   },
   goldenhour: {
     key: "goldenhour", name: "Golden Hour", desc: "Sunset warm · dusk stage", family: "soft", mode: "mid",
@@ -79,7 +79,7 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
   },
 };
 
-/** Picker order (product decision: 6 light/mid before 3 dark alternates). */
+/** Picker order. */
 export const SKIN_ORDER: AppSkinId[] = [
   "print", "bndy-light", "bndy-dark", "openair", "goldenhour", "solar", "underground", "synthwave", "blackout", "poole", "hyper",
 ];
