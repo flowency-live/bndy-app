@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { CircleHelp, History, LogOut, Settings, SlidersHorizontal, UserRound, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/cn";
@@ -121,14 +122,17 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
         </div>
       )}
 
-      {/* Profile Edit Modal */}
-      {showProfileEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      {/* Profile edit must portal to the viewport. On mobile this UserButton is
+          mounted inside a 48px glass/backdrop-filter control, which otherwise
+          becomes the containing block for fixed descendants. */}
+      {showProfileEdit && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 py-[max(1rem,env(safe-area-inset-top))]">
           <div className="relative w-full max-w-sm">
             <button
               type="button"
               onClick={() => setShowProfileEdit(false)}
-              className="absolute -right-2 -top-2 z-10 rounded-full bg-white/10 p-1.5 text-dim hover:text-txt"
+              aria-label="Close edit profile"
+              className="absolute -right-2 -top-2 z-10 rounded-full bg-card p-1.5 text-dim shadow-[var(--shadow)] hover:text-txt"
             >
               <X size={18} />
             </button>
@@ -143,7 +147,8 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
               onComplete={() => setShowProfileEdit(false)}
             />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
