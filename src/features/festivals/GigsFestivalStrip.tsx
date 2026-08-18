@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { ArrowRight, CalendarRange } from "lucide-react";
 import { useFestivals } from "@/lib/hooks";
-import { addDaysISO, todayISO } from "@/domain/dates";
+import { todayISO } from "@/domain/dates";
 import { FestivalCard } from "./FestivalCard";
 
 export function GigsFestivalStrip() {
   const { data: festivals = [], isLoading } = useFestivals();
   const today = todayISO();
-  const horizon = addDaysISO(today, 120);
-  const relevant = festivals.filter((f) => f.endDate >= today && f.startDate <= horizon).slice(0, 4);
+  // Festivals are a planning surface, not a near-me feed: keep the next few
+  // visible even when they are months away so mobile users can always reach
+  // the full festival calendar through the Gigs experience.
+  const relevant = festivals.filter((f) => f.endDate >= today).slice(0, 4);
 
   if (isLoading || relevant.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-content px-4 pt-[calc(env(safe-area-inset-top,0px)+14px)] lg:px-8 lg:pt-7">
+    <section className="mx-auto max-w-content px-4 pt-1 lg:px-8 lg:pt-3">
       <div className="mb-2.5 flex items-end gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc)]"><CalendarRange size={12} /> Worth planning around</div>
