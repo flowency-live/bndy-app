@@ -263,7 +263,7 @@ export function MapView() {
     mapRef.current = map;
     prevBasemapRef.current = basemapFor(appSkin);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-    const geo = new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true });
+    const geo = new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true } as maplibregl.GeolocateControlOptions & { showUserHeading?: boolean });
     geolocateRef.current = geo;
     map.addControl(geo, "bottom-right");
     map.once("load", () => {
