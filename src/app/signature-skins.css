@@ -1,0 +1,322 @@
+/* ============================================================
+   BNDY SIGNATURE SKINS
+   Roadcase = backstage flight-case hardware
+   Flyer    = pasted venue-wall gig posters
+
+   These deliberately go beyond palette changes. The tokens still
+   keep every feature working, while family selectors change material,
+   typography, borders, shadows, texture and motion language.
+   ============================================================ */
+
+/* ---------------- ROADCASE ---------------- */
+html[data-theme="roadcase"] {
+  --ink-rgb: 12 13 15;
+  --surface: #0C0D0F;
+  --card: #15171A;
+  --card2: #202328;
+  --txt: #F2F1E8;
+  --dim: #B5B7B7;
+  --dim2: #777B80;
+  --line: #697078;
+  --line-hi: #BFC5CB;
+  --bw: 1.5px;
+  --rad: 3px;
+  --rad-lg: 6px;
+  --glass: rgba(17, 19, 22, .90);
+  --glass-hi: rgba(12, 13, 15, .97);
+  --sh: 0 5px 0 #050506, 0 9px 20px rgba(0,0,0,.42);
+  --sh-lg: 0 8px 0 #050506, 0 16px 34px rgba(0,0,0,.55);
+  --sh-hover: 0 0 0 1px #D0D4D8, 0 8px 0 #050506, 0 18px 32px rgba(0,0,0,.55);
+  --shadow: var(--sh);
+  --acc: #F4C542;
+  --on-acc: #15120A;
+  --acc2: #FF5B3D;
+  --on-acc2: #180603;
+  --hl: #C9CDD2;
+  --on-hl: #111214;
+  --disp: var(--font-archivo-black), sans-serif;
+  --disp-wt: 400;
+  --disp-case: uppercase;
+  --ui: var(--font-archivo), var(--font-inter), sans-serif;
+  --meta: var(--font-space-mono), monospace;
+  --ital: var(--font-space-mono), monospace;
+  --tick-bg: #050506;
+  --tick-fg: #C9CDD2;
+  --tick-hl: #F4C542;
+  --dayhead-bg: linear-gradient(180deg,#272B30,#17191C);
+  --dayhead-fg: #E8E8E0;
+  --dayhead-hot-bg: repeating-linear-gradient(-45deg,#F4C542 0 11px,#171717 11px 22px);
+  --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #F4C542;
+  --stub-fg: #17140A;
+  --m-bg: #101215;
+  --m-block: #1B1E22;
+  --m-road1: #3B4147;
+  --m-road2: #2A2F34;
+  --m-river: #15252D;
+  --m-park: #19251D;
+  --m-lab: #9CA2A8;
+  --pin-bd: #D6D9DC;
+  --pin-sh: 0 0 0 2px #23262A, 0 0 0 4px #F4C542, 0 6px 15px rgba(0,0,0,.7);
+  --pin2-sh: 0 0 0 2px #23262A, 0 0 0 4px #FF5B3D, 0 6px 15px rgba(0,0,0,.7);
+  --pin-stem: #C9CDD2;
+}
+
+html[data-family="roadcase"] body {
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(circle at 20% 12%, rgba(255,255,255,.035) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 73% 67%, rgba(255,255,255,.025) 0 1px, transparent 1.5px),
+    repeating-linear-gradient(91deg, rgba(255,255,255,.012) 0 1px, transparent 1px 7px),
+    linear-gradient(135deg,#111316 0%,#090A0B 52%,#111316 100%);
+  background-size: 19px 19px, 23px 23px, auto, auto;
+}
+
+html[data-family="roadcase"] body::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:60;
+  pointer-events:none;
+  opacity:.11;
+  mix-blend-mode:screen;
+  background:
+    linear-gradient(105deg,transparent 0 44%,rgba(255,255,255,.18) 44.2%,transparent 44.5%) 0 0/170px 120px,
+    linear-gradient(78deg,transparent 0 68%,rgba(255,255,255,.12) 68.2%,transparent 68.6%) 0 0/230px 160px;
+}
+
+html[data-family="roadcase"] .glass,
+html[data-family="roadcase"] .glass-hi {
+  background-color:#141619;
+  background-image:
+    linear-gradient(90deg,rgba(255,255,255,.05),transparent 13%,transparent 87%,rgba(255,255,255,.04)),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 4px);
+  border-color:#555C63;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(0,0,0,.8), 0 5px 18px rgba(0,0,0,.32);
+}
+
+html[data-family="roadcase"] .bndy-card {
+  position:relative;
+  border:2px solid #737A82;
+  border-radius:3px;
+  box-shadow:inset 0 0 0 1px #0B0C0E,var(--sh);
+  background-image:linear-gradient(145deg,rgba(255,255,255,.035),transparent 38%);
+}
+
+html[data-family="roadcase"] .bndy-card::before,
+html[data-family="roadcase"] .bndy-card::after {
+  content:"";
+  position:absolute;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#F1F3F4 0,#8B9299 38%,#34383C 70%,#161719 100%);
+  box-shadow:0 1px 2px #000;
+  pointer-events:none;
+}
+html[data-family="roadcase"] .bndy-card::before{top:5px;left:5px}
+html[data-family="roadcase"] .bndy-card::after{right:5px;bottom:5px}
+
+html[data-family="roadcase"] .bndy-btn {
+  border:2px solid #E4C24F;
+  border-radius:2px;
+  font-family:var(--meta);
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  box-shadow:inset 0 0 0 2px #6A5510,0 4px 0 #090A0B;
+}
+html[data-family="roadcase"] .bndy-btn:active{transform:translateY(3px);box-shadow:inset 0 0 0 2px #6A5510,0 1px 0 #090A0B}
+
+html[data-family="roadcase"] .bndy-btn2,
+html[data-family="roadcase"] .bndy-chip {
+  border-radius:2px;
+  border-color:#697078;
+  background-image:linear-gradient(180deg,#262A2F,#15171A);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+html[data-family="roadcase"] .bndy-chip.on {
+  background:repeating-linear-gradient(-45deg,#F4C542 0 8px,#D4A924 8px 16px);
+  color:#12100A;
+  border-color:#F4C542;
+  font-family:var(--meta);
+}
+
+html[data-family="roadcase"] .bndy-ticker {
+  border-bottom:2px solid #697078;
+  box-shadow:0 2px 0 #08090A,0 5px 12px rgba(0,0,0,.45);
+}
+html[data-family="roadcase"] .bndy-ticker-in{font-weight:700;letter-spacing:4px}
+html[data-family="roadcase"] .brand-glow{text-shadow:none;filter:drop-shadow(2px 2px 0 #000)}
+html[data-family="roadcase"] ::selection{background:#F4C542;color:#111214}
+
+/* Aluminium corner treatment on major cards/panels without changing layout. */
+html[data-family="roadcase"] [class*="rounded-"][class*="border-line"] {
+  border-radius:3px !important;
+}
+
+/* ---------------- FLYER ---------------- */
+html[data-theme="flyer"] {
+  --ink-rgb: 232 220 197;
+  --surface: #D8C9AD;
+  --card: #F2E8D5;
+  --card2: #E6D8BC;
+  --txt: #161514;
+  --dim: #4F493F;
+  --dim2: #817766;
+  --line: #171615;
+  --line-hi: #171615;
+  --bw: 2px;
+  --rad: 1px;
+  --rad-lg: 2px;
+  --glass: rgba(242,232,213,.94);
+  --glass-hi: rgba(246,237,220,.98);
+  --sh: 4px 4px 0 #171615;
+  --sh-lg: 7px 7px 0 #171615;
+  --sh-hover: 8px 8px 0 #3157FF;
+  --shadow: var(--sh);
+  --acc: #FF3B30;
+  --on-acc: #FFFFFF;
+  --acc2: #3157FF;
+  --on-acc2: #FFFFFF;
+  --hl: #F4D52C;
+  --on-hl: #171615;
+  --disp: var(--font-archivo-black), sans-serif;
+  --disp-wt: 400;
+  --disp-case: uppercase;
+  --ui: var(--font-archivo), var(--font-inter), sans-serif;
+  --meta: var(--font-space-mono), monospace;
+  --ital: var(--font-instrument), serif;
+  --tick-bg: #171615;
+  --tick-fg: #F2E8D5;
+  --tick-hl: #F4D52C;
+  --dayhead-bg: #171615;
+  --dayhead-fg: #F2E8D5;
+  --dayhead-hot-bg: #FF3B30;
+  --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #3157FF;
+  --stub-fg: #FFFFFF;
+  --m-bg: #D9D0BE;
+  --m-block: #EAE2D2;
+  --m-road1: #B8AD99;
+  --m-road2: #C9BFAC;
+  --m-river: #A8C7D9;
+  --m-park: #B9C79C;
+  --m-lab: #746C5E;
+  --pin-bd: #171615;
+  --pin-sh: 3px 3px 0 #171615;
+  --pin2-sh: 3px 3px 0 #171615;
+  --pin-stem: #171615;
+}
+
+html[data-family="flyer"] body {
+  background-color:#D8C9AD;
+  background-image:
+    linear-gradient(8deg,transparent 0 71%,rgba(75,54,34,.08) 71.2%,transparent 71.8%),
+    linear-gradient(-13deg,transparent 0 38%,rgba(255,255,255,.19) 38.4%,transparent 39%),
+    radial-gradient(ellipse at 14% 28%,rgba(255,59,48,.10) 0 8%,transparent 8.5%),
+    radial-gradient(ellipse at 86% 68%,rgba(49,87,255,.08) 0 11%,transparent 11.5%),
+    repeating-linear-gradient(90deg,rgba(70,50,30,.025) 0 1px,transparent 1px 5px);
+}
+
+html[data-family="flyer"] body::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:60;
+  pointer-events:none;
+  opacity:.34;
+  background-image:
+    radial-gradient(circle,rgba(26,21,17,.22) 0 .7px,transparent .9px),
+    radial-gradient(circle,rgba(255,255,255,.5) 0 .7px,transparent .9px);
+  background-position:0 0,3px 4px;
+  background-size:7px 7px,9px 9px;
+  mix-blend-mode:multiply;
+}
+
+html[data-family="flyer"] .glass,
+html[data-family="flyer"] .glass-hi {
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  background-color:#F2E8D5;
+  background-image:
+    repeating-linear-gradient(0deg,rgba(71,52,35,.018) 0 1px,transparent 1px 3px),
+    linear-gradient(96deg,rgba(255,255,255,.38),transparent 18% 82%,rgba(80,54,32,.06));
+  border-color:#171615;
+  box-shadow:3px 3px 0 #171615;
+}
+
+html[data-family="flyer"] .bndy-card {
+  border:2px solid #171615;
+  border-radius:1px;
+  box-shadow:var(--sh);
+  background-color:#F2E8D5;
+  background-image:linear-gradient(102deg,rgba(255,255,255,.4),transparent 17%),repeating-linear-gradient(0deg,rgba(50,39,28,.02) 0 1px,transparent 1px 3px);
+}
+html[data-family="flyer"] .bndy-card:nth-child(4n+1){transform:rotate(-.45deg)}
+html[data-family="flyer"] .bndy-card:nth-child(4n+2){transform:rotate(.3deg)}
+html[data-family="flyer"] .bndy-card:nth-child(4n+3){transform:rotate(-.18deg)}
+html[data-family="flyer"] .bndy-card:hover{transform:translate(-2px,-3px) rotate(0);box-shadow:var(--sh-hover)}
+html[data-family="flyer"] .bndy-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #171615}
+
+html[data-family="flyer"] .bndy-card::after {
+  content:"";
+  position:absolute;
+  left:9%;
+  top:-7px;
+  width:52px;
+  height:15px;
+  background:rgba(242,213,44,.75);
+  transform:rotate(-2deg);
+  box-shadow:inset 0 0 0 1px rgba(95,78,10,.16);
+  pointer-events:none;
+}
+
+html[data-family="flyer"] .bndy-btn {
+  border:2px solid #171615;
+  border-radius:0;
+  box-shadow:5px 5px 0 #171615;
+  font-family:var(--disp);
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  transform:rotate(-.5deg);
+}
+html[data-family="flyer"] .bndy-btn:hover{transform:translate(-1px,-1px) rotate(.2deg);box-shadow:7px 7px 0 #3157FF}
+html[data-family="flyer"] .bndy-btn:active{transform:translate(4px,4px);box-shadow:1px 1px 0 #171615}
+
+html[data-family="flyer"] .bndy-btn2,
+html[data-family="flyer"] .bndy-chip {
+  border:2px solid #171615;
+  border-radius:0;
+  box-shadow:2px 2px 0 #171615;
+  font-weight:800;
+}
+html[data-family="flyer"] .bndy-chip.on {
+  background:#F4D52C;
+  color:#171615;
+  border-color:#171615;
+  transform:rotate(-1.5deg);
+  box-shadow:3px 3px 0 #171615;
+}
+
+html[data-family="flyer"] .bndy-ticker {
+  border-bottom:3px solid #FF3B30;
+  box-shadow:0 3px 0 #3157FF;
+}
+html[data-family="flyer"] .bndy-ticker-in{font-weight:700;letter-spacing:3.5px}
+html[data-family="flyer"] .brand-glow{text-shadow:2px 2px 0 #3157FF,-1px -1px 0 #FF3B30;filter:none}
+html[data-family="flyer"] ::selection{background:#3157FF;color:#fff}
+
+/* Kill the generic polished SaaS rounding in the poster skin. */
+html[data-family="flyer"] [class*="rounded-"] { border-radius:2px !important; }
+html[data-family="flyer"] .rounded-full { border-radius:999px !important; }
+
+/* Poster headings get a tiny offset-print registration error. */
+html[data-family="flyer"] .disp {
+  letter-spacing:-.025em;
+  text-shadow:1px 0 0 rgba(255,59,48,.28),-1px 0 0 rgba(49,87,255,.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-family="flyer"] .bndy-card,
+  html[data-family="flyer"] .bndy-btn { transform:none; }
+}
