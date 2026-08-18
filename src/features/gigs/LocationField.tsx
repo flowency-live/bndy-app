@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { MapPin, Search, LocateFixed, ChevronDown, X } from "lucide-react";
+import { CalendarRange, ChevronDown, ChevronRight, LocateFixed, MapPin, Search, X } from "lucide-react";
 import { placesSuggest, placesDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { cn } from "@/lib/cn";
 import type { LatLng } from "@/domain/types";
@@ -53,18 +54,33 @@ export function LocationField({ value, onChange }: { value: OriginChoice; onChan
   };
 
   return (
-    <div ref={wrapRef} className="relative shrink-0">
+    <div ref={wrapRef} className="relative flex w-full min-w-0 items-stretch gap-2 lg:w-auto lg:shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={cn("flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-[12.5px] font-extrabold", usingCurrent ? "border-line glass text-txt" : "border-[var(--acc)] bg-card2 text-txt")}
+        className={cn("flex min-w-0 items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-[12.5px] font-extrabold lg:shrink-0", usingCurrent ? "border-line glass text-txt" : "border-[var(--acc)] bg-card2 text-txt")}
       >
-        <MapPin size={14} className="text-[var(--acc)]" /> {value.label}
+        <MapPin size={14} className="shrink-0 text-[var(--acc)]" />
+        <span className="min-w-0 truncate">{value.label}</span>
         {usingCurrent ? (
-          <ChevronDown size={14} className={cn("text-dim transition-transform", open && "rotate-180")} />
+          <ChevronDown size={14} className={cn("shrink-0 text-dim transition-transform", open && "rotate-180")} />
         ) : (
-          <span onClick={(e) => { e.stopPropagation(); pickCurrent(); }} className="rounded p-0.5 hover:bg-white/10" aria-label="Reset to current location"><X size={13} /></span>
+          <span onClick={(e) => { e.stopPropagation(); pickCurrent(); }} className="shrink-0 rounded p-0.5 hover:bg-white/10" aria-label="Reset to current location"><X size={13} /></span>
         )}
       </button>
+
+      <Link
+        href="/festivals"
+        aria-label="Explore festivals and music series"
+        className="ml-auto flex shrink-0 items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-[12px] font-black text-txt transition-transform active:scale-[.98] lg:hidden"
+        style={{
+          borderColor: "color-mix(in srgb, var(--acc) 52%, var(--line))",
+          background: "linear-gradient(110deg, color-mix(in srgb, var(--acc) 18%, var(--glass)), color-mix(in srgb, var(--acc2) 10%, var(--glass)))",
+        }}
+      >
+        <CalendarRange size={14} className="shrink-0 text-[var(--acc)]" strokeWidth={2.5} />
+        <span>Festivals</span>
+        <ChevronRight size={13} className="shrink-0 text-dim" strokeWidth={2.5} />
+      </Link>
 
       {open && (
         <div className="absolute left-0 top-[calc(100%+6px)] z-40 w-[290px] max-w-[82vw] rounded-2xl border border-line-hi glass-hi p-2 shadow-[0_16px_50px_rgba(0,0,0,.6)]">
