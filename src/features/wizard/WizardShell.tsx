@@ -34,12 +34,8 @@ export function WizardShell() {
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [error, setError] = useState<string | null>(null);
   const hydrated = useRef(false);
-  const startedAt = useRef(Date.now()); // bot time-trap: server rejects publishes <3s after open
+  const startedAt = useRef(Date.now());
 
-  // hydrate from sessionStorage once, then apply URL prefills when caches land.
-  // A prefilled entry point that does NOT match the stored draft is a NEW gig intent:
-  // start clean (only the prefill anchor gets applied) instead of resuming an old
-  // half-finished draft and skipping straight to review.
   useEffect(() => {
     if (!hydrated.current) {
       hydrated.current = true;
@@ -81,8 +77,6 @@ export function WizardShell() {
   const artistDone = !!draft.artistId || !!draft.newArtist || !!draft.isOpenMic;
   const whenDone = !!draft.date && !!draft.startTime;
 
-  // auto-advance to the first incomplete step on load/prefill.
-  // In multi-act mode, stay on the artist step — the user clicks "Next" to advance.
   useEffect(() => {
     setStep((prev) => {
       if (draft.multiAct && prev === "artist") return prev;
@@ -102,8 +96,6 @@ export function WizardShell() {
     if (!draft.venueId || !draft.date || !draft.startTime) return;
     setError(null);
     try {
-      // 1) resolve/create the artist if new (open mics skip this: host is optional
-      //    and always an EXISTING act — StepArtist never offers new-artist creation there)
       let artistId = draft.artistId;
       let artistName = draft.artistName;
       if (!artistId && !draft.isOpenMic && draft.newArtist) {
@@ -121,9 +113,6 @@ export function WizardShell() {
           { confirmNew: draft.newArtist.confirmNew },
         );
         if (!((r.action === "matched" || r.action === "created") && r.artistId) && r.action !== "review") {
-          // Self-heal (bug observed 2026-08-07): the create can land server-side even when
-          // the response is an error (422 seen AFTER the artist record existed). Re-check
-          // read-only; if the artist is there now, carry on to the event instead of stranding.
           const recheck = await resolveArtist(
             { name: draft.newArtist.name, location: draft.newArtist.location, facebookUrl: draft.newArtist.facebookUrl },
             { dryRun: true },
@@ -147,16 +136,10 @@ export function WizardShell() {
       }
       if (!artistId && !draft.isOpenMic) { setStep("artist"); return; }
 
-      // 2) create the gig — or the whole series for a repeating open mic (item 13):
-      //    each date is its own event; the server dedup gate absorbs re-runs.
       setPhase("event");
-      // Feature 12: act 1 may have been resolved just now, so rebuild the bill
-      // from the resolved id rather than the pre-resolve draft.
       const acts = artistId && artistName
         ? [{ id: artistId, name: artistName }, ...(draft.extraActs ?? [])]
         : draftActs(draft);
-      // The draft may bill the unresolved sentinel as headline. Map it to the id
-      // resolveArtist just returned, then drop anything not on the bill.
       const headlineIds = draft.headlineIds?.length
         ? draft.headlineIds
             .map((h) => (h === NEW_ACT_ID && artistId ? artistId : h))
@@ -174,8 +157,6 @@ export function WizardShell() {
       for (const date of dates) {
         const res = await createCommunityEvent({
           artistId,
-          // Only sent for a real bill. A single-act gig posts exactly what it
-          // always did, so nothing about the 80% path changes on the wire.
           artistIds: acts.length > 1 ? acts.map((a) => a.id) : undefined,
           headlineArtistIds: acts.length > 1 ? (headlineIds.length ? headlineIds : undefined) : undefined,
           isOpenMic: draft.isOpenMic || undefined,
@@ -198,10 +179,6 @@ export function WizardShell() {
       }
       setPhase("idle");
       if (ok > 0) {
-        // A2 fix: invalidate gigs cache so the new event appears immediately
-        // C5 fix: the wizard can also create a NEW artist and a NEW venue.
-        // Clear those caches too, or the new record stays hidden until the
-        // cache expires.
         queryClient.invalidateQueries({ queryKey: ["gigs"] });
         queryClient.invalidateQueries({ queryKey: ["artists"] });
         queryClient.invalidateQueries({ queryKey: ["venues"] });
@@ -225,7 +202,6 @@ export function WizardShell() {
     } catch { /* dismissed */ }
   };
 
-  /** Reset for the next gig, keeping the chosen anchor (artist / venue / both). */
   const again = (keep: "artist" | "venue" | "both" | "none") => {
     const base: Draft = { ...EMPTY_DRAFT };
     if (keep === "artist" || keep === "both") { base.artistId = draft.artistId; base.artistName = draft.artistName; }
@@ -237,7 +213,6 @@ export function WizardShell() {
     setStep(keep === "both" ? "when" : keep === "venue" ? "artist" : "venue");
   };
 
-  /* ---------------- outcome screens ---------------- */
   if (outcome) {
     const dup = outcome.kind === "duplicate";
     const many = outcome.kind === "published" && (outcome.count ?? 1) > 1;
@@ -265,38 +240,20 @@ export function WizardShell() {
           )}
           <Link href="/map" className="bndy-btn2 flex items-center justify-center py-3.5 text-[14px]">See it on the map</Link>
         </div>
-
         <div className="mt-6 border-t border-line pt-4">
           <div className="text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim2">Add another gig</div>
           <div className="mt-2.5 flex flex-col gap-2">
-            {draft.artistId && draft.venueId && (
-              <button onClick={() => again("both")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">
-                {draft.artistName} at {draft.venueName}, another date
-              </button>
-            )}
-            {draft.artistId && (
-              <button onClick={() => again("artist")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">
-                Another gig for {draft.artistName}
-              </button>
-            )}
-            {draft.venueId && (
-              <button onClick={() => again("venue")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">
-                Another gig at {draft.venueName}
-              </button>
-            )}
-            <button onClick={() => again("none")} className="py-1.5 text-[13px] font-extrabold text-dim hover:text-txt">
-              Start fresh
-            </button>
+            {draft.artistId && draft.venueId && <button onClick={() => again("both")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">{draft.artistName} at {draft.venueName}, another date</button>}
+            {draft.artistId && <button onClick={() => again("artist")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">Another gig for {draft.artistName}</button>}
+            {draft.venueId && <button onClick={() => again("venue")} className="bndy-btn2 truncate px-4 py-3 text-[13.5px]">Another gig at {draft.venueName}</button>}
+            <button onClick={() => again("none")} className="py-1.5 text-[13px] font-extrabold text-dim hover:text-txt">Start fresh</button>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ---------------- wizard ---------------- */
   const stepIndex = steps.findIndex((s) => s.key === step);
-  // Jason 2026-08-11: the draft cache survives refreshes BY DESIGN (app-flips for
-  // a Facebook URL), so there must be an explicit way out of a changed mind.
   const dirty = venueDone || artistDone || !!draft.date;
   const startOver = () => {
     clearDraft();
@@ -308,15 +265,16 @@ export function WizardShell() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-28 pt-2 lg:px-8">
       <div className="mb-5 flex items-center gap-3">
-        {/* slot always rendered: appearing/disappearing shifted the heading by a few px between steps */}
-        <button
-          onClick={() => setStep(steps[stepIndex - 1].key)}
-          aria-label="Back"
-          disabled={stepIndex === 0 || steps[stepIndex - 1].locked}
-          className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-line glass transition-opacity", (stepIndex === 0 || steps[stepIndex - 1].locked) && "pointer-events-none opacity-0")}
-        >
-          <ArrowLeft size={16} />
-        </button>
+        {stepIndex > 0 && (
+          <button
+            onClick={() => setStep(steps[stepIndex - 1].key)}
+            aria-label="Back"
+            disabled={steps[stepIndex - 1].locked}
+            className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line glass transition-opacity", steps[stepIndex - 1].locked && "pointer-events-none opacity-0")}
+          >
+            <ArrowLeft size={16} />
+          </button>
+        )}
         <h1 className="text-[22px] font-black tracking-tight">Add a gig</h1>
         {dirty && (
           <button
@@ -354,9 +312,6 @@ export function WizardShell() {
               initialMultiAct={draft.multiAct}
               onPickExisting={(a) => { patch({ artistId: a.id, artistName: a.name, newArtist: undefined, isOpenMic: undefined, repeat: undefined, extraActs: undefined, headlineIds: undefined, multiAct: undefined }); setStep("when"); }}
               onPickNew={(na) => {
-                // In bill mode a NEW act stays as act 1 and the step holds, so
-                // support acts can be added to it. Publish resolves it to a real
-                // id and swaps the sentinel out. Outside bill mode: unchanged.
                 const keepBill = !!draft.multiAct;
                 patch(keepBill
                   ? { newArtist: na, artistId: undefined, artistName: undefined, isOpenMic: undefined, repeat: undefined }
@@ -365,8 +320,6 @@ export function WizardShell() {
               }}
               onPickOpenMic={(host) => { patch({ isOpenMic: true, artistId: host?.id, artistName: host?.name, newArtist: undefined, extraActs: undefined, headlineIds: undefined, multiAct: undefined }); setStep("when"); }}
               onBillChange={(list, heads, multiAct) => {
-                // Act 1 may be the unresolved NEW_ACT_ID sentinel. Keep newArtist
-                // in that case and leave artistId empty; publish fills it in.
                 const pending = list[0]?.id === NEW_ACT_ID;
                 patch({
                   artistId: pending ? undefined : list[0]?.id,
@@ -393,7 +346,13 @@ export function WizardShell() {
                   className="w-full rounded-2xl border border-line glass px-4 py-3 text-[15px] font-extrabold outline-none focus:border-orange/55"
                 />
               </label>
-              <div className="mt-4 lg:hidden"><PreviewCard draft={draft} /></div>
+              <div className="mt-5 lg:hidden">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-[1.35px] text-txt">Your gig</span>
+                  <span className="text-[10px] font-bold text-dim">This is what goes live</span>
+                </div>
+                <PreviewCard draft={draft} />
+              </div>
               {error && <p className="mt-3 rounded-xl bg-card2 px-3.5 py-3 text-[13px] font-bold text-[var(--acc)]">{error}</p>}
               <button onClick={publish} disabled={phase !== "idle"} className="bndy-btn mt-5 flex w-full items-center justify-center gap-2 py-4 text-[15px] disabled:opacity-60">
                 {phase !== "idle" ? (
@@ -407,7 +366,6 @@ export function WizardShell() {
           )}
         </div>
 
-        {/* live preview — desktop rail (mobile shows it on the review step) */}
         <aside className="hidden lg:block">
           <div className="sticky top-6">
             <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim2">Your gig so far</div>
