@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
@@ -21,19 +21,20 @@ const NAV = [
   { key: "add", label: "Add", href: "/add", icon: Plus },
 ] as const;
 
-function activeKey(path: string): string {
+function activeKey(path: string, mapMode: string | null): string {
   if (path.startsWith("/artists")) return "artists";
   if (path.startsWith("/gigs")) return "gigs";
   if (path.startsWith("/add")) return "add";
+  if (path.startsWith("/map") && mapMode === "venues") return "venues";
   return "map";
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const active = activeKey(path);
+  const searchParams = useSearchParams();
+  const active = activeKey(path, searchParams.get("mode"));
   const gigDiscoveryView = path.startsWith("/map") || path.startsWith("/gigs");
 
-  // Standalone branded webform — no app chrome, shareable straight into FB groups etc.
   if (path.startsWith("/list-a-gig")) {
     return (
       <div className="min-h-[100dvh]">
@@ -60,7 +61,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Splash />
       <LiveTicker />
 
-      {/* ---- desktop sidebar ---- */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
         <Link href="/" className="mb-6 flex shrink-0 items-center gap-1 px-2 text-2xl font-black tracking-tight">
           <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
@@ -80,11 +80,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={key}
               href={href}
               className={cn(
-                "flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-bold transition-colors",
-                active === key ? "bg-white/10 text-txt" : "text-dim hover:text-txt hover:bg-white/5",
+                "flex shrink-0 items-center gap-3 rounded-xl border px-3 py-2.5 text-[15px] font-bold transition-colors",
+                active === key
+                  ? "border-[var(--acc)] bg-acc text-on-acc"
+                  : "border-transparent text-dim hover:bg-card2 hover:text-txt",
               )}
             >
-              <Icon size={20} className={active === key ? "text-[var(--acc)]" : ""} />
+              <Icon size={20} />
               {label}
             </Link>
           ))}
@@ -102,32 +104,35 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SkinControl variant="sidebar" />
       </aside>
 
-      {/* ---- content ---- */}
       <main className="lg:pl-60" style={{ paddingTop: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}>{children}</main>
 
-      {/* ---- mobile bottom nav ---- */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex h-16 border-t border-line glass-hi pb-safe lg:hidden">
-        {NAV.map(({ key, label, href, icon: Icon }) => (
-          <Link
-            key={key}
-            href={href}
-            className={cn(
-              "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10.5px] font-extrabold tracking-wide",
-              active === key ? "text-txt" : "text-dim",
-            )}
-          >
-            {active === key && (
-              <span className="absolute top-0 h-[3px] w-7 rounded-b bg-acc shadow-[0_0_12px_var(--acc)]" />
-            )}
-            <Icon size={22} className={active === key ? "text-[var(--acc)] drop-shadow-[0_0_8px_var(--acc)]" : ""} />
-            {label}
-          </Link>
-        ))}
+        {NAV.map(({ key, label, href, icon: Icon }) => {
+          const isActive = active === key;
+          return (
+            <Link
+              key={key}
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-extrabold tracking-wide transition-colors",
+                isActive ? "text-[var(--acc)]" : "text-dim",
+              )}
+            >
+              {isActive && <span className="absolute inset-x-2 bottom-1 top-1 rounded-xl bg-[color-mix(in_srgb,var(--acc)_12%,transparent)]" />}
+              {isActive && <span className="absolute top-0 h-[3px] w-8 rounded-b bg-acc shadow-[0_0_12px_var(--acc)]" />}
+              <span className={cn(
+                "relative z-10 flex h-7 w-9 items-center justify-center rounded-lg transition-all",
+                isActive && "bg-acc text-on-acc shadow-[0_0_14px_color-mix(in_srgb,var(--acc)_35%,transparent)]",
+              )}>
+                <Icon size={20} />
+              </span>
+              <span className="relative z-10">{label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Mobile utilities are deliberately identical on every app view: skin on
-          the far left, account immediately beside it. My gigs joins the cluster
-          only on discovery views and only renders for a signed-in user. */}
       <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden">
         <UserButton variant="map" />
       </div>
