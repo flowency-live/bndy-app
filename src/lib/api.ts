@@ -1,6 +1,19 @@
 // bndy API client + DTO→domain transforms. All I/O lives here.
 
-import type { Artist, AvailabilityDate, Gig, ResolvedTicketing, SocialLink, SocialPlatform, Venue } from "@/domain/types";
+import type {
+  Artist,
+  AvailabilityDate,
+  Festival,
+  FestivalBilling,
+  FestivalLineupSlot,
+  FestivalStage,
+  FestivalSummary,
+  Gig,
+  ResolvedTicketing,
+  SocialLink,
+  SocialPlatform,
+  Venue,
+} from "@/domain/types";
 import { canonicalActTypes, canonicalArtistType } from "@/lib/artistTaxonomyCore";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
@@ -47,14 +60,13 @@ interface GigDTO {
   venueId: string; venueName?: string; venueCity?: string; venue?: { name?: string; city?: string };
   artistId?: string; artistName?: string; geoLat?: number; geoLng?: number;
   ticketed?: boolean; ticketUrl?: string; ticketing?: TicketingDTO; isOpenMic?: boolean; cancelled?: boolean;
-  /** community-created open mics carry type 'open-mic' rather than an isOpenMic attribute */
   type?: string;
-  /** feature 12 — the bill. Denormalised by the backend; absent on a single-act gig. */
   artistIds?: string[]; artistNames?: string[]; headlineArtistIds?: string[];
+  festivalId?: string; festivalName?: string; festivalSlug?: string;
+  stageId?: string; billing?: FestivalBilling; billingOrder?: number;
 }
 export function toGig(e: GigDTO): Gig | null {
   if (typeof e.geoLat !== "number" || typeof e.geoLng !== "number") return null;
-  // Use resolved ticketing if available, fall back to legacy fields
   const ticketing = e.ticketing;
   const isTicketed = ticketing?.isTicketed ?? !!e.ticketed;
   const ticketUrl = ticketing?.ticketUrl ?? e.ticketUrl;
@@ -71,10 +83,6 @@ export function toGig(e: GigDTO): Gig | null {
     artistId: e.artistId,
     artistName: e.artistName,
     venueId: e.venueId,
-    // POST /api/events/batch (the map's tap handler) returns a NESTED `venue` object and
-    // no flat `venueName`. `venueCity` already had this fallback; `venueName` did not, so
-    // every map card rendered "Venue TBC" while the city beside it was correct. Venue and
-    // artist pages were unaffected because they use endpoints that do denormalise the name.
     venueName: e.venueName || e.venue?.name || "",
     venueCity: e.venueCity || e.venue?.city,
     date: e.date,
@@ -86,9 +94,12 @@ export function toGig(e: GigDTO): Gig | null {
     ticketing: resolved,
     isOpenMic: e.isOpenMic || e.type === "open-mic" || undefined,
     cancelled: !!e.cancelled,
-    // Feature 12. Only carried when the endpoint denormalises a bill. A single-act
-    // gig, and every gig created before feature 12, leaves all three undefined and
-    // domain/lineup falls back to artistId. Never synthesise them here.
+    festivalId: e.festivalId,
+    festivalName: e.festivalName,
+    festivalSlug: e.festivalSlug,
+    stageId: e.stageId,
+    billing: e.billing,
+    billingOrder: e.billingOrder,
     artistIds: e.artistIds?.length ? e.artistIds : undefined,
     artistNames: e.artistNames?.length ? e.artistNames : undefined,
     headlineArtistIds: e.headlineArtistIds?.length ? e.headlineArtistIds : undefined,
@@ -119,7 +130,7 @@ interface ArtistDTO {
   id: string; name: string; genres?: string[]; artist_type?: string; artistType?: string;
   actType?: string[]; acoustic?: boolean; location?: string; profileImageUrl?: string | null; bio?: string;
   socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string; websiteUrl?: string; spotifyUrl?: string;
-  publishAvailability?: boolean; // A6 fix: was missing, Availability tab never showed
+  publishAvailability?: boolean;
 }
 export function toArtist(a: ArtistDTO): Artist {
   const legacyActs = canonicalActTypes(a.actType);
@@ -134,7 +145,69 @@ export function toArtist(a: ArtistDTO): Artist {
     profileImageUrl: a.profileImageUrl,
     bio: a.bio,
     socials: toSocials(a as unknown as Record<string, unknown>),
-    publishAvailability: a.publishAvailability, // A6 fix
+    publishAvailability: a.publishAvailability,
+  };
+}
+
+interface FestivalDTO {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  town?: string;
+  location?: string;
+  primaryVenueId?: string;
+  venueIds?: string[];
+  stages?: FestivalStage[];
+  lineup?: FestivalLineupSlot[];
+  ticketed?: boolean;
+  price?: string;
+  ticketUrl?: string;
+  lineupUrl?: string;
+  websiteUrl?: string;
+  socialMediaUrls?: string[];
+  heroImageUrl?: string;
+  posterImageUrl?: string;
+  theme?: unknown;
+  actCount?: number;
+  gigCount?: number;
+  venueCount?: number;
+}
+
+export function toFestivalSummary(f: FestivalDTO): FestivalSummary {
+  const venueIds = [...new Set([f.primaryVenueId, ...(f.venueIds || [])].filter((id): id is string => !!id))];
+  return {
+    id: f.id,
+    slug: f.slug,
+    name: f.name,
+    startDate: f.startDate,
+    endDate: f.endDate || f.startDate,
+    location: f.location || f.town,
+    venueIds,
+    posterImageUrl: f.posterImageUrl,
+    heroImageUrl: f.heroImageUrl,
+    actCount: f.actCount ?? f.lineup?.length,
+    gigCount: f.gigCount,
+    venueCount: f.venueCount ?? venueIds.length,
+    price: f.price,
+    ticketed: f.ticketed,
+  };
+}
+
+export function toFestival(f: FestivalDTO): Festival {
+  return {
+    ...toFestivalSummary(f),
+    description: f.description,
+    primaryVenueId: f.primaryVenueId,
+    stages: Array.isArray(f.stages) ? f.stages : [],
+    lineup: Array.isArray(f.lineup) ? f.lineup : [],
+    ticketUrl: f.ticketUrl,
+    lineupUrl: f.lineupUrl,
+    websiteUrl: f.websiteUrl,
+    socialMediaUrls: Array.isArray(f.socialMediaUrls) ? f.socialMediaUrls : [],
+    theme: f.theme,
   };
 }
 
@@ -147,10 +220,10 @@ export interface LightEvent {
   startTime?: string;
   geoLat: number;
   geoLng: number;
-  /** absent until the geo GSI carries it (see AGENT-WORKORDER TASK 7) — MapView falls back to a join */
   ticketed?: boolean;
-  /** feature 7 — may be absent from the GSI projection; MapView joins the full gigs cache as fallback */
   cancelled?: boolean;
+  festivalId?: string;
+  festivalName?: string;
 }
 
 export interface BBox { west: number; south: number; east: number; north: number }
@@ -168,16 +241,24 @@ export async function fetchGigsInView(bbox: BBox, startDate: string, endDate: st
   return { events: data.events || [], truncated: !!data.truncated };
 }
 
+/** Batch endpoint is capped at 100 IDs; transparently chunk larger festival programmes. */
 export async function fetchEventsBatch(ids: string[]): Promise<Gig[]> {
   if (ids.length === 0) return [];
-  const res = await fetch(`${BASE}/api/events/batch`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ eventIds: ids.slice(0, 100) }),
-  });
-  if (!res.ok) throw new Error(`POST /api/events/batch → ${res.status}`);
-  const data = await res.json() as { events?: GigDTO[] };
-  return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
+  const unique = [...new Set(ids)];
+  const chunks: string[][] = [];
+  for (let i = 0; i < unique.length; i += 100) chunks.push(unique.slice(i, i + 100));
+  const results = await Promise.all(chunks.map(async (eventIds) => {
+    const res = await fetch(`${BASE}/api/events/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventIds }),
+    });
+    if (!res.ok) throw new Error(`POST /api/events/batch → ${res.status}`);
+    const data = await res.json() as { events?: GigDTO[] };
+    return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
+  }));
+  const byId = new Map(results.flat().map((g) => [g.id, g]));
+  return unique.map((id) => byId.get(id)).filter((g): g is Gig => !!g);
 }
 
 /* ---------- endpoints ---------- */
@@ -188,6 +269,32 @@ export async function fetchGigs(params?: { startDate?: string; endDate?: string 
   const data = await get<{ events?: GigDTO[] }>(`/api/events/public${q.toString() ? `?${q}` : ""}`);
   return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
 }
+
+export async function fetchFestivals(params?: { startDate?: string; endDate?: string }): Promise<FestivalSummary[]> {
+  const q = new URLSearchParams();
+  if (params?.startDate) q.set("startDate", params.startDate);
+  if (params?.endDate) q.set("endDate", params.endDate);
+  const data = await get<{ festivals?: FestivalDTO[] }>(`/api/festivals/public${q.toString() ? `?${q}` : ""}`, 300);
+  return (data.festivals || []).map(toFestivalSummary).sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
+export async function fetchFestival(slug: string): Promise<{ festival: Festival; childEvents: Gig[] }> {
+  const data = await get<{ festival: FestivalDTO; childEvents?: GigDTO[] }>(`/api/festivals/slug/${encodeURIComponent(slug)}`, 60);
+  const festival = toFestival(data.festival);
+  const rawEvents = data.childEvents || [];
+  // The festival endpoint intentionally returns raw event rows. Enrich through the
+  // standard batch endpoint so schedule/map cards get the exact same artist, venue
+  // and ticketing shape as the rest of bndy. This also avoids one request per gig.
+  const childEvents = await fetchEventsBatch(rawEvents.map((e) => e.id));
+  const withParent = childEvents.map((gig) => ({
+    ...gig,
+    festivalId: gig.festivalId || festival.id,
+    festivalName: gig.festivalName || festival.name,
+    festivalSlug: festival.slug,
+  }));
+  return { festival: { ...festival, gigCount: festival.gigCount ?? withParent.length }, childEvents: withParent };
+}
+
 export async function fetchVenues(): Promise<Venue[]> {
   const data = await get<VenueDTO[]>("/api/venues", 600);
   return data.map(toVenue).filter((v): v is Venue => v !== null);
