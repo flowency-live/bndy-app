@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
+import { CalendarRange, CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
@@ -22,11 +22,13 @@ const NAV = [
 ] as const;
 
 function activeKey(path: string, mapMode: string | null): string {
+  if (path.startsWith("/festivals")) return "festivals";
   if (path.startsWith("/artists")) return "artists";
   if (path.startsWith("/gigs")) return "gigs";
   if (path.startsWith("/add")) return "add";
   if (path.startsWith("/map") && mapMode === "venues") return "venues";
-  return "map";
+  if (path.startsWith("/map") || path === "/") return "map";
+  return "none";
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -90,6 +92,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               {label}
             </Link>
           ))}
+          <div className="my-1.5 h-px shrink-0 bg-line" />
+          <Link
+            href="/festivals"
+            className={cn(
+              "flex shrink-0 items-center gap-3 rounded-xl border px-3 py-2.5 text-[15px] font-bold transition-colors",
+              active === "festivals"
+                ? "border-[var(--acc)] bg-acc text-on-acc"
+                : "border-transparent text-dim hover:bg-card2 hover:text-txt",
+            )}
+          >
+            <CalendarRange size={20} />
+            Festivals
+          </Link>
         </nav>
         <Link
           href="/help"
