@@ -42,7 +42,7 @@ export function FestivalSchedule({ festival, gigs }: { festival: Festival; gigs:
                     <div className="border-b border-line bg-card2 px-3 py-1.5 font-meta text-[8px] font-black uppercase tracking-[1.2px] text-[var(--acc)]">{stageById.get(gig.stageId)}</div>
                   )}
                   <GigCard
-                    gig={gig}
+                    gig={{ ...gig, festivalName: undefined, festivalSlug: undefined }}
                     tonight={isTonight(gig.date, gig.startTime)}
                     imageUrl={gig.artistId ? imgMap.get(gig.artistId) : undefined}
                     onClick={() => setSelected(gig)}
