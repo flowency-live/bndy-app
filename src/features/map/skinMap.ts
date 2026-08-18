@@ -13,17 +13,16 @@ export const BASEMAP_URLS = {
 } as const;
 export type BasemapKey = keyof typeof BASEMAP_URLS;
 
-/** Warm skins ride Voyager; cool light skins Positron; dark skins Dark Matter. */
+/** Warm/editorial skins ride Voyager; cool light skins Positron; dark skins Dark Matter. */
 const BASEMAP_BY_SKIN: Record<AppSkinId, BasemapKey> = {
-  print: "voyager",
   "bndy-light": "light",
   "bndy-dark": "dark",
-  openair: "light",
+  openair: "dark",
+  roadcase: "dark",
+  flyer: "voyager",
   goldenhour: "voyager",
-  solar: "voyager",
   underground: "light",
   synthwave: "dark",
-  blackout: "dark",
   poole: "dark",
   hyper: "light",
 };
@@ -87,7 +86,7 @@ export function readSkinColors(): SkinColors {
   return {
     gigGlow: acc,
     // gigCore = the £ glyph on ticketed pins: best WCAG contrast against the accent fill,
-    // picked at runtime (on-acc fails on 6/9 skins, e.g. white on #F97316 = 2.8:1)
+    // picked at runtime rather than assuming a fixed foreground.
     gigCore: bestOn(acc, [onAcc, txt, surface, "#000000", "#ffffff"]),
     gigStroke: pinBd,
     venLive: acc2,
@@ -96,8 +95,7 @@ export function readSkinColors(): SkinColors {
     venIdleCore: surface,
     clRing: acc,
     clFill: hexToRgba(card, 0.9),
-    // venue name pills: the skin's standard card/txt pairing.
-    // WCAG AA verified across all 9 skins (worst = solar 10.6:1; bndy-dark 13.9, synthwave 13.1, light skins >13).
+    // venue name pills use the skin's standard card/text pairing.
     pillBg: card,
     pillTxt: txt,
   };
@@ -117,25 +115,22 @@ function diamondImage(fill: string, border: string, sizePx = 30): ImageData {
   cv.width = px; cv.height = px;
   const ctx = cv.getContext("2d")!;
   const c = px / 2;
-  const r = px * 0.36;                 // half-diagonal of the diamond
+  const r = px * 0.36;
   ctx.translate(c, c);
   ctx.rotate(Math.PI / 4);
   const side = r * Math.SQRT2 * 0.78;
-  const rad = px * 0.09;               // corner rounding
+  const rad = px * 0.09;
   const draw = (s: number) => {
     ctx.beginPath();
     if (typeof ctx.roundRect === "function") {
       ctx.roundRect(-s / 2, -s / 2, s, s, rad);
     } else {
-      // fallback: plain square path for browsers without roundRect
       ctx.rect(-s / 2, -s / 2, s, s);
     }
   };
-  // border
   draw(side);
   ctx.fillStyle = border;
   ctx.fill();
-  // solid fill (no punched centre)
   draw(side - px * 0.085);
   ctx.fillStyle = fill;
   ctx.fill();
@@ -148,31 +143,26 @@ export const PILL_LIVE = "bndy-pill-live";
 export const PILL_IDLE = "bndy-pill-idle";
 export const MIC_ICON = "bndy-mic";
 
-/* ---------------- mic glyph for open mic gig pins (item 13) ---------------- */
-/** Small microphone drawn in the pin's contrast colour: capsule head, arc cradle,
- *  stand. Sits inside the accent-filled gig pin, same slot as the £ glyph. */
+/* ---------------- mic glyph for open mic gig pins ---------------- */
 function micImage(color: string, sizePx = 18): ImageData {
   const px = sizePx * 2;
   const cv = document.createElement("canvas");
   cv.width = px; cv.height = px;
   const ctx = cv.getContext("2d")!;
   const cx = px / 2;
-  const u = px / 36; // unit scale
+  const u = px / 36;
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   ctx.lineCap = "round";
   ctx.lineWidth = 3.4 * u;
-  // capsule head
   const capW = 9 * u, capH = 15 * u, capTop = 3 * u, r = capW / 2;
   ctx.beginPath();
   if (typeof ctx.roundRect === "function") ctx.roundRect(cx - r, capTop, capW, capH, r);
   else ctx.rect(cx - r, capTop, capW, capH);
   ctx.fill();
-  // cradle arc
   ctx.beginPath();
   ctx.arc(cx, capTop + capH - 3 * u, 8.5 * u, Math.PI * 0.05, Math.PI * 0.95);
   ctx.stroke();
-  // stand
   ctx.beginPath();
   ctx.moveTo(cx, capTop + capH + 5.5 * u);
   ctx.lineTo(cx, px - 4 * u);
@@ -180,7 +170,6 @@ function micImage(color: string, sizePx = 18): ImageData {
   return ctx.getImageData(0, 0, px, px);
 }
 
-/** (Re)register the open-mic glyph for the current skin. Call with registerDiamonds. */
 export function registerMic(map: maplibregl.Map, colors: SkinColors): void {
   try {
     if (map.hasImage(MIC_ICON)) map.removeImage(MIC_ICON);
@@ -191,8 +180,6 @@ export function registerMic(map: maplibregl.Map, colors: SkinColors): void {
 }
 
 /* ---------------- venue name pill (stretchable nine-patch) ---------------- */
-/** Rounded-rect background for venue name labels. Used with icon-text-fit so the
- *  pill hugs its text. Drawn at 2x; stretch/content coords are physical pixels. */
 function pillImage(fill: string, border: string): ImageData {
   const w = 64, h = 32, r = 14;
   const cv = document.createElement("canvas");
@@ -200,7 +187,7 @@ function pillImage(fill: string, border: string): ImageData {
   const ctx = cv.getContext("2d")!;
   ctx.beginPath();
   if (typeof ctx.roundRect === "function") ctx.roundRect(1.5, 1.5, w - 3, h - 3, r);
-  else ctx.rect(1.5, 1.5, w - 3, h - 3); // fallback: square pill
+  else ctx.rect(1.5, 1.5, w - 3, h - 3);
   ctx.fillStyle = fill;
   ctx.fill();
   ctx.lineWidth = 2.5;
@@ -215,7 +202,6 @@ const PILL_OPTS = {
   content: [10, 7, 54, 25] as [number, number, number, number],
 };
 
-/** (Re)register venue-name pill backgrounds for the current skin. Call with registerDiamonds. */
 export function registerPills(map: maplibregl.Map, colors: SkinColors): void {
   const fill = colors.pillBg ?? "#10131C";
   const entries: [string, ImageData][] = [
@@ -232,7 +218,6 @@ export function registerPills(map: maplibregl.Map, colors: SkinColors): void {
   }
 }
 
-/** (Re)register diamond icons for the current skin. Call before adding layers. */
 export function registerDiamonds(map: maplibregl.Map, colors: SkinColors): void {
   const v = readVars(["--pin-bd"]);
   const border = v["--pin-bd"] || "#ffffff";
