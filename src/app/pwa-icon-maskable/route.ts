@@ -1,6 +1,6 @@
 import { createPwaIcon } from "@/lib/pwaIcon";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export function GET() {
   return createPwaIcon(512, true);

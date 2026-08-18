@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Archivo, Archivo_Black, Chakra_Petch, Instrument_Serif, Inter, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import "./skins.css";
@@ -53,7 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans antialiased">
         <Providers>
-          <AppShell>{children}</AppShell>
+          <Suspense>
+            <AppShell>{children}</AppShell>
+          </Suspense>
           <InstallPrompt />
         </Providers>
       </body>
