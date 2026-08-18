@@ -1,7 +1,5 @@
 "use client";
 
-// Standalone gig view (backlog 3b) — the share deep-link lands here.
-
 import Link from "next/link";
 import { useState } from "react";
 import { MapPin, Mic, Navigation, Share2, User } from "lucide-react";
@@ -9,6 +7,7 @@ import { avatarGradient, initials } from "@/domain/avatar";
 import { prettyDate, formatTime, isTonight, setTimeLabel } from "@/domain/dates";
 import { gigDisplayName } from "@/domain/gigName";
 import { AddToCalendarButton } from "@/features/gigs/AddToCalendarButton";
+import { FestivalRibbon } from "@/features/festivals/FestivalRibbon";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { ShareSheet } from "@/features/shared/ShareSheet";
@@ -26,11 +25,12 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
   const time = setTimeLabel(gig.startTime, gig.endTime);
 
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/g/${gig.id}` : `/g/${gig.id}`;
-  const shareText = `${name} at ${gig.venueName}${gig.venueCity ? `, ${gig.venueCity}` : ""} · ${prettyDate(gig.date, gig.startTime)}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} · found on bndy`;
+  const shareText = `${name} at ${gig.venueName}${gig.venueCity ? `, ${gig.venueCity}` : ""} · ${prettyDate(gig.date, gig.startTime)}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""}${gig.festivalName ? ` · ${gig.festivalName}` : ""} · found on bndy`;
 
   return (
     <div className="mx-auto max-w-xl px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:pb-12 lg:pt-8">
-      {/* hero */}
+      {gig.festivalName && <FestivalRibbon name={gig.festivalName} slug={gig.festivalSlug} className="mb-3" />}
+
       <div className="relative mb-4 h-52 overflow-hidden rounded-2xl border border-line">
         <div className={gig.cancelled ? "h-full w-full opacity-60 saturate-0" : "h-full w-full"}>
           {imageUrl ? (
@@ -49,14 +49,10 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
         )}
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
           {tonight && !gig.cancelled && (
-            <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
-              Tonight
-            </span>
+            <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">Tonight</span>
           )}
           {gig.isOpenMic && (
-            <span className="flex items-center gap-1 rounded-lg bg-acc2 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc2 shadow-lg">
-              <Mic size={11} strokeWidth={2.75} /> Open mic
-            </span>
+            <span className="flex items-center gap-1 rounded-lg bg-acc2 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc2 shadow-lg"><Mic size={11} strokeWidth={2.75} /> Open mic</span>
           )}
         </div>
         {gig.ticketed && !gig.cancelled && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
@@ -70,24 +66,18 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
       </p>
       <p className="mt-2 text-[15px] font-extrabold text-[var(--acc)]">
         {prettyDate(gig.date, gig.startTime)}
-        {time ? ` · ${time}` : ""}
+        {time ? ` · ${time.value}` : ""}
       </p>
 
-      {/* actions */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <AddToCalendarButton gig={gig} />
-        <button
-          type="button"
-          onClick={() => setSharing(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-line glass px-3 py-2 text-[12px] font-extrabold text-dim transition-colors hover:text-txt"
-        >
+        <button type="button" onClick={() => setSharing(true)} className="flex items-center gap-1.5 rounded-xl border border-line glass px-3 py-2 text-[12px] font-extrabold text-dim transition-colors hover:text-txt">
           <Share2 size={13} className="text-[var(--acc2)]" /> Share
         </button>
         <CuratorBar target={{ kind: "gig", gig }} />
         <FlagButton type="event" id={gig.id} name={name} size={15} className="ml-auto h-[34px] w-[34px] rounded-xl border border-line glass bg-transparent text-dim hover:text-txt" />
       </div>
 
-      {/* navigation */}
       <div className="mt-5 flex gap-2.5">
         {gig.artistId && (
           <Link href={`/artists/${gig.artistId}`} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
@@ -97,13 +87,7 @@ export function GigPageClient({ gig, imageUrl }: { gig: Gig; imageUrl?: string }
         <Link href={`/venues/${gig.venueId}`} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
           <MapPin size={16} /> Venue
         </Link>
-        <a
-          href={gmaps(gig.location.lat, gig.location.lng)}
-          target="_blank"
-          rel="noopener"
-          className="bndy-btn2 flex w-[54px] shrink-0 items-center justify-center py-3.5 transition-transform active:scale-[.97]"
-          aria-label="Directions"
-        >
+        <a href={gmaps(gig.location.lat, gig.location.lng)} target="_blank" rel="noopener" className="bndy-btn2 flex w-[54px] shrink-0 items-center justify-center py-3.5 transition-transform active:scale-[.97]" aria-label="Directions">
           <Navigation size={16} />
         </a>
       </div>
