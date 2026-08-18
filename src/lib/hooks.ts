@@ -2,7 +2,7 @@
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { fetchArtist, fetchArtistGigs, fetchArtists, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
+import { fetchArtist, fetchArtistGigs, fetchArtists, fetchFestival, fetchFestivals, fetchGigs, fetchGigsInView, fetchVenue, fetchVenueGigs, fetchVenues, type BBox } from "./api";
 import type { Gig } from "@/domain/types";
 import { todayISO, addDaysISO } from "@/domain/dates";
 import { artistMap, matchesMyGigFilter, useMyGigFilter } from "@/lib/myGigFilter";
@@ -11,18 +11,51 @@ const MIN = 60 * 1000;
 
 function useUpcomingGigsRaw() {
   const today = todayISO();
-  const endDate = addDaysISO(today, 730); // ~2 years — some endpoints window out far-future gigs without an explicit endDate
+  const endDate = addDaysISO(today, 730);
   return useQuery({ queryKey: ["gigs", "upcoming", today, endDate], queryFn: () => fetchGigs({ startDate: today, endDate }), staleTime: 5 * MIN, gcTime: 30 * MIN });
+}
+
+export function useFestivals() {
+  const today = todayISO();
+  const endDate = addDaysISO(today, 730);
+  return useQuery({
+    queryKey: ["festivals", "upcoming", today, endDate],
+    queryFn: () => fetchFestivals({ startDate: today, endDate }),
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
+}
+
+export function useFestival(slug: string) {
+  return useQuery({
+    queryKey: ["festival", slug],
+    queryFn: () => fetchFestival(slug),
+    enabled: !!slug,
+    staleTime: 2 * MIN,
+    gcTime: 30 * MIN,
+  });
 }
 
 export function useUpcomingGigs() {
   const query = useUpcomingGigsRaw();
   const { data: artists = [] } = useArtists();
+  const { data: festivals = [] } = useFestivals();
   const { filter, isActive } = useMyGigFilter();
   const artistsById = useMemo(() => artistMap(artists), [artists]);
+  const festivalsById = useMemo(() => new Map(festivals.map((f) => [f.id, f])), [festivals]);
+  const enriched = useMemo(() => (query.data ?? []).map((gig) => {
+    if (!gig.festivalId) return gig;
+    const festival = festivalsById.get(gig.festivalId);
+    if (!festival) return gig;
+    return {
+      ...gig,
+      festivalName: gig.festivalName || festival.name,
+      festivalSlug: gig.festivalSlug || festival.slug,
+    };
+  }), [query.data, festivalsById]);
   const data = useMemo(
-    () => isActive ? (query.data ?? []).filter((gig) => matchesMyGigFilter(gig, artistsById, filter)) : query.data,
-    [query.data, isActive, artistsById, filter],
+    () => isActive ? enriched.filter((gig) => matchesMyGigFilter(gig, artistsById, filter)) : enriched,
+    [enriched, isActive, artistsById, filter],
   );
   return { ...query, data };
 }
