@@ -65,7 +65,7 @@ export function GigsHome() {
     if (ticketOnly) out = out.filter((g) => g.ticketed);
     if (openMicOnly) out = out.filter((g) => g.isOpenMic);
     if (favActive) out = out.filter((g) => (g.artistId && favArtists.has(g.artistId)) || favVenues.has(g.venueId));
-    if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title}`.toLowerCase().includes(query));
+    if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title} ${g.festivalName ?? ""}`.toLowerCase().includes(query));
     return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= dRadius);
   }, [gigs, ticketOnly, openMicOnly, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
 
@@ -101,7 +101,7 @@ export function GigsHome() {
   };
 
   return (
-    <div className="mx-auto max-w-content px-4 pb-24 pt-[calc(env(safe-area-inset-top,0px)+16px)] lg:px-8 lg:pb-10 lg:pt-8">
+    <div className="mx-auto max-w-content px-4 pb-24 pt-5 lg:px-8 lg:pb-10 lg:pt-8">
       <div className="mb-6 lg:grid lg:grid-cols-[250px_minmax(0,1fr)] lg:items-end lg:gap-x-8 lg:gap-y-4 lg:mb-8">
         <header className="mb-5 hidden lg:block lg:mb-0">
           <h1 className="font-disp text-[38px] font-black leading-none tracking-tight">Gigs near you</h1>
@@ -115,8 +115,8 @@ export function GigsHome() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            aria-label="Search gigs by artist or venue"
-            placeholder="Search artists or venues…"
+            aria-label="Search gigs by artist, venue or festival"
+            placeholder="Search gigs, venues, festivals…"
             className="min-w-0 flex-1 rounded-[var(--rad)] border border-line glass px-4 py-3 text-left text-[14px] font-semibold outline-none transition-colors placeholder:text-left placeholder:text-dim focus:border-[var(--acc)]"
           />
           <div
@@ -134,8 +134,8 @@ export function GigsHome() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              aria-label="Search gigs by artist or venue"
-              placeholder="Search artists or venues…"
+              aria-label="Search gigs by artist, venue or festival"
+              placeholder="Search artists, venues or festivals…"
               className="w-full rounded-[var(--rad)] border border-line glass px-10 py-3 text-[14px] font-semibold outline-none transition-colors placeholder:text-dim focus:border-[var(--acc)]"
             />
           </div>
