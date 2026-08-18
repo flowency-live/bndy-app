@@ -3,6 +3,7 @@ import { Archivo, Archivo_Black, Chakra_Petch, Instrument_Serif, Inter, Space_Gr
 import "./globals.css";
 import "./skins.css";
 import "./vibe.css";
+import "./signature-skins.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/app-shell";
@@ -42,11 +43,11 @@ export const viewport: Viewport = {
 
 /** Sets skin attributes before first paint — no flash of wrong theme.
  *  Family/mode map must stay in sync with src/lib/appSkins.ts. */
-const NO_FLASH = `(function(){try{var M={print:["print","light"],"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],openair:["soft","dark"],goldenhour:["soft","light"],solar:["soft","light"],underground:["mono","light"],synthwave:["soft","dark"],blackout:["mono","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(!M[s])s="print";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
+const NO_FLASH = `(function(){try{var M={"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],openair:["soft","dark"],roadcase:["roadcase","dark"],flyer:["flyer","light"],goldenhour:["soft","light"],underground:["mono","light"],synthwave:["soft","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(!M[s])s="bndy-dark";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="print" data-family="print" className={FONT_VARS} suppressHydrationWarning>
+    <html lang="en" data-theme="bndy-dark" data-family="soft" className={`dark ${FONT_VARS}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
       </head>
