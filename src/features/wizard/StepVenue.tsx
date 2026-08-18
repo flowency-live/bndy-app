@@ -9,8 +9,6 @@ import { cn } from "@/lib/cn";
 import { normKey } from "./lib";
 import { findOrCreateVenue, placesDetails, placesSuggest, type PlaceDetails, type PlaceSuggestion } from "./wizardApi";
 
-/** WHERE step. Venue is NEVER free-text (runbook §0.8): pick a known bndy venue
- *  or confirm a Google Places result — which round-trips the place_id gate. */
 export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; city?: string }) => void }) {
   const { data: venues = [] } = useVenues();
   const [q, setQ] = useState("");
@@ -20,9 +18,6 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Matches ranked name-startsWith > name-contains > town-contains, then nearest-first
-  // when we have the user's location. Distance is computed only for the MATCHED subset
-  // (tens of rows, not the whole list): no per-keystroke cost beyond the string filter.
   const { location: userLoc, located } = useGeolocation();
   const local = useMemo(() => {
     const key = normKey(q);
@@ -118,15 +113,15 @@ export function StepVenue({ onPick }: { onPick: (v: { id: string; name: string; 
     <div>
       <h2 className="text-[19px] font-black tracking-tight">Where&apos;s the gig?</h2>
       <div className="relative mt-3">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
         <input
           value={q}
           onChange={(e) => { setQ(e.target.value); setPlacesResults(null); setError(null); }}
           placeholder="Venue name or town…"
           aria-label="Search for a venue"
           autoFocus
-          className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
+          className="w-full rounded-2xl border border-line glass py-3 pl-4 pr-11 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
         />
+        <Search size={17} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-dim" />
       </div>
 
       {local.length > 0 && (
