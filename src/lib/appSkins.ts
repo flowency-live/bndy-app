@@ -1,13 +1,12 @@
-// App-level skin registry — 11 user-selectable skins.
-// Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md · visual truth: bndy-skins-v4.html
-// A skin = token block in src/app/skins.css + one entry here. Nothing else.
+// App-level skin registry — user-selectable visual identities.
+// A skin = token block + registry entry. Behaviour stays shared.
 
-export type SkinFamily = "print" | "hyper" | "soft" | "mono";
+export type SkinFamily = "hyper" | "soft" | "mono" | "roadcase" | "flyer";
 export type SkinMode = "light" | "mid" | "dark";
 
 export type AppSkinId =
-  | "print" | "bndy-light" | "bndy-dark" | "openair" | "goldenhour"
-  | "solar" | "underground" | "synthwave" | "blackout" | "poole" | "hyper";
+  | "bndy-light" | "bndy-dark" | "openair" | "goldenhour"
+  | "underground" | "synthwave" | "poole" | "hyper" | "roadcase" | "flyer";
 
 export interface AppSkin {
   key: AppSkinId;
@@ -22,11 +21,6 @@ export interface AppSkin {
 }
 
 export const APP_SKINS: Record<AppSkinId, AppSkin> = {
-  print: {
-    key: "print", name: "Print Run", desc: "Poster & ink · daylight paper", family: "print", mode: "light",
-    dots: ["#F03A21", "#2A46E8", "#FFC61A"],
-    pal: [["#F03A21", "#2A46E8"], ["#2A46E8", "#FFC61A"], ["#1F8A4C", "#F03A21"], ["#FFC61A", "#1F8A4C"], ["#181309", "#F03A21"]],
-  },
   "bndy-light": {
     key: "bndy-light", name: "bndy Light", desc: "The classic · daytime set", family: "soft", mode: "light",
     dots: ["#F97316", "#0891B2", "#F8FAFC"],
@@ -42,15 +36,20 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     dots: ["#19D9F3", "#FF2BC2", "#8B5CF6"],
     pal: [["#19D9F3", "#086F86"], ["#FF2BC2", "#8A176B"], ["#8B5CF6", "#4C2FA3"], ["#19D9F3", "#FF2BC2"], ["#6D5DFB", "#19D9F3"]],
   },
+  roadcase: {
+    key: "roadcase", name: "Roadcase", desc: "Backstage hardware · stencil, tape & steel", family: "roadcase", mode: "dark",
+    dots: ["#111214", "#C9CDD2", "#F4C542"],
+    pal: [["#F4C542", "#69520D"], ["#FF5B3D", "#7D2415"], ["#C9CDD2", "#5B6168"], ["#65D6C8", "#1D6860"], ["#A78BFA", "#4A357F"]],
+  },
+  flyer: {
+    key: "flyer", name: "Flyer", desc: "Venue wall · ripped paper & fluorescent ink", family: "flyer", mode: "light",
+    dots: ["#F2E8D5", "#FF3B30", "#3157FF"],
+    pal: [["#FF3B30", "#7E1713"], ["#3157FF", "#132779"], ["#F4D52C", "#8A7610"], ["#FF4FB8", "#8B1E61"], ["#171717", "#FF3B30"]],
+  },
   goldenhour: {
     key: "goldenhour", name: "Golden Hour", desc: "Sunset warm · dusk stage", family: "soft", mode: "mid",
     dots: ["#E85D3D", "#8E4EC6", "#F9EBDC"],
     pal: [["#E85D3D", "#B03A22"], ["#8E4EC6", "#5F2E8C"], ["#FFB020", "#E85D3D"], ["#D6486E", "#8E4EC6"], ["#3E8E7E", "#E85D3D"]],
-  },
-  solar: {
-    key: "solar", name: "Solar Fade", desc: "Sepia mid · easy on the eyes", family: "soft", mode: "mid",
-    dots: ["#CB4B16", "#2AA198", "#FDF6E3"],
-    pal: [["#CB4B16", "#8F3410"], ["#2AA198", "#1B6E68"], ["#B58900", "#CB4B16"], ["#6C71C4", "#2AA198"], ["#D33682", "#6C71C4"]],
   },
   underground: {
     key: "underground", name: "Underground", desc: "Mind the gap · tube-map London", family: "mono", mode: "light",
@@ -61,11 +60,6 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     key: "synthwave", name: "Synthwave Stage", desc: "Retro neon · '84 vibes", family: "soft", mode: "dark",
     dots: ["#FF7EDB", "#36F9F6", "#FEDE5D"],
     pal: [["#FF7EDB", "#B44CFF"], ["#36F9F6", "#1B8A88"], ["#FEDE5D", "#FF8B39"], ["#FF8B39", "#FF7EDB"], ["#72F1B8", "#36F9F6"]],
-  },
-  blackout: {
-    key: "blackout", name: "Blackout", desc: "Venue mono · stark", family: "mono", mode: "dark",
-    dots: ["#000000", "#FFFFFF", "#4D7CFE"],
-    pal: [["#1A1A1A", "#4D7CFE"], ["#4D7CFE", "#16224A"], ["#333333", "#111111"], ["#4D7CFE", "#99B4FF"], ["#222222", "#000000"]],
   },
   poole: {
     key: "poole", name: "Poole Position", desc: "KLMA Stoke homage · red & gold", family: "soft", mode: "dark",
@@ -79,12 +73,11 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
   },
 };
 
-/** Picker order. */
 export const SKIN_ORDER: AppSkinId[] = [
-  "print", "bndy-light", "bndy-dark", "openair", "goldenhour", "solar", "underground", "synthwave", "blackout", "poole", "hyper",
+  "bndy-light", "bndy-dark", "openair", "roadcase", "flyer", "goldenhour", "underground", "synthwave", "poole", "hyper",
 ];
 
-export const DEFAULT_SKIN: AppSkinId = "print";
+export const DEFAULT_SKIN: AppSkinId = "bndy-dark";
 
 export function isAppSkinId(v: unknown): v is AppSkinId {
   return typeof v === "string" && v in APP_SKINS;
