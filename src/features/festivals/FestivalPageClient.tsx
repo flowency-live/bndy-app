@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CalendarDays, Info, Map } from "lucide-react";
+import { ArrowLeft, CalendarDays, Info, Map } from "lucide-react";
 import { useFestival, useVenues } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { FestivalHero } from "./FestivalHero";
@@ -23,15 +24,16 @@ export function FestivalPageClient({ slug }: { slug: string }) {
   }, [data, allVenues]);
 
   if (isLoading) {
-    return <div className="mx-auto max-w-content px-4 pb-28 pt-[calc(env(safe-area-inset-top,0px)+18px)] lg:px-8"><div className="h-[420px] animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" /><div className="mt-4 h-16 animate-pulse rounded-xl border border-line bg-card" /><div className="mt-4 h-80 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" /></div>;
+    return <div className="mx-auto max-w-content px-4 pb-28 pt-5 lg:px-8"><div className="h-[420px] animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" /><div className="mt-4 h-16 animate-pulse rounded-xl border border-line bg-card" /><div className="mt-4 h-80 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" /></div>;
   }
 
   if (error || !data) {
     return (
-      <main className="mx-auto max-w-content px-4 pb-28 pt-[calc(env(safe-area-inset-top,0px)+32px)] lg:px-8">
+      <main className="mx-auto max-w-content px-4 pb-28 pt-8 lg:px-8">
         <div className="rounded-[var(--rad-lg)] border border-line bg-card p-8 text-center">
           <h1 className="text-2xl font-black">We couldn&apos;t find that festival.</h1>
           <p className="mt-2 text-[13px] font-semibold text-dim">It may have moved, been unpublished, or not reached bndy yet.</p>
+          <Link href="/festivals" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-line bg-card2 px-4 py-2.5 text-[12px] font-black"><ArrowLeft size={14} /> All festivals</Link>
         </div>
       </main>
     );
@@ -40,11 +42,14 @@ export function FestivalPageClient({ slug }: { slug: string }) {
   const { festival, childEvents } = data;
 
   return (
-    <main className="mx-auto max-w-content px-4 pb-28 pt-[calc(env(safe-area-inset-top,0px)+18px)] lg:px-8 lg:pb-12 lg:pt-8">
+    <main className="mx-auto max-w-content px-4 pb-28 pt-4 lg:px-8 lg:pb-12 lg:pt-6">
+      <Link href="/festivals" className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-lg px-1 text-[11px] font-black text-dim transition-colors hover:text-txt">
+        <ArrowLeft size={14} className="text-[var(--acc)]" /> All festivals
+      </Link>
       <FestivalHero festival={festival} />
 
       <div className="sticky top-0 z-20 -mx-4 mt-4 border-y border-line bg-ink/92 px-4 py-2.5 backdrop-blur lg:static lg:mx-0 lg:mt-5 lg:rounded-[var(--rad-lg)] lg:border lg:bg-card lg:p-1.5 lg:shadow-[var(--shadow)]">
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Festival views">
           <Tab active={view === "schedule"} onClick={() => setView("schedule")} icon={<CalendarDays size={15} />} label="Schedule" />
           <Tab active={view === "map"} onClick={() => setView("map")} icon={<Map size={15} />} label="Map" />
           <Tab active={view === "info"} onClick={() => setView("info")} icon={<Info size={15} />} label="Info" />
