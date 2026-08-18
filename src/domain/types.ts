@@ -15,6 +15,57 @@ export interface ResolvedTicketing {
   ticketInformation?: string;
 }
 
+export type FestivalBilling = 'headline' | 'special_guest' | 'support' | 'general' | 'opener';
+
+export interface FestivalStage {
+  id: string;
+  name: string;
+}
+
+export interface FestivalLineupSlot {
+  id: string;
+  displayName: string;
+  artistId?: string;
+  artistName?: string;
+  eventId?: string;
+  day?: string;
+  stageId?: string;
+  billing?: FestivalBilling;
+  billingOrder?: number;
+  resolved?: boolean;
+}
+
+/** Lightweight festival data used by discovery/list/calendar surfaces. */
+export interface FestivalSummary {
+  id: string;
+  slug: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  venueIds: string[];
+  posterImageUrl?: string;
+  heroImageUrl?: string;
+  actCount?: number;
+  gigCount?: number;
+  venueCount?: number;
+  price?: string;
+  ticketed?: boolean;
+}
+
+/** A festival / short grassroots music programme grouping ordinary gigs. */
+export interface Festival extends FestivalSummary {
+  description?: string;
+  primaryVenueId?: string;
+  stages: FestivalStage[];
+  lineup: FestivalLineupSlot[];
+  ticketUrl?: string;
+  lineupUrl?: string;
+  websiteUrl?: string;
+  socialMediaUrls?: string[];
+  theme?: unknown;
+}
+
 /** A live music event at a venue. */
 export interface Gig {
   id: string;
@@ -37,6 +88,14 @@ export interface Gig {
   isOpenMic?: boolean;
   /** Feature 7: cancelled gigs stay visible as a ghosted row with a stamp. */
   cancelled?: boolean;
+  /** Optional parent programme. The gig remains the atomic event object. */
+  festivalId?: string;
+  festivalName?: string;
+  /** Client-side convenience resolved from the public festival list/detail. */
+  festivalSlug?: string;
+  stageId?: string;
+  billing?: FestivalBilling;
+  billingOrder?: number;
   /** Feature 12 — the bill, in display order. `artistId` is always artistIds[0].
    *  Absent on a single-act gig and on every gig created before feature 12. */
   artistIds?: string[];
