@@ -6,6 +6,7 @@ import { formatDistance } from "@/domain/geo";
 import { gigDisplayName } from "@/domain/gigName";
 import { headlineActs, supportChipLabel } from "@/domain/lineup";
 import { MicTile } from "@/features/shared/MicTile";
+import { FestivalRibbon } from "@/features/festivals/FestivalRibbon";
 import { cn } from "@/lib/cn";
 import { TicketStub } from "@/components/TicketStub";
 import type { Gig } from "@/domain/types";
@@ -13,8 +14,6 @@ import type { Gig } from "@/domain/types";
 export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight, onClick }: { gig: Gig; imageUrl?: string; distance?: number; tonight: boolean; onClick: () => void }) {
   const hasDistance = distance !== undefined && isFinite(distance);
   const time = gig.startTime ? formatTime(gig.startTime) : "TBC";
-  // Feature 12: the card image belongs to the first HEADLINE act, which is not
-  // always artistId — artistId is act 1 in display order, nothing more.
   const lead = headlineActs(gig)[0];
   const support = supportChipLabel(gig);
 
@@ -55,6 +54,7 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
       </div>
 
       <div className="min-w-0 lg:pl-1">
+        {gig.festivalName && <FestivalRibbon name={gig.festivalName} compact className="mb-1.5 max-w-[280px]" />}
         <div className="truncate text-[15px] font-extrabold tracking-tight transition-transform duration-150 group-hover:translate-x-0.5 lg:text-[18px]">{gigDisplayName(gig)}</div>
 
         <div className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-[11.5px] font-semibold text-dim lg:hidden">
@@ -67,7 +67,6 @@ export const GigCard = memo(function GigCard({ gig, imageUrl, distance, tonight,
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             {gig.cancelled && <Status tone="cancelled">CANCELLED</Status>}
             {gig.isOpenMic && <Status tone="mic"><Mic size={10} strokeWidth={2.75} /> OPEN MIC</Status>}
-            {/* feature 12: support acts are a count, never part of the name */}
             {support && <Status tone="bill">{support}</Status>}
             {gig.ticketed && <TicketStub onCard price={gig.ticketing?.price} />}
           </div>
