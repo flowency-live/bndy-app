@@ -162,7 +162,7 @@ export function StepWhen({ draft, onDone }: { draft: Draft; onDone: (patch: Part
       if (c) {
         const who = c.artistName ?? "another act";
         const when = c.startTime ? ` at ${c.startTime}` : "";
-        out.push({ tone: "info", text: `${draft.venueName} also has ${who}${when} that night. That is fine. Two gigs at one venue on one night are allowed.` });
+        out.push({ tone: "info", text: `${draft.venueName} also has ${who}${when} that night. Are you sure?` });
       }
     }
     return out;
