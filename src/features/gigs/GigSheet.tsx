@@ -8,6 +8,7 @@ import { TicketStub } from "@/components/TicketStub";
 import { headlineActs, lineupOf } from "@/domain/lineup";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
+import { FestivalRibbon } from "@/features/festivals/FestivalRibbon";
 import { AddToCalendarButton } from "./AddToCalendarButton";
 import { ShareSheet } from "@/features/shared/ShareSheet";
 import { useArtistImageMap, useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
@@ -40,17 +41,19 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   distanceOf?: (g: Gig) => number | undefined;
 }) {
   const imgMap = useArtistImageMap();
-  // Batch-loaded map events can omit denormalised names — resolve from cached entity lists.
   const { data: artists = [] } = useArtists();
   const { data: venues = [] } = useVenues();
-  // Live state join: the sheet holds a SNAPSHOT of the gig from when it was
-  // tapped. A cancel/un-cancel invalidates the gigs cache — read the flag
-  // back from it so the stamp appears the moment the action completes,
-  // without closing and reopening the sheet.
   const { data: liveGigs = [] } = useUpcomingGigs();
   const liveOf = (g: Gig): Gig => {
     const live = liveGigs.find((x) => x.id === g.id);
-    return live ? { ...g, cancelled: live.cancelled, isOpenMic: g.isOpenMic ?? live.isOpenMic } : g;
+    return live ? {
+      ...g,
+      cancelled: live.cancelled,
+      isOpenMic: g.isOpenMic ?? live.isOpenMic,
+      festivalId: g.festivalId ?? live.festivalId,
+      festivalName: g.festivalName ?? live.festivalName,
+      festivalSlug: g.festivalSlug ?? live.festivalSlug,
+    } : g;
   };
   const hostOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || undefined;
   const nameOf = (g: Gig) => {
@@ -69,7 +72,6 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const multi = !!gig && !!stack && stack.length > 1;
 
-  // new deck → rewind to the first (soonest) card
   const stackKey = multi ? `${stack![0].id}:${stack!.length}` : null;
   useEffect(() => {
     setIdx(0);
@@ -84,7 +86,6 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
     setIdx(clamped);
   };
 
-  // desktop: arrow keys page the deck (mouse users can't horizontal-scroll)
   useEffect(() => {
     if (!multi) return;
     const onKey = (e: KeyboardEvent) => {
@@ -135,7 +136,6 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
                 );
               })}
             </div>
-            {/* desktop chevrons — mouse users have no horizontal scroll; touch swipes */}
             <button
               onClick={() => goTo(idx - 1)}
               disabled={idx === 0}
@@ -170,7 +170,6 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   );
 }
 
-/** Slab: the framed date/time blocks (accent keyline on top, like a ticket edge). */
 function Slab({ label, value, hot }: { label: string; value: string; hot?: boolean }) {
   return (
     <div
@@ -190,13 +189,20 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
   const time = setTimeLabel(gig.startTime, gig.endTime);
   const [sharing, setSharing] = useState(false);
 
-  // 3b: the gig now has its own URL — share the short /g link, not the profile.
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/g/${gig.id}` : `/g/${gig.id}`;
   const shareText = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} · found on bndy`;
 
   return (
     <>
-      {/* hero: big artist image (falls back to the palette gradient + initials) */}
+      {gig.festivalName && (
+        <FestivalRibbon
+          name={gig.festivalName}
+          slug={gig.festivalSlug}
+          onNavigate={onClose}
+          className="mb-3 -mx-0.5"
+        />
+      )}
+
       <div className="relative mb-3.5 h-44 overflow-hidden rounded-2xl border border-line">
         <div className={cn("h-full w-full", gig.cancelled && "opacity-60 saturate-0")}>
           {src ? (
@@ -208,7 +214,6 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
             </div>
           )}
         </div>
-        {/* feature 7: rubber-stamp treatment — unmissable, hero greyed underneath */}
         {gig.cancelled && (
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-md border-[3px] border-red-500 bg-black/60 px-5 py-1.5 text-[20px] font-black uppercase tracking-[4px] text-red-500 shadow-xl">
             Cancelled
@@ -229,7 +234,6 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         {gig.ticketed && !gig.cancelled && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 
-      {/* Feature 3a/4/6/7: calendar for everyone; curators edit, cancel, hide; anyone flags */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <AddToCalendarButton gig={gig} />
         <CuratorBar target={{ kind: "gig", gig }} onHidden={onClose} />
@@ -245,8 +249,6 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         </span>
       </div>
 
-      {/* Feature 12: the full bill. Headline acts first, then support. Only shown
-          when there is more than one act, so a normal gig is unchanged. */}
       {lineupOf(gig).length > 1 && (
         <div className="mt-3 space-y-1">
           {[...lineupOf(gig)].sort((a, b) => Number(b.headline) - Number(a.headline)).map((a) => (
