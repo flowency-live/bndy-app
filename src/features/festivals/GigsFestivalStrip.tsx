@@ -55,7 +55,11 @@ export function GigsFestivalStrip() {
   const bannerMiles = first.prox.distanceMiles !== undefined ? ` · ${formatDistance(first.prox.distanceMiles)}` : "";
 
   return (
-    <section className="mx-auto max-w-content px-4 pt-1 lg:px-8 lg:pt-3">
+    <section
+      // Mobile top padding clears the fixed ticker (safe area + strip height).
+      // pt-1 sat the banner underneath it (Jason, 2026-08-20).
+      className="mx-auto max-w-content px-4 pt-[calc(env(safe-area-inset-top,0px)+34px)] lg:px-8 lg:pt-3"
+    >
       {/* Phone: one line, no cards. */}
       <Link
         href="/festivals"
