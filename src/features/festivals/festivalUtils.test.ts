@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FestivalSummary, Gig } from "@/domain/types";
-import { datesForFestival, festivalCountLine, festivalDateRange, festivalStatus, groupFestivalGigs } from "./festivalUtils";
+import { datesForFestival, festivalCountLine, festivalDateRange, festivalProximity, festivalStatus, groupFestivalGigs } from "./festivalUtils";
 
 const festival: FestivalSummary = {
   id: "fest-1",
@@ -62,5 +62,42 @@ describe("festivalUtils", () => {
       gig("first", "2026-09-11", "20:00", 1),
     ]);
     expect(groups[0].gigs.map((g) => g.id)).toEqual(["first", "second"]);
+  });
+});
+
+describe("festivalProximity", () => {
+  const venue = (id: string, lat: number, lng: number, city?: string) =>
+    [id, { id, name: id, city, location: { lat, lng } } as import("@/domain/types").Venue] as const;
+
+  it("distance is to the NEAREST venue, not the first", () => {
+    const vmap = new Map([venue("v1", 54.0, -2.2, "Far"), venue("v2", 53.17, -2.21, "Near")]);
+    const p = festivalProximity(festival, vmap, { lat: 53.16, lng: -2.2 });
+    expect(p.distanceMiles).toBeLessThan(2);
+  });
+
+  it("one town reads as the town", () => {
+    const vmap = new Map([venue("v1", 53.16, -2.2, "Congleton"), venue("v2", 53.17, -2.21, "Congleton")]);
+    expect(festivalProximity(festival, vmap).scope).toBe("Congleton");
+  });
+
+  it("several towns read as a count", () => {
+    const vmap = new Map([venue("v1", 53.16, -2.2, "Congleton"), venue("v2", 53.4, -2.9, "Liverpool")]);
+    expect(festivalProximity(festival, vmap).scope).toBe("2 towns");
+  });
+
+  it("a 90 mile spread reads UK wide", () => {
+    const vmap = new Map([venue("v1", 51.5, -0.1, "London"), venue("v2", 53.48, -2.24, "Manchester")]);
+    expect(festivalProximity(festival, vmap).scope).toBe("UK wide");
+  });
+
+  it("no resolved venues returns an empty result, never a guess", () => {
+    expect(festivalProximity(festival, new Map(), { lat: 53, lng: -2 })).toEqual({});
+  });
+
+  it("no user location still yields a scope", () => {
+    const vmap = new Map([venue("v1", 53.16, -2.2, "Congleton")]);
+    const p = festivalProximity(festival, vmap);
+    expect(p.scope).toBe("Congleton");
+    expect(p.distanceMiles).toBeUndefined();
   });
 });

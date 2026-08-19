@@ -1,32 +1,90 @@
 "use client";
 
+// The festival strip on the gigs page.
+//
+// PROXIMITY AND DATE GATED (Jason, 2026-08-20): a festival 200 miles away or
+// eleven months out is noise on a "gigs near you" surface. The strip shows
+// festivals whose NEAREST venue is within STRIP_MILES and which start inside
+// STRIP_WEEKS. When geolocation is refused, the date gate still applies.
+//
+// MOBILE IS A ONE-LINE BANNER. The V1 cards owned half the first screen on a
+// phone. Desktop keeps slim cards; the phone gets a signpost to /festivals.
+
 import Link from "next/link";
 import { ArrowRight, CalendarRange } from "lucide-react";
-import { useFestivals } from "@/lib/hooks";
-import { todayISO } from "@/domain/dates";
+import { useMemo } from "react";
+import { useFestivals, useVenues } from "@/lib/hooks";
+import { addDaysISO, todayISO } from "@/domain/dates";
+import { useGeolocation } from "@/lib/useGeolocation";
+import { formatDistance } from "@/domain/geo";
+import type { Venue } from "@/domain/types";
 import { FestivalCard } from "./FestivalCard";
+import { festivalProximity, festivalStatus } from "./festivalUtils";
+
+const STRIP_MILES = 50;
+const STRIP_WEEKS = 8;
+const STRIP_MAX = 3;
 
 export function GigsFestivalStrip() {
   const { data: festivals = [], isLoading } = useFestivals();
+  const { data: venues = [] } = useVenues();
+  const { location, located } = useGeolocation();
   const today = todayISO();
-  // Festivals are a planning surface, not a near-me feed: keep the next few
-  // visible even when they are months away so mobile users can always reach
-  // the full festival calendar through the Gigs experience.
-  const relevant = festivals.filter((f) => f.endDate >= today).slice(0, 4);
+  const horizon = addDaysISO(today, STRIP_WEEKS * 7);
+
+  const venueById = useMemo(() => new Map<string, Venue>(venues.map((v) => [v.id, v])), [venues]);
+
+  const relevant = useMemo(() => {
+    return festivals
+      .filter((f) => f.endDate >= today && f.startDate <= horizon)
+      .map((f) => ({ festival: f, prox: festivalProximity(f, venueById, located ? location : undefined) }))
+      .filter((x) => !located || (x.prox.distanceMiles !== undefined && x.prox.distanceMiles <= STRIP_MILES))
+      .sort((a, b) => {
+        const da = a.prox.distanceMiles ?? Number.POSITIVE_INFINITY;
+        const db = b.prox.distanceMiles ?? Number.POSITIVE_INFINITY;
+        if (da !== db) return da - db;
+        return a.festival.startDate.localeCompare(b.festival.startDate);
+      })
+      .slice(0, STRIP_MAX);
+  }, [festivals, today, horizon, venueById, located, location]);
 
   if (isLoading || relevant.length === 0) return null;
 
+  const first = relevant[0];
+  const bannerWhen = festivalStatus(first.festival, today);
+  const bannerMiles = first.prox.distanceMiles !== undefined ? ` · ${formatDistance(first.prox.distanceMiles)}` : "";
+
   return (
     <section className="mx-auto max-w-content px-4 pt-1 lg:px-8 lg:pt-3">
-      <div className="mb-2.5 flex items-end gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc)]"><CalendarRange size={12} /> Worth planning around</div>
-          <h2 className="mt-1 text-[19px] font-black tracking-tight lg:text-[23px]">Upcoming festivals</h2>
+      {/* Phone: one line, no cards. */}
+      <Link
+        href="/festivals"
+        className="flex items-center gap-2 rounded-xl border px-3 py-2.5 lg:hidden"
+        style={{
+          borderColor: "color-mix(in srgb, var(--acc) 58%, var(--line))",
+          background: "linear-gradient(105deg, color-mix(in srgb, var(--acc) 22%, var(--card)) 0%, var(--card) 85%)",
+          boxShadow: "inset 3px 0 0 var(--acc)",
+        }}
+      >
+        <CalendarRange size={15} className="shrink-0 text-[var(--acc)]" />
+        <span className="min-w-0 flex-1 truncate text-[12px] font-black">
+          {relevant.length === 1 ? `${first.festival.name} · ${bannerWhen}${bannerMiles}` : `${relevant.length} festivals near you`}
+        </span>
+        <ArrowRight size={15} className="shrink-0 text-dim" />
+      </Link>
+
+      {/* Desktop: slim cards, already distance-ordered. */}
+      <div className="hidden lg:block">
+        <div className="mb-2.5 flex items-end gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc)]"><CalendarRange size={12} /> Worth planning around</div>
+            <h2 className="mt-1 text-[19px] font-black tracking-tight lg:text-[23px]">Festivals near you</h2>
+          </div>
+          <Link href="/festivals" className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-[10.5px] font-black text-txt transition-colors hover:border-line-hi">All festivals <ArrowRight size={13} /></Link>
         </div>
-        <Link href="/festivals" className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-[10.5px] font-black text-txt transition-colors hover:border-line-hi">All festivals <ArrowRight size={13} /></Link>
-      </div>
-      <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-2 lg:overflow-visible lg:px-0 xl:grid-cols-4">
-        {relevant.map((festival) => <div key={festival.id} className="w-[82vw] max-w-[360px] shrink-0 snap-start lg:w-auto lg:max-w-none"><FestivalCard festival={festival} compact /></div>)}
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+          {relevant.map(({ festival, prox }) => <FestivalCard key={festival.id} festival={festival} proximity={prox} compact />)}
+        </div>
       </div>
     </section>
   );

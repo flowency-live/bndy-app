@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { ArrowUpRight, CalendarRange, MapPin, Music2 } from "lucide-react";
 import type { FestivalSummary } from "@/domain/types";
-import { festivalCountLine, festivalDateRange, festivalStatus } from "./festivalUtils";
+import { festivalCountLine, festivalDateRange, festivalStatus, festivalWhereLine, type FestivalProximity } from "./festivalUtils";
 
-export function FestivalCard({ festival, compact = false }: { festival: FestivalSummary; compact?: boolean }) {
+export function FestivalCard({ festival, compact = false, proximity }: { festival: FestivalSummary; compact?: boolean; proximity?: FestivalProximity }) {
   const counts = festivalCountLine(festival);
+  // Derived from the venue set when the caller has it; the stored free-text
+  // location is only the fallback.
+  const where = (proximity && festivalWhereLine(proximity)) || festival.location;
   const image = festival.posterImageUrl || festival.heroImageUrl;
   const status = festivalStatus(festival);
   return (
@@ -40,9 +43,9 @@ export function FestivalCard({ festival, compact = false }: { festival: Festival
             <CalendarRange size={13} className="shrink-0" />
             <span>{festivalDateRange(festival.startDate, festival.endDate)}</span>
           </div>
-          {festival.location && (
+          {where && (
             <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] font-bold text-dim">
-              <MapPin size={13} className="shrink-0" /> <span className="truncate">{festival.location}</span>
+              <MapPin size={13} className="shrink-0" /> <span className="truncate">{where}</span>
             </div>
           )}
           {counts && (

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { supportingLabel } from "@/domain/lineup";
-import { ChevronDown, ChevronRight, MapPin, Mic } from "lucide-react";
+import { CalendarRange, ChevronDown, ChevronRight, MapPin, Mic } from "lucide-react";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles, formatDistance } from "@/domain/geo";
 import { todayISO, formatTime, addDaysISO, DOW, MON, MON_FULL } from "@/domain/dates";
@@ -151,6 +151,11 @@ function EventRow({ g, dist, today, artistId, onClick }: { g: Gig; dist: number;
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{g.venueName}</span>
           {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
+          {g.festivalName && (
+            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]" style={{ background: "color-mix(in srgb, var(--acc) 16%, transparent)" }} title={g.festivalName}>
+              <CalendarRange size={9} strokeWidth={2.75} /> Festival
+            </span>
+          )}
           {g.isOpenMic && (
             <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}>
               <Mic size={9} strokeWidth={2.75} /> Open mic

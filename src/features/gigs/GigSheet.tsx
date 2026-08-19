@@ -5,16 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, MapPin, Mic, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
-import { headlineActs, lineupOf } from "@/domain/lineup";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { FlagButton } from "@/features/shared/FlagButton";
-import { FestivalRibbon } from "@/features/festivals/FestivalRibbon";
 import { AddToCalendarButton } from "./AddToCalendarButton";
 import { ShareSheet } from "@/features/shared/ShareSheet";
 import { useArtistImageMap, useArtists, useUpcomingGigs, useVenues } from "@/lib/hooks";
 import { avatarGradient, initials } from "@/domain/avatar";
 import { formatTime, isTonight, setTimeLabel, todayISO } from "@/domain/dates";
 import { formatDistance } from "@/domain/geo";
+import { FestivalRibbon } from "@/features/festivals/FestivalRibbon";
 import { cn } from "@/lib/cn";
 import { safeHref } from "@/lib/safeHref";
 import { DOW, MON } from "@/domain/dates";
@@ -41,19 +40,17 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   distanceOf?: (g: Gig) => number | undefined;
 }) {
   const imgMap = useArtistImageMap();
+  // Batch-loaded map events can omit denormalised names — resolve from cached entity lists.
   const { data: artists = [] } = useArtists();
   const { data: venues = [] } = useVenues();
+  // Live state join: the sheet holds a SNAPSHOT of the gig from when it was
+  // tapped. A cancel/un-cancel invalidates the gigs cache — read the flag
+  // back from it so the stamp appears the moment the action completes,
+  // without closing and reopening the sheet.
   const { data: liveGigs = [] } = useUpcomingGigs();
   const liveOf = (g: Gig): Gig => {
     const live = liveGigs.find((x) => x.id === g.id);
-    return live ? {
-      ...g,
-      cancelled: live.cancelled,
-      isOpenMic: g.isOpenMic ?? live.isOpenMic,
-      festivalId: g.festivalId ?? live.festivalId,
-      festivalName: g.festivalName ?? live.festivalName,
-      festivalSlug: g.festivalSlug ?? live.festivalSlug,
-    } : g;
+    return live ? { ...g, cancelled: live.cancelled, isOpenMic: g.isOpenMic ?? live.isOpenMic } : g;
   };
   const hostOf = (g: Gig) => g.artistName || (g.artistId && artists.find((a) => a.id === g.artistId)?.name) || undefined;
   const nameOf = (g: Gig) => {
@@ -72,6 +69,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const multi = !!gig && !!stack && stack.length > 1;
 
+  // new deck → rewind to the first (soonest) card
   const stackKey = multi ? `${stack![0].id}:${stack!.length}` : null;
   useEffect(() => {
     setIdx(0);
@@ -86,6 +84,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
     setIdx(clamped);
   };
 
+  // desktop: arrow keys page the deck (mouse users can't horizontal-scroll)
   useEffect(() => {
     if (!multi) return;
     const onKey = (e: KeyboardEvent) => {
@@ -103,7 +102,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   return (
     <Sheet open={!!gig} onClose={onClose}>
       {gig && !multi && (
-        <Body gig={liveOf(gig)} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={headlineActs(gig)[0] ? imgMap.get(headlineActs(gig)[0].id) : undefined} onClose={onClose} />
+        <Body gig={liveOf(gig)} name={nameOf(gig)} venueName={selectedVenue.name} venueCity={selectedVenue.city} distance={distance} src={gig.artistId ? imgMap.get(gig.artistId) : undefined} onClose={onClose} />
       )}
       {gig && multi && (
         <>
@@ -131,11 +130,12 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
                     className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
                     style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
                   >
-                    <Body gig={liveOf(g)} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={headlineActs(g)[0] ? imgMap.get(headlineActs(g)[0].id) : undefined} onClose={onClose} />
+                    <Body gig={liveOf(g)} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
                   </div>
                 );
               })}
             </div>
+            {/* desktop chevrons — mouse users have no horizontal scroll; touch swipes */}
             <button
               onClick={() => goTo(idx - 1)}
               disabled={idx === 0}
@@ -170,6 +170,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   );
 }
 
+/** Slab: the framed date/time blocks (accent keyline on top, like a ticket edge). */
 function Slab({ label, value, hot }: { label: string; value: string; hot?: boolean }) {
   return (
     <div
@@ -189,31 +190,25 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
   const time = setTimeLabel(gig.startTime, gig.endTime);
   const [sharing, setSharing] = useState(false);
 
+  // 3b: the gig now has its own URL — share the short /g link, not the profile.
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/g/${gig.id}` : `/g/${gig.id}`;
   const shareText = `${name}${venueName ? ` at ${venueName}` : ""}${venueCity ? `, ${venueCity}` : ""} · ${dow} ${label}${gig.startTime ? ` · ${formatTime(gig.startTime)}` : ""} · found on bndy`;
 
   return (
     <>
-      {gig.festivalName && (
-        <FestivalRibbon
-          name={gig.festivalName}
-          slug={gig.festivalSlug}
-          onNavigate={onClose}
-          className="mb-3 -mx-0.5"
-        />
-      )}
-
+      {/* hero: big artist image (falls back to the palette gradient + initials) */}
       <div className="relative mb-3.5 h-44 overflow-hidden rounded-2xl border border-line">
         <div className={cn("h-full w-full", gig.cancelled && "opacity-60 saturate-0")}>
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt={name} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(headlineActs(gig)[0]?.id || gig.venueId) }}>
+            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
               <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
             </div>
           )}
         </div>
+        {/* feature 7: rubber-stamp treatment — unmissable, hero greyed underneath */}
         {gig.cancelled && (
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-md border-[3px] border-red-500 bg-black/60 px-5 py-1.5 text-[20px] font-black uppercase tracking-[4px] text-red-500 shadow-xl">
             Cancelled
@@ -234,12 +229,15 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         {gig.ticketed && !gig.cancelled && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
 
+      {/* Feature 3a/4/6/7: calendar for everyone; curators edit, cancel, hide; anyone flags */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <AddToCalendarButton gig={gig} />
         <CuratorBar target={{ kind: "gig", gig }} onHidden={onClose} />
         <FlagButton type="event" id={gig.id} name={name} size={15} className="ml-auto h-[34px] w-[34px] rounded-xl border border-line glass bg-transparent text-dim hover:text-txt" />
       </div>
 
+      {/* A festival gig says so, and the ribbon walks through to the programme. */}
+      {gig.festivalName && <FestivalRibbon name={gig.festivalName} slug={gig.festivalSlug} onNavigate={onClose} className="mb-2" />}
       <div className="text-[22px] font-black leading-tight tracking-tight">{name}</div>
       <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">
         <MapPin size={13} className="shrink-0 opacity-70" />
@@ -248,20 +246,6 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
           {venueCity ? ` · ${venueCity}` : ""}
         </span>
       </div>
-
-      {lineupOf(gig).length > 1 && (
-        <div className="mt-3 space-y-1">
-          {[...lineupOf(gig)].sort((a, b) => Number(b.headline) - Number(a.headline)).map((a) => (
-            <Link key={a.id} href={`/artists/${a.id}`} onClick={onClose}
-              className="flex items-center gap-2.5 rounded-xl border border-line bg-card px-3 py-2 transition-colors hover:border-line-hi">
-              <span className="min-w-0 flex-1 truncate text-[14px] font-extrabold">{a.name}</span>
-              {!a.headline && (
-                <span className="shrink-0 rounded-md bg-card2 px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wide text-dim">Support</span>
-              )}
-            </Link>
-          ))}
-        </div>
-      )}
 
       <div className="mb-4 mt-3.5 flex flex-wrap gap-2">
         <Slab label={tonight ? "Tonight" : isToday ? "Today" : dow} value={label} hot={tonight} />
@@ -280,8 +264,8 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         <Navigation size={16} /> Directions
       </a>
       <div className="flex gap-2.5">
-        {lineupOf(gig).length === 1 && headlineActs(gig)[0] && (
-          <Link href={`/artists/${headlineActs(gig)[0].id}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
+        {gig.artistId && (
+          <Link href={`/artists/${gig.artistId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
             <User size={16} /> Artist
           </Link>
         )}

@@ -1,5 +1,6 @@
 import { DOW, MON, MON_FULL, parseISO, todayISO } from "@/domain/dates";
-import type { FestivalSummary, Gig } from "@/domain/types";
+import { distanceMiles, formatDistance } from "@/domain/geo";
+import type { FestivalSummary, Gig, LatLng, Venue } from "@/domain/types";
 
 export function festivalDateRange(start: string, end: string): string {
   const s = parseISO(start);
@@ -65,4 +66,55 @@ export function datesForFestival(f: FestivalSummary): string[] {
     cursor = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
   return out;
+}
+
+/* ---------------- proximity (derived, never stored) ---------------- */
+
+
+export interface FestivalProximity {
+  /** Miles to the NEAREST festival venue. Undefined when no venue has resolved. */
+  distanceMiles?: number;
+  /** "Congleton" | "4 towns" | "UK wide". Undefined when no venue has resolved. */
+  scope?: string;
+}
+
+/**
+ * Distance and scope come from the festival's VENUES, never from a typed-in
+ * location field. A hand-typed "city" drifts the first time a venue is added;
+ * the venue set cannot, because every venue carries a verified coordinate.
+ * Scope rule: venues spread over 90 miles read "UK wide"; one town reads as
+ * that town; anything between reads "N towns".
+ */
+export function festivalProximity(f: FestivalSummary, venueById: Map<string, Venue>, from?: LatLng): FestivalProximity {
+  const found = f.venueIds.map((id) => venueById.get(id)).filter((v): v is Venue => !!v);
+  if (!found.length) return {};
+
+  let distance: number | undefined;
+  if (from) {
+    distance = Math.min(...found.map((v) => distanceMiles(from, v.location)));
+  }
+
+  let spread = 0;
+  for (let i = 0; i < found.length; i++) {
+    for (let j = i + 1; j < found.length; j++) {
+      const d = distanceMiles(found[i].location, found[j].location);
+      if (d > spread) spread = d;
+    }
+  }
+  const towns = new Set(found.map((v) => (v.city || "").trim().toLowerCase()).filter(Boolean));
+  let scope: string;
+  if (spread > 90) scope = "UK wide";
+  else if (towns.size === 1) scope = found.find((v) => v.city)?.city ?? "1 town";
+  else if (towns.size > 1) scope = `${towns.size} towns`;
+  else scope = f.location || "";
+
+  return { distanceMiles: distance, scope: scope || undefined };
+}
+
+/** "Congleton · 12 mi" or whichever half exists. */
+export function festivalWhereLine(p: FestivalProximity): string {
+  const bits: string[] = [];
+  if (p.scope) bits.push(p.scope);
+  if (p.distanceMiles !== undefined && isFinite(p.distanceMiles)) bits.push(formatDistance(p.distanceMiles));
+  return bits.join(" · ");
 }
