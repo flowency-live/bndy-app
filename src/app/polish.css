@@ -1,0 +1,40 @@
+/* Final cross-skin polish: small, deliberate overrides only. */
+
+/* Signature textures are decorative. They must never visually sit over sheets,
+   menus or the bottom nav (modal z-index starts at 50). */
+html[data-family="roadcase"] body::before,
+html[data-family="flyer"] body::before {
+  z-index: 20 !important;
+}
+
+/* Backdrop-filter is one of the most expensive bits of otherwise-simple mobile
+   chrome. Keep the glass look, but use a lighter blur budget on phones/tablets.
+   Flyer deliberately disables blur in its own material system. */
+@media (max-width: 1023px) {
+  html:not([data-family="flyer"]) .glass {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  html:not([data-family="flyer"]) .glass-hi {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+}
+
+/* Don't turn infinite decorative motion into ultra-fast 0.01ms loops for users
+   who request reduced motion. Stop it completely. */
+@media (prefers-reduced-motion: reduce) {
+  .bndy-ticker-in,
+  .skin-wipe,
+  .bndy-splash,
+  .bndy-splash-logo,
+  .bndy-splash-stamp {
+    animation: none !important;
+  }
+
+  html[data-family="flyer"] .bndy-card,
+  html[data-family="flyer"] .bndy-btn {
+    transform: none !important;
+  }
+}
