@@ -38,9 +38,11 @@ export function useFestival(slug: string) {
 
 export function useUpcomingGigs() {
   const query = useUpcomingGigsRaw();
-  const { data: artists = [] } = useArtists();
-  const { data: festivals = [] } = useFestivals();
   const { filter, isActive } = useMyGigFilter();
+  // Artist metadata is only required to evaluate My Gigs filters. Do not make
+  // map/list consumers download the entire artist catalogue when that filter is off.
+  const { data: artists = [] } = useArtists(isActive);
+  const { data: festivals = [] } = useFestivals();
   const artistsById = useMemo(() => artistMap(artists), [artists]);
   const festivalsById = useMemo(() => new Map(festivals.map((f) => [f.id, f])), [festivals]);
   const enriched = useMemo(() => (query.data ?? []).map((gig) => {
@@ -120,8 +122,8 @@ export function useGigsInView(bbox: BBox | null, startDate: string, endDate: str
   });
 
   const fullQuery = useUpcomingGigsRaw();
-  const { data: artists = [] } = useArtists();
   const { filter, isActive } = useMyGigFilter();
+  const { data: artists = [] } = useArtists(isActive);
   const artistsById = useMemo(() => artistMap(artists), [artists]);
   const fullById = useMemo(
     () => new Map<string, Gig>((fullQuery.data ?? []).map((gig): [string, Gig] => [gig.id, gig])),
