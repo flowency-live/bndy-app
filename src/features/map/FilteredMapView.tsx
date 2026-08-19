@@ -182,7 +182,13 @@ export function FilteredMapView({
     <>
       <section className="overflow-hidden rounded-[var(--rad-lg)] border border-line bg-card shadow-[var(--shadow)]">
         <div className={`relative ${heightClass}`}>
-          <div ref={containerRef} className="absolute inset-0" />
+          {/* ⚠ The inline size is LOAD-BEARING. maplibre stamps .maplibregl-map
+              on this div, and its stylesheet sets position:relative, which
+              beats the Tailwind `absolute` and collapses the div to 0 height.
+              The canvas then freezes at maplibre's 300px fallback and the map
+              ships blank. MapView survives for exactly one reason: this same
+              inline style. Found on production, 2026-08-20. */}
+          <div ref={containerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
           {badge && (
             <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-xl border border-line glass px-3 py-2 shadow-[var(--shadow)]">
               <div className="font-meta text-[8px] font-black uppercase tracking-[1.4px] text-[var(--acc)]">{badge}</div>
