@@ -3,15 +3,13 @@
 // /festivals - the discovery list.
 //
 // NO CALENDAR VIEW. V1 shipped one and it was twelve empty month grids around
-// two festivals (Jason, 2026-08-20). It returns if density ever justifies it;
-// the git history holds the code.
+// two festivals. It returns if density ever justifies it; the git history holds the code.
 //
 // ORDERED BY PROXIMITY. Distance and scope are DERIVED from each festival's
-// venue set (festivalProximity). The control is THE SAME pair as /gigs
-// (Jason, 2026-08-20): a LocationField and a radius slider, so a user can
-// plan around any town, not just where they stand. "Show all" bypasses the
-// radius because festivals are a travel surface. With no location at all the
-// list quietly falls back to soonest first.
+// venue set (festivalProximity). The control is THE SAME pair as /gigs:
+// a LocationField and a radius slider, so a user can plan around any town,
+// not just where they stand. "Show all" bypasses the radius because festivals
+// are a travel surface. With no location at all the list falls back to soonest first.
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -25,8 +23,6 @@ import { LocationField, type OriginChoice } from "@/features/gigs/LocationField"
 import { FestivalCard } from "./FestivalCard";
 import { festivalProximity } from "./festivalUtils";
 
-/** Default reach. Festivals are a travel surface, so this is deliberately
- *  wider than the gig feed's 5 miles. */
 const DEFAULT_MILES = 75;
 const MAX_MILES = 250;
 
@@ -35,7 +31,6 @@ export function FestivalIndex() {
   const { data: venues = [] } = useVenues();
   const { location: geo, located } = useGeolocation();
   const today = todayISO();
-  // Same origin pattern as GigsHome: null loc = follow the device.
   const [origin, setOrigin] = useState<OriginChoice>({ loc: null, label: "Current location" });
   const [radius, setRadius] = useState(DEFAULT_MILES);
   const [showAll, setShowAll] = useState(false);
@@ -47,8 +42,6 @@ export function FestivalIndex() {
     const list = festivals
       .filter((f) => f.endDate >= today)
       .map((f) => ({ festival: f, prox: festivalProximity(f, venueById, originLoc) }));
-    // Nearest first; unknown distances sink; ties and the no-location case
-    // fall back to soonest first.
     return list.sort((a, b) => {
       const da = a.prox.distanceMiles ?? Number.POSITIVE_INFINITY;
       const db = b.prox.distanceMiles ?? Number.POSITIVE_INFINITY;
@@ -61,7 +54,6 @@ export function FestivalIndex() {
     () => upcoming.filter((x) => x.prox.distanceMiles !== undefined && x.prox.distanceMiles <= radius),
     [upcoming, radius],
   );
-  // No usable location = radius means nothing, show everything.
   const shown = showAll || !originLoc ? upcoming : near;
   const hiddenCount = upcoming.length - shown.length;
 
@@ -74,11 +66,8 @@ export function FestivalIndex() {
         <p className="mt-3 max-w-2xl text-[13px] font-semibold leading-relaxed text-dim lg:text-[15px]">
           Grassroots festivals and short live-music programmes. Pick a weekend, explore the full schedule, then drop straight back into bndy gigs and venues.
         </p>
-        {/* The same pair /gigs uses: pick a place, set a reach. Show all is
-            the escape hatch because a festival worth travelling to may sit
-            outside any radius a slider offers. */}
         <div className="mt-5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(240px,.9fr)_auto_auto_1fr] lg:items-center">
-          <LocationField value={origin} onChange={setOrigin} />
+          <LocationField value={origin} onChange={setOrigin} showFestivalsShortcut={false} />
           <div className={cn("flex min-w-[190px] items-center gap-2.5 lg:px-1", (showAll || !originLoc) && "opacity-40")}>
             <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[1.3px] text-dim2">within</span>
             <input
@@ -100,7 +89,7 @@ export function FestivalIndex() {
             aria-pressed={showAll}
             onClick={() => setShowAll((v) => !v)}
             className={cn(
-              "rounded-xl border px-3 py-2 text-[11px] font-black transition-all",
+              "rounded-xl border px-3 py-2 text-[11px] font-black transition-[background-color,border-color,color,transform] active:scale-[.98]",
               showAll ? "border-[var(--acc)] bg-[var(--acc)] text-on-acc shadow-sm" : "border-line bg-card2 text-dim hover:text-txt",
             )}
           >
