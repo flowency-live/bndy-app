@@ -13,9 +13,9 @@
 // component. Festivals are the explicit-list case arriving first. Keep the
 // props dumb - Venue[] and Gig[] - so both callers stay trivial.
 //
-// TAP BEHAVIOUR (Jason, 2026-08-20): tapping a venue with gigs opens the
-// GigSheet; more than one gig at that venue and the sheet gets the whole
-// stack (carousel). A venue with no linked gigs yet opens the VenueSheet.
+// TAP BEHAVIOUR: tapping a venue with gigs opens the GigSheet; more than one
+// gig at that venue and the sheet gets the whole stack. A venue with no linked
+// gigs yet opens the VenueSheet.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
@@ -35,7 +35,6 @@ export function FilteredMapView({
 }: {
   venues: Venue[];
   gigs: Gig[];
-  /** Small overlay label, e.g. "Festival map". */
   badge?: string;
   heightClass?: string;
 }) {
@@ -126,8 +125,6 @@ export function FilteredMapView({
     const map = new maplibregl.Map({ container: el, style: initialBasemap, center: [-2.1, 53.4], zoom: 6.2, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-    // The first festival map went blank when it mounted inside a tab that had
-    // no size yet. The observer keeps the canvas honest whatever the layout does.
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(el);
     requestAnimationFrame(() => map.resize());
@@ -139,11 +136,16 @@ export function FilteredMapView({
       fitTo(map, venGeoRef.current, false);
     });
     map.on("error", (e) => { console.error("[bndy-map] maplibre error:", e?.error?.message || e); });
-    return () => { ro.disconnect(); map.remove(); mapRef.current = null; readyRef.current = false; };
+    return () => {
+      epochRef.current += 1;
+      ro.disconnect();
+      map.remove();
+      mapRef.current = null;
+      readyRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Data updates: push into the source; self-heal if a style swap ate it.
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
     if (!m.getSource("vens")) { if (m.isStyleLoaded()) ensureSourcesAndLayers(m); return; }
@@ -152,21 +154,25 @@ export function FilteredMapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venGeo]);
 
-  // Skin changes: same epoch pattern as MapView, minus the gig layers.
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
     epochRef.current += 1;
     const epoch = epochRef.current;
     const newUrl = basemapFor(appSkin);
+    let cancelled = false;
     const rebuild = () => {
-      if (epochRef.current !== epoch) return;
+      if (cancelled || epochRef.current !== epoch) return;
       if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
       else window.setTimeout(rebuild, 80);
     };
-    if (newUrl === prevBasemapRef.current) { rebuild(); return; }
+    if (newUrl === prevBasemapRef.current) {
+      rebuild();
+      return () => { cancelled = true; };
+    }
     prevBasemapRef.current = newUrl;
-    m.once("styledata", () => window.setTimeout(rebuild, 0));
+    m.once("styledata", rebuild);
     m.setStyle(newUrl);
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appSkin]);
 
@@ -197,7 +203,6 @@ export function FilteredMapView({
   );
 }
 
-/** Frame the whole venue set. One venue gets a street-level ease instead. */
 function fitTo(map: maplibregl.Map, geo: FeatureCollection<Point>, animateSingle: boolean) {
   const coords = geo.features.map((f) => f.geometry.coordinates as [number, number]);
   if (!coords.length) return;
