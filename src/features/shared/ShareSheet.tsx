@@ -1,10 +1,6 @@
 "use client";
 
-// Share sheet (backlog 3b) — the AllEvents model in bndy's skin:
-// copy-link field, direct channel buttons, native share where it exists.
-// One component for gigs, artists and venues.
-
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/cn";
@@ -52,34 +48,34 @@ function channelLinks(url: string, text: string): { key: string; label: string; 
   ];
 }
 
-export function ShareSheet({
-  open,
-  onClose,
-  url,
-  title,
-  text,
-}: {
+export function ShareSheet({ open, onClose, url, title, text }: {
   open: boolean;
   onClose: () => void;
-  /** The link to share — already absolute. */
   url: string;
-  /** Sheet heading, e.g. "Share The Torrists". */
   title: string;
-  /** The message that rides along on chat channels. */
   text: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [canNative, setCanNative] = useState(false);
+  const copiedTimer = useRef<number | null>(null);
 
   useEffect(() => {
     setCanNative(typeof navigator !== "undefined" && !!navigator.share);
+    return () => {
+      if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!open) setCopied(false);
+  }, [open]);
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current);
+      copiedTimer.current = window.setTimeout(() => setCopied(false), 1600);
     } catch { /* clipboard unavailable */ }
   };
 
@@ -95,7 +91,6 @@ export function ShareSheet({
       <h2 className="text-lg font-black tracking-tight text-txt">{title}</h2>
       <p className="mt-1 text-[13px] font-semibold text-dim">{text}</p>
 
-      {/* copy-link field */}
       <div className="mt-4 flex items-center gap-2">
         <input
           readOnly
@@ -107,7 +102,7 @@ export function ShareSheet({
           type="button"
           onClick={copy}
           className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px] font-extrabold transition-colors",
+            "flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px] font-extrabold transition-[background-color,color,transform] active:scale-[.97]",
             copied ? "bg-emerald-600 text-white" : "bg-[var(--acc)] text-black hover:opacity-90",
           )}
         >
@@ -116,7 +111,6 @@ export function ShareSheet({
         </button>
       </div>
 
-      {/* direct channels */}
       <p className="mt-5 text-center text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim2">
         Share it straight to
       </p>
