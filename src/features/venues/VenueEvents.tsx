@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Mic } from "lucide-react";
+import { CalendarRange, ChevronDown, ChevronRight, Mic } from "lucide-react";
 import { useArtistImageMap, useUpcomingGigs } from "@/lib/hooks";
 import { todayISO, formatTime, addDaysISO, DOW, MON, MON_FULL } from "@/domain/dates";
 import { relativeLabel } from "@/domain/relative";
@@ -12,6 +12,8 @@ import { gigDisplayName } from "@/domain/gigName";
 import { headlineActs, supportChipLabel } from "@/domain/lineup";
 import { MicTile } from "@/features/shared/MicTile";
 import { cn } from "@/lib/cn";
+import { blockFestivalGigs, type FestivalBlock } from "@/domain/festivalBlocks";
+import { FestivalBlockRow } from "@/features/festivals/FestivalBlockRow";
 import type { Gig } from "@/domain/types";
 
 /** Reads all upcoming gigs (cached) and filters to this venue — robust vs the per-venue endpoint. */
@@ -94,7 +96,14 @@ export function VenueEvents({ venueId }: { venueId: string }) {
                 </button>
                 {isExpanded && (
                   <div className="mt-1">
-                    {m.items.map((g) => <EventRow key={g.id} g={g} today={today} imgMap={imgMap} onClick={() => setSelected(g)} />)}
+                    {/* A festival bill at THIS venue (several acts, one shared
+                        time) collapses to one ribbon row - the festival page
+                        owns the bill. Timed festival gigs keep their row. */}
+                    {blockFestivalGigs(m.items).map((item) =>
+                      item.kind === "gig"
+                        ? <EventRow key={item.gig.id} g={item.gig} today={today} imgMap={imgMap} onClick={() => setSelected(item.gig)} />
+                        : <VenueBlockRow key={`${item.festivalId}-${item.date}`} block={item} />,
+                    )}
                   </div>
                 )}
               </div>
@@ -133,6 +142,11 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{gigDisplayName(g)}</span>
           {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
+          {g.festivalName && (
+            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]" style={{ background: "color-mix(in srgb, var(--acc) 16%, transparent)" }} title={g.festivalName}>
+              <CalendarRange size={9} strokeWidth={2.75} /> Festival
+            </span>
+          )}
           {g.isOpenMic && (
             <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}>
               <Mic size={9} strokeWidth={2.75} /> Open mic
@@ -146,5 +160,24 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
       </div>
       <ChevronRight size={18} className="shrink-0 text-dim2" />
     </button>
+  );
+}
+
+/** The collapsed bill row, wearing the same date cell as EventRow so the list scans. */
+function VenueBlockRow({ block }: { block: FestivalBlock }) {
+  const [, m, d] = block.date.split("-").map(Number);
+  const dow = new Date(Date.UTC(Number(block.date.slice(0, 4)), m - 1, d)).getUTCDay();
+  return (
+    <FestivalBlockRow
+      block={block}
+      className="border-l-2 border-orange/70 pl-4 pr-1"
+      leading={
+        <span className="w-12 shrink-0 leading-none">
+          <span className="block text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{DOW[dow]}</span>
+          <span className="my-0.5 block text-[22px] font-black">{d}</span>
+          <span className="block text-[10px] font-extrabold uppercase text-dim">{MON[m - 1]}</span>
+        </span>
+      }
+    />
   );
 }

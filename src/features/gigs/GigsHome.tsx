@@ -13,6 +13,8 @@ import { cn } from "@/lib/cn";
 import { Deferred } from "@/components/DeferredSection";
 import { GigCard } from "./GigCard";
 import { GigSheet } from "./GigSheet";
+import { blockFestivalGigs } from "@/domain/festivalBlocks";
+import { FestivalBlockRow } from "@/features/festivals/FestivalBlockRow";
 import { LocationField, type OriginChoice } from "./LocationField";
 import { GigDatePicker, gigDateLabel, type DateSel } from "./GigDatePicker";
 import type { Gig, LatLng } from "@/domain/types";
@@ -314,16 +316,23 @@ export function GigsHome() {
 
                       <Deferred count={day.gigs.length} heightPerItem={100} itemsPerRow={1}>
                         <div className="overflow-hidden rounded-[var(--rad-lg)] border border-line bg-card lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent">
-                          {day.gigs.map((g) => (
-                            <GigCard
-                              key={g.id}
-                              gig={g}
-                              imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined}
-                              distance={distById.get(g.id)}
-                              tonight={isTonight(g.date, g.startTime, today)}
-                              onClick={() => openGig(g)}
-                            />
-                          ))}
+                          {/* Festival bills (several acts, one venue, one shared
+                              time) collapse to one signpost row - six 4pm rows
+                              from one bill is noise, not a listing. */}
+                          {blockFestivalGigs(day.gigs).map((item) =>
+                            item.kind === "gig" ? (
+                              <GigCard
+                                key={item.gig.id}
+                                gig={item.gig}
+                                imageUrl={item.gig.artistId ? imgMap.get(item.gig.artistId) : undefined}
+                                distance={distById.get(item.gig.id)}
+                                tonight={isTonight(item.gig.date, item.gig.startTime, today)}
+                                onClick={() => openGig(item.gig)}
+                              />
+                            ) : (
+                              <FestivalBlockRow key={`${item.festivalId}-${item.venueId}-${item.date}`} block={item} showVenue className="px-2 lg:px-0" />
+                            ),
+                          )}
                         </div>
                       </Deferred>
                     </div>
