@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gigmap.bndy.co.uk"),
   manifest: "/manifest.webmanifest",
   icons: {
+    icon: "/icon.svg",
     apple: [{ url: "/pwa-icon-192", sizes: "192x192", type: "image/png" }],
   },
   appleWebApp: {
