@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import { Heart, Search } from "lucide-react";
-import { useArtists, useUpcomingGigs } from "@/lib/hooks";
+import { useArtists, useUpcomingGigsBasic } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
 import { ArtistTile } from "./ArtistTile";
@@ -12,7 +12,9 @@ import { Deferred } from "@/components/DeferredSection";
 
 export function ArtistsBrowse() {
   const { data: artists = [], isLoading } = useArtists();
-  const { data: gigs = [] } = useUpcomingGigs();
+  // Only need existence of an upcoming gig here. Avoid festival enrichment and
+  // My Gigs filter leakage into the artist directory's gigging indicator.
+  const { data: gigs = [] } = useUpcomingGigsBasic();
   const gigging = useMemo(() => new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)), [gigs]);
   const [q, setQ] = useState("");
   const { isAuthenticated } = useAuth();
@@ -46,6 +48,7 @@ export function ArtistsBrowse() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            enterKeyHint="search"
             aria-label="Search artists by name or genre"
             placeholder="Search artists or genres…"
             className={cn(
@@ -60,7 +63,7 @@ export function ArtistsBrowse() {
               aria-label="Show favourite artists only"
               style={favOnly ? { background: "color-mix(in srgb, var(--acc) 18%, transparent)" } : undefined}
               className={cn(
-                "absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition-colors",
+                "absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition-colors active:scale-95",
                 favOnly ? "text-[var(--acc)]" : "text-dim",
               )}
             >
@@ -83,6 +86,7 @@ export function ArtistsBrowse() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            enterKeyHint="search"
             aria-label="Search artists by name or genre"
             placeholder="Search artists or genres…"
             className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
@@ -94,7 +98,7 @@ export function ArtistsBrowse() {
             aria-pressed={favOnly}
             aria-label="Show favourite artists only"
             style={favOnly ? { borderColor: "color-mix(in srgb, var(--acc) 60%, transparent)", background: "color-mix(in srgb, var(--acc) 22%, var(--glass))" } : undefined}
-            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-3 transition-colors", favOnly ? "text-[var(--acc)]" : "text-dim")}
+            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-3 transition-colors active:scale-95", favOnly ? "text-[var(--acc)]" : "text-dim")}
           >
             <Heart size={17} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />
           </button>
