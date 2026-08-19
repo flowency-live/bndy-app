@@ -24,7 +24,14 @@ export function FestivalHero({ festival }: { festival: Festival }) {
           <div className="relative min-h-[210px] border-b border-line sm:min-h-[260px] lg:min-h-[420px] lg:border-b-0 lg:border-r">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt={`${festival.name} poster`} className="absolute inset-0 h-full w-full object-cover" />
+              <img
+                src={image}
+                alt={`${festival.name} poster`}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             ) : (
               <div
                 className="absolute inset-0"
