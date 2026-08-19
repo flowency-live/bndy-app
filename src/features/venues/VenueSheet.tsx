@@ -16,7 +16,9 @@ function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/s
 export function VenueSheet({ venue, gigs, live, onClose, onGigClick }: {
   venue: Venue | null; gigs: Gig[]; live: boolean; onClose: () => void; onGigClick: (g: Gig) => void;
 }) {
-  const imgMap = useArtistImageMap();
+  // VenueSheet is permanently mounted by map views; only fetch artist artwork
+  // when there is actually a sheet on screen.
+  const imgMap = useArtistImageMap(!!venue);
   const share = () => {
     if (!venue) return;
     const url = typeof window !== "undefined" ? `${window.location.origin}/venues/${venue.id}` : "";
