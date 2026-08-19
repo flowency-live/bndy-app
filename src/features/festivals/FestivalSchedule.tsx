@@ -111,7 +111,6 @@ function ProgrammeRow({ gig, stageName, imageUrl, onPick, first }: { gig: Gig; s
     >
       <div className="self-stretch border-r border-line pr-3 sm:pr-4">
         <div className={`tnum text-[16px] font-black leading-none sm:text-[18px] ${live ? "text-[var(--acc)]" : "text-txt"}`}>{time}</div>
-        {gig.endTime && <div className="tnum mt-1 text-[9px] font-bold text-dim">– {gig.endTime}</div>}
         {live && <div className="mt-2 inline-flex items-center gap-1 font-meta text-[7.5px] font-black uppercase tracking-[1px] text-[var(--acc)]"><span className="h-1.5 w-1.5 rounded-full bg-[var(--acc)] shadow-[0_0_8px_var(--acc)]" /> Live</div>}
       </div>
 
@@ -156,7 +155,6 @@ function BlockPanel({ block, imgMap, onPick, first }: { block: FestivalBlock; im
             onClick={() => onPick(g)}
             className={`group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-[background-color,transform] active:scale-[.995] hover:bg-card2 sm:px-4 ${index ? "border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)]" : ""}`}
           >
-            <div className="w-[38px] shrink-0 border-r border-line pr-3 text-right font-meta text-[8px] font-black uppercase tracking-[.8px] text-dim">Act {index + 1}</div>
             <Avatar id={g.artistId || g.id} name={g.artistName || g.title} src={g.artistId ? imgMap.get(g.artistId) : undefined} size={38} radius={11} />
             <span className="min-w-0 flex-1 truncate text-[13.5px] font-extrabold text-txt">{g.artistName || g.title}</span>
             {g.ticketed && <TicketStub price={g.ticketing?.price} />}
