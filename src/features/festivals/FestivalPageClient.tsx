@@ -14,17 +14,26 @@ type View = "schedule" | "map" | "info";
 
 export function FestivalPageClient({ slug }: { slug: string }) {
   const { data, isLoading, error } = useFestival(slug);
-  const { data: allVenues = [] } = useVenues();
   const [view, setView] = useState<View>("schedule");
+  // The schedule is the default mobile surface. Do not download the complete
+  // venue catalogue until Info actually needs it; FestivalMap loads its own
+  // venue data only when that tab mounts.
+  const { data: allVenues = [] } = useVenues(view === "info");
 
   const participatingVenues = useMemo(() => {
-    if (!data) return [];
+    if (!data || view !== "info") return [];
     const ids = new Set([...data.festival.venueIds, ...data.childEvents.map((g) => g.venueId)]);
     return allVenues.filter((v) => ids.has(v.id));
-  }, [data, allVenues]);
+  }, [data, allVenues, view]);
 
   if (isLoading) {
-    return <div className="mx-auto max-w-content px-4 pb-28 pt-5 lg:px-8"><div className="h-[420px] animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" /><div className="mt-4 h-16 animate-pulse rounded-xl border border-line bg-card" /><div className="mt-4 h-80 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" /></div>;
+    return (
+      <div className="mx-auto max-w-content px-4 pb-28 pt-5 lg:px-8">
+        <div className="h-[330px] animate-pulse rounded-[var(--rad-lg)] border border-line bg-card lg:h-[420px]" />
+        <div className="mt-4 h-14 animate-pulse rounded-xl border border-line bg-card lg:h-16" />
+        <div className="mt-4 h-72 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card lg:h-80" />
+      </div>
+    );
   }
 
   if (error || !data) {
@@ -73,7 +82,7 @@ function Tab({ active, onClick, icon, label }: { active: boolean; onClick: () =>
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        "flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[11.5px] font-black transition-[background-color,color,border-color,box-shadow,transform]",
+        "flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[11.5px] font-black transition-[background-color,color,border-color,box-shadow,transform] active:scale-[.98]",
         active ? "border-[var(--acc)] bg-[var(--acc)] text-on-acc shadow-sm" : "border-transparent text-dim hover:bg-card2 hover:text-txt",
       )}
     >
