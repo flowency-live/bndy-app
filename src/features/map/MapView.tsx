@@ -243,7 +243,7 @@ export function MapView() {
       const f = e.features?.[0]; if (!f) return;
       (map.getSource(src) as maplibregl.GeoJSONSource).getClusterExpansionZoom((f.properties as { cluster_id: number }).cluster_id).then((z) => map.easeTo({ center: (f.geometry as Point).coordinates as [number, number], zoom: Math.min(z + 0.2, 15), duration: 600 })).catch(() => {});
     };
-    map.on("click", "g-cl-core", clExp("gigs")); map.on("click", "v-cl-core", clExp("vens"));
+    map.on("click", "g-cl", clExp("gigs")); map.on("click", "v-cl", clExp("vens"));
     const gigClick = (e: maplibregl.MapLayerMouseEvent) => {
       const f = e.features?.[0];
       if (!f || f.properties?.point_count) return;
@@ -271,10 +271,10 @@ export function MapView() {
           if (thisRequest === gigRequestId.current) setLoadingGig(false);
         });
     };
-    map.on("click", "g-hit", gigClick); map.on("click", "g-core", gigClick);
+    map.on("click", "g-pin", gigClick); map.on("click", "g-count", gigClick);
     const venClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const v = venueByIdRef.current[(f.properties as { id: string }).id]; if (v) { map.easeTo({ center: [v.location.lng, v.location.lat], duration: 500, offset: [0, -120] }); setSelectedVenue(v); } } };
     map.on("click", "v-hit", venClick); map.on("click", "v-core", venClick); map.on("click", "v-label", venClick);
-    ["g-cl-core", "v-cl-core", "g-hit", "g-core", "v-hit", "v-core", "v-label"].forEach((id) => { map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer")); map.on("mouseleave", id, () => (map.getCanvas().style.cursor = "")); });
+    ["g-cl", "v-cl", "g-pin", "g-count", "v-hit", "v-pin", "v-label"].forEach((id) => { map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer")); map.on("mouseleave", id, () => (map.getCanvas().style.cursor = "")); });
   }
 
   useEffect(() => {
@@ -317,7 +317,7 @@ export function MapView() {
       map.on("moveend", () => updateBbox(map));
       // Safety net: if any race eats the layers, this restores them within a frame (idempotent)
       map.on("idle", () => {
-        if (map.isStyleLoaded() && (!map.getSource("gigs") || !map.getLayer("g-core"))) {
+        if (map.isStyleLoaded() && (!map.getSource("gigs") || !map.getLayer("g-count"))) {
           ensureSourcesAndLayers(map);
         }
       });
