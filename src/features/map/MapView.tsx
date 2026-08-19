@@ -31,14 +31,14 @@ export function MapView() {
   const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null);
   const readyRef = useRef(false);
   const rafRef = useRef(0);
+  const startupTimerRef = useRef<number | null>(null);
   const prevBasemapRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const epochRef = useRef(0); // incremented on each skin change to kill stale closures
+  const epochRef = useRef(0);
   const { appSkin } = useTheme();
   const { location } = useGeolocation();
 
   const today = todayISO();
-  // Keep the map window deliberately small; the list is the long-range discovery surface.
   const geoEndDate = addDaysISO(today, 30);
 
   const [bbox, setBbox] = useState<BBox | null>(null);
@@ -61,6 +61,16 @@ export function MapView() {
     const m = searchParams.get("mode");
     setMode(m === "venues" ? "venues" : "events");
   }, [searchParams]);
+  const chooseMode = (next: Mode) => {
+    setMode(next);
+    setSearchQuery("");
+    // Keep shell/nav state shareable without router navigation remounting MapLibre.
+    const url = next === "venues" ? "/map?mode=venues" : "/map";
+    if (`${window.location.pathname}${window.location.search}` !== url) {
+      window.history.replaceState(window.history.state, "", url);
+    }
+  };
+
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
   const { isAuthenticated } = useAuth();
   const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
@@ -82,16 +92,12 @@ export function MapView() {
   const venueIdsLive = useMemo(() => new Set(gigs.map((g) => g.venueId)), [gigs]);
   const gigSearchIndex = useMemo(() => {
     const index: Record<string, { artistName?: string; venueName?: string; lat: number; lng: number }> = {};
-    for (const g of gigs) {
-      index[g.id] = { artistName: g.artistName, venueName: g.venueName, lat: g.location.lat, lng: g.location.lng };
-    }
+    for (const g of gigs) index[g.id] = { artistName: g.artistName, venueName: g.venueName, lat: g.location.lat, lng: g.location.lng };
     return index;
   }, [gigs]);
   const venueSearchIndex = useMemo(() => {
     const index: Record<string, { name: string; lat: number; lng: number }> = {};
-    for (const v of venues) {
-      index[v.id] = { name: v.name, lat: v.location.lat, lng: v.location.lng };
-    }
+    for (const v of venues) index[v.id] = { name: v.name, lat: v.location.lat, lng: v.location.lng };
     return index;
   }, [venues]);
 
@@ -101,18 +107,14 @@ export function MapView() {
     const ids = new Set<string>();
     for (const e of lightEvents) {
       const info = gigSearchIndex[e.id];
-      if (info && ((info.artistName?.toLowerCase().includes(sq)) || (info.venueName?.toLowerCase().includes(sq)))) {
-        ids.add(e.id);
-      }
+      if (info && ((info.artistName?.toLowerCase().includes(sq)) || (info.venueName?.toLowerCase().includes(sq)))) ids.add(e.id);
     }
     return ids;
   }, [sq, lightEvents, gigSearchIndex]);
   const matchingVenueIds = useMemo(() => {
     if (!sq) return null;
     const ids = new Set<string>();
-    for (const v of venues) {
-      if (v.name.toLowerCase().includes(sq)) ids.add(v.id);
-    }
+    for (const v of venues) if (v.name.toLowerCase().includes(sq)) ids.add(v.id);
     return ids;
   }, [sq, venues]);
 
@@ -232,8 +234,6 @@ export function MapView() {
       const thisRequest = ++gigRequestId.current;
       setGigError(false);
 
-      // Open from the already-loaded upcoming-gig cache immediately. The batch
-      // endpoint is enrichment/fallback, not a prerequisite for a responsive pin.
       const cached = wanted.map((x) => gigByIdRef.current[x]).filter((g): g is Gig => !!g);
       const cachedChoice = cached.find((g) => g.id === id) ?? cached[0];
       if (cachedChoice) {
@@ -284,6 +284,7 @@ export function MapView() {
     const map = new maplibregl.Map({ container: el, style: initialBasemap, center: [-2.1, 53.4], zoom: 6.2, pitch: 0, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    // @ts-expect-error showUserHeading exists at runtime but is missing from this MapLibre type surface.
     const geolocate = new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true, fitBoundsOptions: { maxZoom: 12 } });
     geolocateRef.current = geolocate;
     map.addControl(geolocate, "bottom-right");
@@ -313,14 +314,21 @@ export function MapView() {
       updateBbox(map);
       map.on("moveend", () => updateBbox(map));
       map.on("idle", () => {
-        if (map.isStyleLoaded() && (!map.getSource("gigs") || !map.getLayer("g-count"))) {
-          ensureSourcesAndLayers(map);
-        }
+        if (map.isStyleLoaded() && (!map.getSource("gigs") || !map.getLayer("g-count"))) ensureSourcesAndLayers(map);
       });
-      setTimeout(() => { try { geolocate.trigger(); } catch { /* ignore */ } }, 600);
+      startupTimerRef.current = window.setTimeout(() => { try { geolocate.trigger(); } catch { /* ignore */ } }, 600);
     });
     map.on("error", (e) => { console.error("[bndy-map] maplibre error:", e?.error?.message || e); });
-    return () => { ro.disconnect(); cancelAnimationFrame(rafRef.current); if (debounceRef.current) clearTimeout(debounceRef.current); map.remove(); mapRef.current = null; readyRef.current = false; };
+    return () => {
+      epochRef.current += 1;
+      ro.disconnect();
+      cancelAnimationFrame(rafRef.current);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (startupTimerRef.current !== null) window.clearTimeout(startupTimerRef.current);
+      map.remove();
+      mapRef.current = null;
+      readyRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -346,27 +354,23 @@ export function MapView() {
       if (info) m.flyTo({ center: [info.lng, info.lat], zoom: 14, duration: 800 });
     }
   }, [sq, mode, matchingEventIds, matchingVenueIds, gigSearchIndex, venueSearchIndex]);
+
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
     epochRef.current += 1;
     const epoch = epochRef.current;
     const newUrl = basemapFor(appSkin);
-    if (newUrl === prevBasemapRef.current) {
-      const poll = () => {
-        if (epochRef.current !== epoch) return;
-        if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
-        else window.setTimeout(poll, 80);
-      };
-      poll();
-      return;
-    }
-    prevBasemapRef.current = newUrl;
     let cancelled = false;
     const rebuild = () => {
       if (cancelled || epochRef.current !== epoch) return;
       if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
       else window.setTimeout(rebuild, 80);
     };
+    if (newUrl === prevBasemapRef.current) {
+      rebuild();
+      return () => { cancelled = true; };
+    }
+    prevBasemapRef.current = newUrl;
     m.once("styledata", rebuild);
     m.setStyle(newUrl);
     return () => { cancelled = true; };
@@ -384,9 +388,9 @@ export function MapView() {
               key={m}
               type="button"
               aria-pressed={mode === m}
-              onClick={() => { setMode(m); setSearchQuery(""); }}
+              onClick={() => chooseMode(m)}
               className={cn(
-                "rounded-xl px-3.5 py-2 text-[12.5px] font-extrabold capitalize transition-[background-color,color,box-shadow]",
+                "rounded-xl px-3.5 py-2 text-[12.5px] font-extrabold capitalize transition-[background-color,color,box-shadow,transform] active:scale-[.98]",
                 mode === m ? "bg-acc text-on-acc shadow-sm" : "text-dim hover:text-txt",
               )}
             >
@@ -404,7 +408,7 @@ export function MapView() {
             className="w-full rounded-2xl border border-line glass py-2.5 pl-9 pr-8 text-[13px] font-semibold outline-none placeholder:text-dim focus:border-acc/50"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-dim hover:text-txt">
+            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-dim hover:text-txt active:scale-90">
               <X size={14} />
             </button>
           )}
@@ -415,7 +419,7 @@ export function MapView() {
             aria-pressed={favOnly}
             aria-label="Show favourites only"
             style={favOnly ? { borderColor: "color-mix(in srgb, var(--acc) 60%, transparent)", background: "color-mix(in srgb, var(--acc) 22%, var(--glass))" } : undefined}
-            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-colors", favOnly ? "text-[var(--acc)]" : "text-dim")}
+            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-[color,background-color,transform] active:scale-95", favOnly ? "text-[var(--acc)]" : "text-dim")}
           >
             <Heart size={16} fill={favOnly ? "currentColor" : "none"} strokeWidth={2.5} />
           </button>
@@ -427,7 +431,7 @@ export function MapView() {
             aria-label={showOpenMics ? "Hide open mics" : "Show open mics"}
             title={showOpenMics ? "Open mics shown. Tap to hide them." : "Open mics hidden. Tap to show them."}
             style={showOpenMics ? { borderColor: "color-mix(in srgb, var(--acc2) 60%, transparent)", background: "color-mix(in srgb, var(--acc2) 22%, var(--glass))" } : undefined}
-            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-colors", showOpenMics ? "text-[var(--acc2)]" : "text-dim")}
+            className={cn("flex shrink-0 items-center justify-center rounded-2xl border border-line glass p-2.5 transition-[color,background-color,transform] active:scale-95", showOpenMics ? "text-[var(--acc2)]" : "text-dim")}
           >
             {showOpenMics ? <Mic size={16} strokeWidth={2.5} /> : <MicOff size={16} strokeWidth={2.5} />}
           </button>
@@ -447,17 +451,11 @@ export function MapView() {
       )}
 
       {(loadingGig || gigError) && (
-        <div
-          role="status"
-          className="pointer-events-none absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line glass-hi px-4 py-2.5 text-[13px] font-extrabold shadow-lg"
-        >
+        <div role="status" className="pointer-events-none absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line glass-hi px-4 py-2.5 text-[13px] font-extrabold shadow-lg">
           {gigError ? (
             <span className="text-red-400">Could not open that gig. Tap it again.</span>
           ) : (
-            <>
-              <Loader2 size={15} className="animate-spin text-[var(--acc)]" />
-              <span className="text-dim">Opening…</span>
-            </>
+            <><Loader2 size={15} className="animate-spin text-[var(--acc)]" /><span className="text-dim">Opening…</span></>
           )}
         </div>
       )}
