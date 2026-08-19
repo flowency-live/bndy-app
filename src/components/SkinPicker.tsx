@@ -1,9 +1,6 @@
 "use client";
 
-// Skin picker — the user-facing "choose your skin" control.
-// Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md §3.5
-
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Sheet } from "@/components/ui/Sheet";
 import { useTheme } from "@/lib/theme";
@@ -50,7 +47,12 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
   const [open, setOpen] = useState(false);
   const [wiping, setWiping] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const timersRef = useRef<number[]>([]);
   useEffect(() => setMounted(true), []);
+  useEffect(() => () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [];
+  }, []);
   const { appSkin, setAppSkin } = useTheme();
   const current = APP_SKINS[appSkin];
 
@@ -58,9 +60,18 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
     (s: AppSkinId) => {
       setOpen(false);
       if (s === appSkin) return;
+      timersRef.current.forEach((id) => window.clearTimeout(id));
+      timersRef.current = [];
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setWiping(false);
+        setAppSkin(s);
+        return;
+      }
+
       setWiping(true);
-      window.setTimeout(() => setAppSkin(s), 260);
-      window.setTimeout(() => setWiping(false), 720);
+      timersRef.current.push(window.setTimeout(() => setAppSkin(s), 220));
+      timersRef.current.push(window.setTimeout(() => setWiping(false), 620));
     },
     [appSkin, setAppSkin],
   );
@@ -94,16 +105,15 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
         <button
           onClick={() => setOpen(true)}
           aria-label="Choose your skin"
-          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-line glass text-txt"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-line glass text-txt transition-transform active:scale-95"
         >
           <Swatch dots={current.dots} size={18} />
         </button>
       )}
 
-      {mounted && createPortal(
-        <>
-          {wiping && <div className="skin-wipe go" />}
-          <Sheet open={open} onClose={() => setOpen(false)}>
+      {mounted && wiping && createPortal(<div className="skin-wipe go" />, document.body)}
+
+      <Sheet open={open} onClose={() => setOpen(false)}>
         <h2 className="disp text-lg text-txt">Choose your skin</h2>
         <p className="mb-4 mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-dim2">
           Same gigs · your vibe · switches live
@@ -140,10 +150,7 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
             );
           })}
         </div>
-          </Sheet>
-        </>,
-        document.body,
-      )}
+      </Sheet>
     </>
   );
 }
