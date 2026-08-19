@@ -38,10 +38,9 @@ export function MapView() {
   const { location } = useGeolocation();
 
   const today = todayISO();
-  // geo endpoint caps windows at 400 days; the map only browses 14 days ahead — keep this window small
+  // Keep the map window deliberately small; the list is the long-range discovery surface.
   const geoEndDate = addDaysISO(today, 30);
 
-  // Bbox state for geo-based fetching (flag on)
   const [bbox, setBbox] = useState<BBox | null>(null);
   const updateBbox = useCallback((m: maplibregl.Map) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -51,7 +50,6 @@ export function MapView() {
     }, 300);
   }, []);
 
-  // Data fetching: geo endpoint for map pins, full gigs for venue sheet
   const { data: gigs = [] } = useUpcomingGigs();
   const { data: geoData } = useGigsInView(bbox, today, geoEndDate);
   const lightEvents = useMemo(() => geoData?.events ?? [], [geoData]);
@@ -59,36 +57,29 @@ export function MapView() {
   const { data: venues = [] } = useVenues();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>("events");
-  // A5 fix: Sync mode from URL param bidirectionally (was only setting venues, not resetting to events)
   useEffect(() => {
     const m = searchParams.get("mode");
     setMode(m === "venues" ? "venues" : "events");
   }, [searchParams]);
   const [sel, setSel] = useState<MapDateSel>({ kind: "today" });
-  // Favourites filter (backlog feature 3): pins narrow to favourite artists + venues.
   const { isAuthenticated } = useAuth();
   const { artistSet: favArtists, venueSet: favVenues } = useFavourites();
   const [favOnly, setFavOnly] = useState(false);
   const favActive = favOnly && isAuthenticated;
-  // Open mics (item 13): shown by default, mic button hides them, remembered per device.
   const { showOpenMics, toggleOpenMics } = useOpenMicPref();
   const [selected, setSelected] = useState<Gig | null>(null);
-  const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null); // same-venue gigs in the active filter (carousel when >1)
+  const [selectedStack, setSelectedStack] = useState<Gig[] | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [loadingGig, setLoadingGig] = useState(false);
-  // C3 fix: the tap-to-open state was tracked but never shown.
   const [gigError, setGigError] = useState(false);
-  const gigRequestId = useRef(0); // A4 fix: track latest request to ignore stale responses
+  const gigRequestId = useRef(0);
   const [searchQuery, setSearchQuery] = useState("");
   const modeRef = useRef(mode); modeRef.current = mode;
-  // When flag off: use full gigs. When flag on: gigById only used for venue sheet fallback.
   const gigById = useMemo(() => { const m: Record<string, Gig> = {}; gigs.forEach((g) => (m[g.id] = g)); return m; }, [gigs]);
   const gigByIdRef = useRef(gigById); gigByIdRef.current = gigById;
   const venueById = useMemo(() => { const m: Record<string, Venue> = {}; venues.forEach((v) => (m[v.id] = v)); return m; }, [venues]);
   const venueByIdRef = useRef(venueById); venueByIdRef.current = venueById;
-  // venueIdsLive needs full gigs for venue mode (geo endpoint is for gig pins only)
   const venueIdsLive = useMemo(() => new Set(gigs.map((g) => g.venueId)), [gigs]);
-  // Search: build indices from full data for name lookups
   const gigSearchIndex = useMemo(() => {
     const index: Record<string, { artistName?: string; venueName?: string; lat: number; lng: number }> = {};
     for (const g of gigs) {
@@ -104,10 +95,9 @@ export function MapView() {
     return index;
   }, [venues]);
 
-  // Filter logic for search
   const sq = searchQuery.trim().toLowerCase();
   const matchingEventIds = useMemo(() => {
-    if (!sq) return null; // null = no filter
+    if (!sq) return null;
     const ids = new Set<string>();
     for (const e of lightEvents) {
       const info = gigSearchIndex[e.id];
@@ -126,23 +116,18 @@ export function MapView() {
     return ids;
   }, [sq, venues]);
 
-  // Feature 7: cancelled gigs leave the map. Join fallback for geo events
-  // whose GSI projection lacks the flag — same pattern as tikById.
   const cancById = useMemo(() => {
     const m = new Set<string>();
     for (const g of gigs) if (g.cancelled) m.add(g.id);
     return m;
   }, [gigs]);
 
-  // Item 13: the geo shape carries no open-mic flag — join the full gigs cache,
-  // same fallback pattern as tikById/cancById.
   const micById = useMemo(() => {
     const m = new Set<string>();
     for (const g of gigs) if (g.isOpenMic) m.add(g.id);
     return m;
   }, [gigs]);
 
-  // shownCount: count lightEvents in viewport matching date filter AND search
   const shownCount = useMemo(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
@@ -157,15 +142,12 @@ export function MapView() {
     return gigs.filter((g) => g.venueId === selectedVenue.id).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`));
   }, [selectedVenue, gigs]);
 
-  // ticketed lookup: fallback join for geo-endpoint events until the GSI projects `ticketed`
-  // (TASK 7) — remove with the whole-window path when it retires.
   const tikById = useMemo(() => {
     const m = new Map<string, boolean>();
     for (const g of gigs) if (g.ticketed) m.set(g.id, true);
     return m;
   }, [gigs]);
 
-  // gigGeo: build from lightEvents (geo endpoint), filtered by date and search
   const gigGeo = useMemo<FeatureCollection<Point>>(() => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
     if (matchingEventIds) filtered = filtered.filter((e) => matchingEventIds.has(e.id));
@@ -181,10 +163,7 @@ export function MapView() {
       })),
     };
   }, [lightEvents, sel, today, matchingEventIds, tikById, favActive, favArtists, favVenues, cancById, showOpenMics, micById]);
-  // Same-venue stack: gig pins at one venue overlap at identical coordinates, so a tap on
-  // "a pin" must surface ALL that venue's gigs within the active date filter + search —
-  // otherwise only the top-of-stack feature is reachable. Ref pattern (like gigByIdRef)
-  // because the click handler lives in a closure created once per style build.
+
   const stackForRef = useRef<(id: string) => string[]>(() => []);
   stackForRef.current = (id: string) => {
     let filtered = lightEvents.filter((e) => matchesMapDate(e.date, sel, today));
@@ -248,22 +227,42 @@ export function MapView() {
       const f = e.features?.[0];
       if (!f || f.properties?.point_count) return;
       const id = (f.properties as { id: string }).id;
-      // Whole same-venue stack (soonest first) via batch endpoint — order is preserved server-side
       const ids = stackForRef.current(id);
-      // A4 fix: use request ID to ignore stale responses from race conditions
+      const wanted = ids.length ? ids : [id];
       const thisRequest = ++gigRequestId.current;
-      setLoadingGig(true);
-      fetchEventsBatch(ids.length ? ids : [id])
-        .then((gigs) => {
-          if (thisRequest !== gigRequestId.current) return; // stale response, ignore
-          if (!gigs.length) return;
-          setSelectedStack(gigs.length > 1 ? gigs : null);
-          setSelected(gigs[0]);
+      setGigError(false);
+
+      // Open from the already-loaded upcoming-gig cache immediately. The batch
+      // endpoint is enrichment/fallback, not a prerequisite for a responsive pin.
+      const cached = wanted.map((x) => gigByIdRef.current[x]).filter((g): g is Gig => !!g);
+      const cachedChoice = cached.find((g) => g.id === id) ?? cached[0];
+      if (cachedChoice) {
+        setSelectedStack(cached.length > 1 ? cached : null);
+        setSelected(cachedChoice);
+      }
+
+      const missing = wanted.filter((x) => !gigByIdRef.current[x]);
+      if (!missing.length) {
+        setLoadingGig(false);
+        return;
+      }
+
+      setLoadingGig(!cachedChoice);
+      fetchEventsBatch(missing)
+        .then((fetched) => {
+          if (thisRequest !== gigRequestId.current) return;
+          for (const g of fetched) gigByIdRef.current[g.id] = g;
+          const stack = wanted.map((x) => gigByIdRef.current[x]).filter((g): g is Gig => !!g);
+          const chosen = stack.find((g) => g.id === id) ?? stack[0];
+          if (!chosen) {
+            setGigError(true);
+            return;
+          }
+          setSelectedStack(stack.length > 1 ? stack : null);
+          setSelected(chosen);
         })
         .catch(() => {
-          // C3 fix: a failed tap used to show the user nothing at all, so the
-          // pin looked dead. Say so, and clear the message by itself.
-          if (thisRequest !== gigRequestId.current) return;
+          if (thisRequest !== gigRequestId.current || cachedChoice) return;
           setGigError(true);
           window.setTimeout(() => setGigError(false), 4000);
         })
@@ -273,7 +272,7 @@ export function MapView() {
     };
     map.on("click", "g-pin", gigClick); map.on("click", "g-count", gigClick);
     const venClick = (e: maplibregl.MapLayerMouseEvent) => { const f = e.features?.[0]; if (f && !f.properties?.point_count) { const v = venueByIdRef.current[(f.properties as { id: string }).id]; if (v) { map.easeTo({ center: [v.location.lng, v.location.lat], duration: 500, offset: [0, -120] }); setSelectedVenue(v); } } };
-    map.on("click", "v-hit", venClick); map.on("click", "v-core", venClick); map.on("click", "v-label", venClick);
+    map.on("click", "v-hit", venClick); map.on("click", "v-pin", venClick); map.on("click", "v-label", venClick);
     ["g-cl", "v-cl", "g-pin", "g-count", "v-hit", "v-pin", "v-label"].forEach((id) => { map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer")); map.on("mouseleave", id, () => (map.getCanvas().style.cursor = "")); });
   }
 
@@ -285,7 +284,6 @@ export function MapView() {
     const map = new maplibregl.Map({ container: el, style: initialBasemap, center: [-2.1, 53.4], zoom: 6.2, pitch: 0, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-    // @ts-expect-error showUserHeading exists in maplibre-gl API but missing from types
     const geolocate = new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true, fitBoundsOptions: { maxZoom: 12 } });
     geolocateRef.current = geolocate;
     map.addControl(geolocate, "bottom-right");
@@ -311,11 +309,9 @@ export function MapView() {
       map.resize();
       ensureSourcesAndLayers(map);
       wireInteractions(map);
-      startPulse(map);
-      // Track viewport bbox for geo-based fetching
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) startPulse(map);
       updateBbox(map);
       map.on("moveend", () => updateBbox(map));
-      // Safety net: if any race eats the layers, this restores them within a frame (idempotent)
       map.on("idle", () => {
         if (map.isStyleLoaded() && (!map.getSource("gigs") || !map.getLayer("g-count"))) {
           ensureSourcesAndLayers(map);
@@ -330,7 +326,6 @@ export function MapView() {
 
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
-    // self-heal: if a style swap dropped the sources, rebuild instead of no-op
     if (!m.getSource("gigs") || !m.getSource("vens")) { if (m.isStyleLoaded()) ensureSourcesAndLayers(m); return; }
     (m.getSource("gigs") as maplibregl.GeoJSONSource).setData(gigGeo as GeoJSON.GeoJSON);
     (m.getSource("vens") as maplibregl.GeoJSONSource).setData(venGeo as GeoJSON.GeoJSON);
@@ -338,7 +333,6 @@ export function MapView() {
   }, [gigGeo, venGeo]);
   useEffect(() => { const m = mapRef.current; if (m && readyRef.current) applyMode(m); }, [mode]);
 
-  // Fly to single match when search yields exactly one result
   useEffect(() => {
     const m = mapRef.current;
     if (!m || !readyRef.current || !sq) return;
@@ -354,28 +348,22 @@ export function MapView() {
   }, [sq, mode, matchingEventIds, matchingVenueIds, gigSearchIndex, venueSearchIndex]);
   useEffect(() => {
     const m = mapRef.current; if (!m || !readyRef.current) return;
-    // Increment epoch to invalidate stale closures from rapid skin cycling
     epochRef.current += 1;
     const epoch = epochRef.current;
     const newUrl = basemapFor(appSkin);
-    // If basemap URL unchanged (skins sharing a basemap), skip setStyle entirely
-    // and just rebuild layers with new CSS tokens. This avoids the race where
-    // styledata fires synchronously before m.once() attaches.
     if (newUrl === prevBasemapRef.current) {
       const poll = () => {
-        if (epochRef.current !== epoch) return; // stale closure
+        if (epochRef.current !== epoch) return;
         if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
         else window.setTimeout(poll, 80);
       };
       poll();
       return;
     }
-    // Basemap changed: setStyle wipes sources/layers/images. Attach listener
-    // BEFORE calling setStyle to avoid missing a synchronous styledata event.
     prevBasemapRef.current = newUrl;
     let cancelled = false;
     const rebuild = () => {
-      if (cancelled || epochRef.current !== epoch) return; // stale closure
+      if (cancelled || epochRef.current !== epoch) return;
       if (m.isStyleLoaded()) ensureSourcesAndLayers(m, epoch);
       else window.setTimeout(rebuild, 80);
     };
@@ -392,7 +380,18 @@ export function MapView() {
       <div className="absolute left-3 right-3 top-8 z-20 flex items-center gap-2 pt-[env(safe-area-inset-top,0px)] lg:left-4 lg:right-auto lg:top-9">
         <div className="flex rounded-2xl border border-line glass p-1">
           {(["events", "venues"] as Mode[]).map((m) => (
-            <button key={m} onClick={() => { setMode(m); setSearchQuery(""); }} className={cn("rounded-xl px-3.5 py-2 text-[12.5px] font-extrabold capitalize", mode === m ? "bg-white/10 text-txt" : "text-dim")}>{m === "events" ? "Gigs" : "Venues"}</button>
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              onClick={() => { setMode(m); setSearchQuery(""); }}
+              className={cn(
+                "rounded-xl px-3.5 py-2 text-[12.5px] font-extrabold capitalize transition-[background-color,color,box-shadow]",
+                mode === m ? "bg-acc text-on-acc shadow-sm" : "text-dim hover:text-txt",
+              )}
+            >
+              {m === "events" ? "Gigs" : "Venues"}
+            </button>
           ))}
         </div>
         <div className="relative flex-1 lg:w-52 lg:flex-none">
@@ -400,6 +399,7 @@ export function MapView() {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            enterKeyHint="search"
             placeholder={mode === "events" ? "Artist or venue…" : "Venue name…"}
             className="w-full rounded-2xl border border-line glass py-2.5 pl-9 pr-8 text-[13px] font-semibold outline-none placeholder:text-dim focus:border-acc/50"
           />
@@ -446,7 +446,6 @@ export function MapView() {
         </div>
       )}
 
-      {/* C3 fix: tell the user what the tap did. Nothing was shown before. */}
       {(loadingGig || gigError) && (
         <div
           role="status"
@@ -462,7 +461,6 @@ export function MapView() {
           )}
         </div>
       )}
-
 
       <GigSheet
         gig={selected}
