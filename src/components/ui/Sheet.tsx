@@ -12,32 +12,39 @@ import { cn } from "@/lib/cn";
  *  C2 fix: delayed unmount preserves slide animation. */
 export function Sheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  // C2 fix: track visibility separately from open state for animation
   const [visible, setVisible] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // C2 fix: delayed unmount - keep in DOM during close animation
   useEffect(() => {
     if (open) {
       setVisible(true);
     } else {
-      // Allow 450ms for the slide-out animation (duration-[420ms] + buffer)
-      const timer = setTimeout(() => setVisible(false), 450);
+      const timer = setTimeout(() => setVisible(false), 340);
       return () => clearTimeout(timer);
     }
   }, [open]);
 
-  // Track the element that triggered the open (for focus restoration)
+  // A bottom sheet should feel modal on mobile. Without this the page/map can
+  // continue moving underneath the sheet, which is especially noticeable on iOS.
   useEffect(() => {
-    if (open) {
-      triggerRef.current = document.activeElement as HTMLElement;
-    }
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevOverscroll = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.overscrollBehavior = prevOverscroll;
+    };
   }, [open]);
 
-  // Escape key handler + focus trap + focus restoration
+  useEffect(() => {
+    if (open) triggerRef.current = document.activeElement as HTMLElement;
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -46,7 +53,6 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
         onClose();
         return;
       }
-      // Focus trap: Tab and Shift+Tab cycle within the dialog
       if (e.key === "Tab") {
         const dialog = dialogRef.current;
         if (!dialog) return;
@@ -67,45 +73,37 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
     };
 
     window.addEventListener("keydown", onKey);
-
-    // Move focus into the dialog on open
     const timer = setTimeout(() => {
       const dialog = dialogRef.current;
-      if (dialog) {
-        const first = dialog.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (first) first.focus();
-        else dialog.focus();
-      }
-    }, 50);
+      if (!dialog) return;
+      const first = dialog.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (first) first.focus();
+      else dialog.focus();
+    }, 40);
 
     return () => {
       window.removeEventListener("keydown", onKey);
       clearTimeout(timer);
-      // Restore focus to the trigger element
       if (triggerRef.current && typeof triggerRef.current.focus === "function") {
         triggerRef.current.focus();
       }
     };
   }, [open, onClose]);
 
-  if (!mounted) return null;
-
-  // C2 fix: only remove from DOM after close animation completes
-  if (!visible) return null;
+  if (!mounted || !visible) return null;
 
   return createPortal(
     <div
       className={cn("fixed inset-0 z-50", open ? "" : "pointer-events-none")}
       aria-hidden={!open}
-      // Prevent tab focus when closed but still visible (during animation)
       inert={!open ? true : undefined}
     >
       <div
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-black/55 transition-opacity duration-300",
+          "absolute inset-0 bg-black/55 transition-opacity duration-250",
           open ? "opacity-100" : "opacity-0"
         )}
         aria-label="Close dialog"
@@ -116,25 +114,21 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
         aria-modal="true"
         tabIndex={-1}
         className={cn(
-          "glass-hi absolute border-line-hi shadow-2xl transition-transform duration-[420ms] ease-pop",
-          // mobile: bottom sheet
-          "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-[24px] border-t",
-          // desktop: centered modal
+          "glass-hi absolute border-line-hi shadow-2xl transition-[transform,opacity] duration-300 ease-pop",
+          "inset-x-0 bottom-0 max-h-[88dvh] rounded-t-[24px] border-t",
           "lg:inset-auto lg:left-1/2 lg:top-1/2 lg:w-[440px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-3xl lg:border",
-          // C2 fix: apply correct transform/opacity based on open state
           open ? "translate-y-0 lg:opacity-100" : "translate-y-full lg:translate-y-[-46%] lg:opacity-0",
         )}
       >
-        {/* Close button - always visible against any background (C1 fix; C3 fix: dark bg for contrast) */}
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70 hover:text-white transition-colors"
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white active:scale-95"
         >
           <X size={18} />
         </button>
-        <div className="mx-auto mt-2 h-1 w-9 rounded-full bg-white/25 lg:hidden" />
-        <div className="max-h-[82dvh] overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-3 lg:max-h-[80vh] lg:pb-5">
+        <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-white/25 lg:hidden" />
+        <div className="max-h-[85dvh] overscroll-contain overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-3 lg:max-h-[80vh] lg:pb-5">
           {children}
         </div>
       </div>
