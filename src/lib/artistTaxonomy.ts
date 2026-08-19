@@ -23,10 +23,11 @@ export async function fetchArtistTaxonomy(): Promise<ArtistTaxonomy> {
   }
 }
 
-export function useArtistTaxonomy() {
+export function useArtistTaxonomy(enabled = true) {
   const query = useQuery({
     queryKey: ["artist-taxonomy"],
     queryFn: fetchArtistTaxonomy,
+    enabled,
     staleTime: 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
     retry: 1,
