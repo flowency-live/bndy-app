@@ -60,15 +60,18 @@ export function useUpcomingGigs() {
   return { ...query, data };
 }
 
-export function useVenues() {
-  return useQuery({ queryKey: ["venues"], queryFn: fetchVenues, staleTime: 10 * MIN, gcTime: 30 * MIN });
+/** Shared venue catalogue. `enabled=false` lets tabbed/detail surfaces avoid
+ * downloading every venue until that catalogue is actually needed. */
+export function useVenues(enabled = true) {
+  return useQuery({ queryKey: ["venues"], queryFn: fetchVenues, enabled, staleTime: 10 * MIN, gcTime: 30 * MIN });
 }
 export function useVenue(id: string) {
   return useQuery({ queryKey: ["venue", id], queryFn: () => fetchVenue(id), enabled: !!id, staleTime: 10 * MIN });
 }
 
-export function useArtists() {
-  return useQuery({ queryKey: ["artists"], queryFn: fetchArtists, staleTime: 10 * MIN, gcTime: 30 * MIN });
+/** Same opt-in gate as venues for screens that only need artists in a later tab/state. */
+export function useArtists(enabled = true) {
+  return useQuery({ queryKey: ["artists"], queryFn: fetchArtists, enabled, staleTime: 10 * MIN, gcTime: 30 * MIN });
 }
 export function useArtist(id: string) {
   return useQuery({ queryKey: ["artist", id], queryFn: () => fetchArtist(id), enabled: !!id, staleTime: 10 * MIN });
