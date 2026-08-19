@@ -5,6 +5,7 @@ import "./globals.css";
 import "./skins.css";
 import "./vibe.css";
 import "./signature-skins.css";
+import "./polish.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/app-shell";
