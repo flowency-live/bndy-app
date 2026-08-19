@@ -21,6 +21,12 @@ function useUpcomingGigsRaw(enabled = true) {
   });
 }
 
+/** Raw shared upcoming-gig catalogue: no festival enrichment and no My Gigs
+ * filtering. Use this for simple existence/count joins. */
+export function useUpcomingGigsBasic(enabled = true) {
+  return useUpcomingGigsRaw(enabled);
+}
+
 export function useFestivals(enabled = true) {
   const today = todayISO();
   const endDate = addDaysISO(today, 730);
