@@ -9,18 +9,25 @@ import { artistMap, matchesMyGigFilter, useMyGigFilter } from "@/lib/myGigFilter
 
 const MIN = 60 * 1000;
 
-function useUpcomingGigsRaw() {
+function useUpcomingGigsRaw(enabled = true) {
   const today = todayISO();
   const endDate = addDaysISO(today, 730);
-  return useQuery({ queryKey: ["gigs", "upcoming", today, endDate], queryFn: () => fetchGigs({ startDate: today, endDate }), staleTime: 5 * MIN, gcTime: 30 * MIN });
+  return useQuery({
+    queryKey: ["gigs", "upcoming", today, endDate],
+    queryFn: () => fetchGigs({ startDate: today, endDate }),
+    enabled,
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
 }
 
-export function useFestivals() {
+export function useFestivals(enabled = true) {
   const today = todayISO();
   const endDate = addDaysISO(today, 730);
   return useQuery({
     queryKey: ["festivals", "upcoming", today, endDate],
     queryFn: () => fetchFestivals({ startDate: today, endDate }),
+    enabled,
     staleTime: 5 * MIN,
     gcTime: 30 * MIN,
   });
@@ -36,13 +43,13 @@ export function useFestival(slug: string) {
   });
 }
 
-export function useUpcomingGigs() {
-  const query = useUpcomingGigsRaw();
+/** Main enriched gig catalogue. Detail/sheet callers may pass `false` while
+ * closed so hidden UI does not trigger the two-year discovery payload. */
+export function useUpcomingGigs(enabled = true) {
+  const query = useUpcomingGigsRaw(enabled);
   const { filter, isActive } = useMyGigFilter();
-  // Artist metadata is only required to evaluate My Gigs filters. Do not make
-  // map/list consumers download the entire artist catalogue when that filter is off.
-  const { data: artists = [] } = useArtists(isActive);
-  const { data: festivals = [] } = useFestivals();
+  const { data: artists = [] } = useArtists(enabled && isActive);
+  const { data: festivals = [] } = useFestivals(enabled);
   const artistsById = useMemo(() => artistMap(artists), [artists]);
   const festivalsById = useMemo(() => new Map(festivals.map((f) => [f.id, f])), [festivals]);
   const enriched = useMemo(() => (query.data ?? []).map((gig) => {
@@ -87,9 +94,9 @@ export function useVenueGigs(id: string) {
   return useQuery({ queryKey: ["venue-gigs", id, today], queryFn: () => fetchVenueGigs(id, today), enabled: !!id, staleTime: 5 * MIN });
 }
 
-/** artistId → profileImageUrl, from the cached artists list. Used to show real avatars on gigs. */
-export function useArtistImageMap(): Map<string, string> {
-  const { data: artists = [] } = useArtists();
+/** artistId → profileImageUrl, from the cached artists list. */
+export function useArtistImageMap(enabled = true): Map<string, string> {
+  const { data: artists = [] } = useArtists(enabled);
   return useMemo(() => {
     const m = new Map<string, string>();
     for (const a of artists) if (a.profileImageUrl) m.set(a.id, a.profileImageUrl);
