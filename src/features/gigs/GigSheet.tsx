@@ -244,7 +244,7 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
 
       <div className="mb-4 mt-3.5 flex flex-wrap gap-2">
         <Slab label={tonight ? "Tonight" : isToday ? "Today" : dow} value={label} hot={tonight} />
-        {time && <Slab label={time.label} value={time.value} />
+        {time && <Slab label={time.label} value={time.value} />}
         {distance !== undefined && isFinite(distance) && <Slab label="Away" value={formatDistance(distance)} />}
       </div>
 
