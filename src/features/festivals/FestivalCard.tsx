@@ -5,8 +5,6 @@ import { festivalCountLine, festivalDateRange, festivalStatus, festivalWhereLine
 
 export function FestivalCard({ festival, compact = false, proximity }: { festival: FestivalSummary; compact?: boolean; proximity?: FestivalProximity }) {
   const counts = festivalCountLine(festival);
-  // Derived from the venue set when the caller has it; the stored free-text
-  // location is only the fallback.
   const where = (proximity && festivalWhereLine(proximity)) || festival.location;
   const image = festival.posterImageUrl || festival.heroImageUrl;
   const status = festivalStatus(festival);
@@ -19,7 +17,13 @@ export function FestivalCard({ festival, compact = false, proximity }: { festiva
         <div className={compact ? "relative min-h-[112px]" : "relative aspect-[16/9] min-h-[150px]"}>
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt={`${festival.name} poster`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
+            <img
+              src={image}
+              alt={`${festival.name} poster`}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
+            />
           ) : (
             <div
               className="absolute inset-0"
