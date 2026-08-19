@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
 const KEY = "bndy.disclaimer.dismissed";
+export const DISCLAIMER_DISMISSED_EVENT = "bndy:disclaimer-dismissed";
 
 /** Global "check before you travel" notice. Shows once per session on first load. */
 export function Disclaimer() {
@@ -22,6 +23,7 @@ export function Disclaimer() {
   const dismiss = () => {
     setOpen(false);
     try { sessionStorage.setItem(KEY, "1"); } catch { /* ignore */ }
+    window.dispatchEvent(new Event(DISCLAIMER_DISMISSED_EVENT));
   };
 
   if (!mounted || !open) return null;
