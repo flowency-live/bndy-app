@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, Share2, Smartphone, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { DISCLAIMER_DISMISSED_EVENT } from "@/components/Disclaimer";
 
 type InstallChoice = { outcome: "accepted" | "dismissed"; platform: string };
 
@@ -35,6 +36,11 @@ function isiOS() {
   return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
+function disclaimerDone() {
+  try { return sessionStorage.getItem(DISCLAIMER_KEY) === "1"; }
+  catch { return true; }
+}
+
 export function InstallPrompt() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
@@ -46,17 +52,13 @@ export function InstallPrompt() {
     if (!window.matchMedia("(max-width: 1023px)").matches || isStandalone() || wasRecentlyDismissed()) return;
 
     let iosTimer: number | undefined;
-
-    if (isiOS()) {
-      iosTimer = window.setTimeout(() => setMode("ios"), 8000);
-    }
+    if (isiOS()) iosTimer = window.setTimeout(() => setMode("ios"), 8000);
 
     const handleBeforeInstall = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
       setMode("native");
     };
-
     const handleInstalled = () => {
       setOpen(false);
       setMode(null);
@@ -65,7 +67,6 @@ export function InstallPrompt() {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
     window.addEventListener("appinstalled", handleInstalled);
-
     return () => {
       if (iosTimer) window.clearTimeout(iosTimer);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
@@ -75,20 +76,12 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (!mode || wasRecentlyDismissed()) return;
-
-    const tryShow = () => {
-      if (wasRecentlyDismissed()) return;
-      try {
-        if (sessionStorage.getItem(DISCLAIMER_KEY) !== "1") return;
-      } catch {
-        // If storage is unavailable, do not block the install prompt forever.
-      }
-      setOpen(true);
+    const showIfReady = () => {
+      if (!wasRecentlyDismissed() && disclaimerDone()) setOpen(true);
     };
-
-    tryShow();
-    const timer = window.setInterval(tryShow, 1000);
-    return () => window.clearInterval(timer);
+    showIfReady();
+    window.addEventListener(DISCLAIMER_DISMISSED_EVENT, showIfReady);
+    return () => window.removeEventListener(DISCLAIMER_DISMISSED_EVENT, showIfReady);
   }, [mode]);
 
   const dismiss = () => {
@@ -136,7 +129,7 @@ export function InstallPrompt() {
                     : "Keep live music one tap away and open it full-screen like an app."}
                 </p>
               </div>
-              <button onClick={dismiss} aria-label="Not now" className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-dim transition-colors hover:bg-card2 hover:text-txt">
+              <button onClick={dismiss} aria-label="Not now" className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-dim transition-colors hover:bg-card2 hover:text-txt active:scale-95">
                 <X size={16} />
               </button>
             </div>
@@ -154,11 +147,11 @@ export function InstallPrompt() {
         ) : null}
 
         <div className="flex items-center gap-2 border-t border-line px-4 py-3">
-          <button onClick={dismiss} className="px-2 py-2 text-[11px] font-extrabold text-dim transition-colors hover:text-txt">
+          <button onClick={dismiss} className="px-2 py-2 text-[11px] font-extrabold text-dim transition-colors hover:text-txt active:scale-[.98]">
             Not now
           </button>
           {ios ? (
-            <button onClick={dismiss} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-white shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)]">
+            <button onClick={dismiss} className="ml-auto flex items-center gap-2 rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[11.5px] font-black text-white shadow-[0_0_18px_color-mix(in_srgb,var(--acc)_28%,transparent)] transition-transform active:scale-[.97]">
               Got it
             </button>
           ) : (
