@@ -21,32 +21,25 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
 
   return (
     <div className="pb-24 lg:pb-12">
-      {/* ---- header: mobile gives the venue identity the full content column;
-           profile actions sit beneath the name instead of competing with it. ---- */}
       <div className="mx-auto max-w-content px-4 pt-3 lg:px-8 lg:pt-5">
         <div className="flex items-center justify-between">
           <HeroBack inline />
           <HeroSocials socials={venue?.socials} name={name} inline />
         </div>
 
-        {/* Mobile identity */}
         <div className="mt-4 grid grid-cols-[96px_minmax(0,1fr)] items-start gap-4 lg:hidden">
           <Avatar id={id} name={name} src={img} size={96} radius={22} icon={<Building2 size={36} />} />
-
           <div className="min-w-0 pt-1">
             <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--acc2)] bg-card2 px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-[var(--acc2)]">
               <MapPin size={11} /> Live music venue
             </span>
-
             <h1 className="mt-2 text-[28px] font-black leading-[0.98] tracking-tight text-txt [overflow-wrap:anywhere]">{name}</h1>
-
             {(venue?.city || venue?.address) && (
-              <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] font-bold text-cyan">
+              <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] font-bold text-[var(--acc)]">
                 <MapPin size={13} className="shrink-0" />
                 <span className="min-w-0 truncate">{venue?.city || venue?.address}</span>
               </div>
             )}
-
             <div className="mt-3 flex items-center gap-2">
               <AvatarUpload type="venue" id={id} className="h-9 w-9 rounded-xl" />
               <FavouriteButton type="venue" id={id} name={name} size={18} className="h-9 w-9 rounded-xl" />
@@ -55,18 +48,15 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
           </div>
         </div>
 
-        {/* Desktop identity */}
         <div className="mt-4 hidden items-start gap-4 lg:flex">
-          <div className="shrink-0">
-            <Avatar id={id} name={name} src={img} size={132} radius={26} icon={<Building2 size={48} />} />
-          </div>
+          <div className="shrink-0"><Avatar id={id} name={name} src={img} size={132} radius={26} icon={<Building2 size={48} />} /></div>
           <div className="min-w-0 pt-1">
             <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-md border border-[var(--acc2)] bg-card2 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc2)]">
               <MapPin size={11} /> Live music venue
             </span>
             <h1 className="text-4xl font-black leading-none tracking-tight">{name}</h1>
             {(venue?.city || venue?.address) && (
-              <div className="mt-1.5 flex items-center gap-1 truncate text-[13px] font-bold text-cyan">
+              <div className="mt-1.5 flex items-center gap-1 truncate text-[13px] font-bold text-[var(--acc)]">
                 <MapPin size={13} className="shrink-0" /> <span className="truncate">{venue?.city || venue?.address}</span>
               </div>
             )}
@@ -79,30 +69,26 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
         </div>
       </div>
 
-      {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">
         {venue && <CuratorBar target={{ kind: "venue", venue }} className="mt-4" />}
         <div className="mt-4 flex max-w-md gap-2.5">
           {loc && (
-            <a href={gmaps(loc.lat, loc.lng)} target="_blank" rel="noopener"
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-orange to-orange/80 py-3 text-[13.5px] font-extrabold text-[#120a04] shadow-[0_6px_22px_rgba(255,122,26,.4)] transition-transform active:scale-[.97]">
+            <a href={gmaps(loc.lat, loc.lng)} target="_blank" rel="noopener" className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-orange to-orange/80 py-3 text-[13.5px] font-extrabold text-[#120a04] shadow-[0_6px_22px_rgba(255,122,26,.4)] transition-transform active:scale-[.97]">
               <Navigation size={16} /> Directions
             </a>
           )}
           {safeHref(website) && (
-            <a href={safeHref(website)} target="_blank" rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-white/5 py-3 text-[13.5px] font-extrabold transition-transform active:scale-[.97]">
+            <a href={safeHref(website)} target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-white/5 py-3 text-[13.5px] font-extrabold transition-transform active:scale-[.97]">
               <Globe size={16} /> Website
             </a>
           )}
-          <Link href={`/add?venueId=${id}`}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-white/5 py-3 text-[13.5px] font-extrabold transition-transform active:scale-[.97]">
+          <Link href={`/add?venueId=${id}`} className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-white/5 py-3 text-[13.5px] font-extrabold transition-transform active:scale-[.97]">
             <Plus size={16} className="text-[var(--acc)]" /> Add a gig
           </Link>
         </div>
         {venue?.address && (
           <div className="mt-3 flex items-center gap-2 text-[13.5px] font-medium text-dim">
-            <MapPin size={15} className="shrink-0 opacity-60" /> {venue.address}
+            <MapPin size={15} className="shrink-0" /> {venue.address}
           </div>
         )}
         <VenueTicketingBanner venue={venue} />
