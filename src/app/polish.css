@@ -115,6 +115,16 @@ html[data-theme="flyer"] {
   color: var(--acc2-text, var(--acc2)) !important;
 }
 
+/* Hyperwave's original three-stop CTA ran from dark violet through bright pink
+   to cyan, so no single text colour could reach 4.5:1 across the whole fill.
+   Keep the iridescent feel, but use darker AA-safe stops for controls that carry
+   text. Decorative gradients elsewhere remain unchanged. */
+html[data-theme="hyper"] .bndy-btn,
+html[data-theme="hyper"] .bndy-chip.on {
+  background: linear-gradient(120deg, #4B2EFF 0%, #B5108A 58%, #087A8A 100%);
+  color: #FFFFFF;
+}
+
 /* Keyboard focus must remain obvious even on skins whose accent is close to
    the surrounding surface. The inner text-colour ring supplies contrast; the
    outer accent ring keeps the bndy visual identity. */
@@ -122,14 +132,6 @@ html[data-theme="flyer"] {
   outline: 2px solid var(--txt) !important;
   outline-offset: 3px !important;
   box-shadow: 0 0 0 5px var(--acc) !important;
-}
-
-/* WCAG 2.2 target-size floor for compact labelled icon controls. This is a
-   minimum only, so normal bndy buttons keep their existing dimensions. */
-button[aria-label],
-a[aria-label] {
-  min-width: 24px;
-  min-height: 24px;
 }
 
 /* MapLibre attribution is 9px text. Don't leave it sitting as low-contrast
