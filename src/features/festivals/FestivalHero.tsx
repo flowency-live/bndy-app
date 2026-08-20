@@ -24,24 +24,14 @@ export function FestivalHero({ festival }: { festival: Festival }) {
           <div className="relative min-h-[210px] border-b border-line sm:min-h-[260px] lg:min-h-[420px] lg:border-b-0 lg:border-r">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={image}
-                alt={`${festival.name} poster`}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              <img src={image} alt={`${festival.name} poster`} loading="eager" decoding="async" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
             ) : (
-              <div
-                className="absolute inset-0"
-                style={{ background: "radial-gradient(circle at 28% 22%, color-mix(in srgb, var(--acc) 78%, transparent), transparent 36%), radial-gradient(circle at 72% 72%, color-mix(in srgb, var(--acc2) 55%, transparent), transparent 42%), repeating-linear-gradient(-12deg, transparent 0 20px, color-mix(in srgb, var(--line) 18%, transparent) 20px 22px), var(--card2)" }}
-              />
+              <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 28% 22%, color-mix(in srgb, var(--acc) 78%, transparent), transparent 36%), radial-gradient(circle at 72% 72%, color-mix(in srgb, var(--acc2) 55%, transparent), transparent 42%), repeating-linear-gradient(-12deg, transparent 0 20px, color-mix(in srgb, var(--line) 18%, transparent) 20px 22px), var(--card2)" }} />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
-            <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-xl border border-white/20 bg-black/65 px-3 py-2 text-white backdrop-blur sm:bottom-4 sm:left-4">
+            <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-xl border border-white/40 bg-black/70 px-3 py-2 text-white backdrop-blur sm:bottom-4 sm:left-4">
               <CalendarRange size={16} />
-              <div><div className="font-meta text-[7.5px] font-black uppercase tracking-[1.4px] opacity-75">Festival</div><div className="text-[11.5px] font-black">{status}</div></div>
+              <div><div className="font-meta text-[7.5px] font-black uppercase tracking-[1.4px] text-white">Festival</div><div className="text-[11.5px] font-black">{status}</div></div>
             </div>
           </div>
 
@@ -55,7 +45,7 @@ export function FestivalHero({ festival }: { festival: Festival }) {
             {counts && <div className="mt-4 inline-flex self-start rounded-xl border border-line bg-card2 px-3 py-2 text-[10px] font-black uppercase tracking-[.8px] text-txt lg:mt-5 lg:text-[11px]">{counts}</div>}
             {festival.description && <p className="mt-4 line-clamp-3 text-[12.5px] font-semibold leading-relaxed text-dim sm:line-clamp-4 lg:mt-5 lg:text-[14px]">{festival.description}</p>}
             <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:mt-6">
-              <button onClick={() => setSharing(true)} className="bndy-btn inline-flex items-center justify-center gap-2 px-3 py-2.5 text-[11.5px] font-black sm:px-4 sm:text-[12px]"><Share2 size={14} /> Share</button>
+              <button type="button" onClick={() => setSharing(true)} className="bndy-btn inline-flex items-center justify-center gap-2 px-3 py-2.5 text-[11.5px] font-black sm:px-4 sm:text-[12px]"><Share2 size={14} /> Share</button>
               {website && <a href={website} target="_blank" rel="noopener" className="bndy-btn2 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-[11.5px] font-black sm:px-4 sm:text-[12px]">Website <ExternalLink size={13} /></a>}
             </div>
           </div>
