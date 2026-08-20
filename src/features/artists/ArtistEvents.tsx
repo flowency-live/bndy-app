@@ -17,14 +17,11 @@ type View = "date" | "distance" | "map";
 export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: string }) {
   const { location, located } = useGeolocation();
   const today = todayISO();
-  const collapse90 = addDaysISO(today, 90); // anything starting at or after this date defaults to collapsed
+  const collapse90 = addDaysISO(today, 90);
   const [view, setView] = useState<View>("date");
   const [selected, setSelected] = useState<Gig | null>(null);
-
   const withDist = useMemo(() => gigs.map((g) => ({ g, dist: distanceMiles(location, g.location) })), [gigs, location]);
-  const byDate = useMemo(() => [...withDist].sort((a, b) => `${a.g.date}${a.g.startTime ?? ""}`.localeCompare(`${b.g.date}${b.g.startTime ?? ""}`)), [withDist]);
 
-  // Group by month for the "By date" view
   const byMonth = useMemo(() => {
     const groups: { key: string; label: string; items: { g: Gig; dist: number }[]; firstDate: string }[] = [];
     const sorted = [...withDist].sort((a, b) => `${a.g.date}${a.g.startTime ?? ""}`.localeCompare(`${b.g.date}${b.g.startTime ?? ""}`));
@@ -32,27 +29,19 @@ export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: strin
       const [y, m] = x.g.date.split("-");
       const key = `${y}-${m}`;
       let grp = groups.find((g) => g.key === key);
-      if (!grp) {
-        grp = { key, label: `${MON_FULL[Number(m) - 1]} ${y}`, items: [], firstDate: x.g.date };
-        groups.push(grp);
-      }
+      if (!grp) { grp = { key, label: `${MON_FULL[Number(m) - 1]} ${y}`, items: [], firstDate: x.g.date }; groups.push(grp); }
       grp.items.push(x);
     }
     return groups;
   }, [withDist]);
 
-  // Track which months are expanded; default collapsed for months starting 90+ days out
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(() => {
     const expanded = new Set<string>();
-    for (const m of byMonth) {
-      if (m.firstDate < collapse90) expanded.add(m.key);
-    }
+    for (const m of byMonth) if (m.firstDate < collapse90) expanded.add(m.key);
     return expanded;
   });
   const toggleMonth = (key: string) => setExpandedMonths((prev) => {
-    const next = new Set(prev);
-    if (next.has(key)) next.delete(key); else next.add(key);
-    return next;
+    const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next;
   });
 
   const bands = useMemo(() => {
@@ -61,17 +50,14 @@ export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: strin
     return defs.map((d) => ({ label: d.l, items: sorted.filter((x) => x.dist > d.lo && x.dist <= d.hi) })).filter((b) => b.items.length);
   }, [withDist]);
 
-  if (!gigs.length) {
-    return <p className="mt-8 py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>;
-  }
+  if (!gigs.length) return <p className="mt-8 py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>;
 
   return (
     <section className="mt-7">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-full border border-line glass p-1">
+        <div className="flex gap-1 rounded-full border border-line glass p-1" role="tablist" aria-label="Artist events view">
           {(["date", "distance", "map"] as View[]).map((v) => (
-            <button key={v} onClick={() => setView(v)}
-              className={cn("rounded-full px-3.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wide transition-colors", view === v ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
+            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn("rounded-full px-3.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wide transition-colors", view === v ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
               {v === "date" ? "By date" : v === "distance" ? "By distance" : "Map"}
             </button>
           ))}
@@ -80,40 +66,21 @@ export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: strin
       </div>
 
       {view === "map" ? (
-        <MiniMap
-          points={gigs.map((g) => ({ id: g.id, lat: g.location.lat, lng: g.location.lng }))}
-          user={location}
-          className="h-[320px] w-full overflow-hidden rounded-xl border border-line"
-        />
+        <MiniMap points={gigs.map((g) => ({ id: g.id, lat: g.location.lat, lng: g.location.lng }))} user={location} className="h-[320px] w-full overflow-hidden rounded-xl border border-line" />
       ) : view === "distance" ? (
-        bands.map((b) => (
-          <div key={b.label} className="mb-6">
-            <SectionHeader label={b.label} count={b.items.length} />
-            {b.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
-          </div>
-        ))
+        bands.map((b) => <div key={b.label} className="mb-6"><SectionHeader label={b.label} count={b.items.length} />{b.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}</div>)
       ) : (
         <div className="space-y-1">
           {byMonth.map((m) => {
             const isExpanded = expandedMonths.has(m.key);
+            const panelId = `artist-events-${m.key}`;
             return (
               <div key={m.key}>
-                <button
-                  onClick={() => toggleMonth(m.key)}
-                  className="flex w-full items-center justify-between rounded-md px-3 py-2"
-                  style={{ background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}
-                >
-                  <span className="flex items-center gap-2">
-                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{m.label}</span>
-                  </span>
+                <button type="button" aria-expanded={isExpanded} aria-controls={panelId} onClick={() => toggleMonth(m.key)} className="flex w-full items-center justify-between rounded-md px-3 py-2" style={{ background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}>
+                  <span className="flex items-center gap-2">{isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}<span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{m.label}</span></span>
                   <span className="text-[11px] font-bold">{m.items.length} gig{m.items.length === 1 ? "" : "s"}</span>
                 </button>
-                {isExpanded && (
-                  <div className="mt-1">
-                    {m.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}
-                  </div>
-                )}
+                {isExpanded && <div id={panelId} className="mt-1">{m.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}</div>}
               </div>
             );
           })}
@@ -126,22 +93,15 @@ export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: strin
 }
 
 function SectionHeader({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="mb-1 flex items-center justify-between border-b border-line pb-1.5">
-      <span className="text-[12px] font-extrabold uppercase tracking-[1.6px] text-[var(--acc)]">{label}</span>
-      <span className="text-[11px] font-bold uppercase tracking-wide text-dim2">{count} event{count === 1 ? "" : "s"}</span>
-    </div>
-  );
+  return <div className="mb-1 flex items-center justify-between border-b border-line pb-1.5"><span className="text-[12px] font-extrabold uppercase tracking-[1.6px] text-[var(--acc)]">{label}</span><span className="text-[11px] font-bold uppercase tracking-wide text-dim2">{count} event{count === 1 ? "" : "s"}</span></div>;
 }
 
 function EventRow({ g, dist, today, artistId, onClick }: { g: Gig; dist: number; today: string; artistId?: string; onClick: () => void }) {
-  // Feature 12: on a bill, say who this artist is supporting. Empty when they
-  // headline, and empty on a single-act gig, so a normal row is unchanged.
   const supporting = artistId ? supportingLabel(g, artistId) : "";
   const [, m, d] = g.date.split("-").map(Number);
   const dow = new Date(Date.UTC(Number(g.date.slice(0, 4)), m - 1, d)).getUTCDay();
   return (
-    <button onClick={onClick} className={cn("group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]", g.cancelled && "opacity-50 saturate-50")}>
+    <button type="button" onClick={onClick} className={cn("group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]", g.cancelled && "saturate-50")}>
       <div className="w-12 shrink-0 leading-none">
         <div className="text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{DOW[dow]}</div>
         <div className="my-0.5 text-[22px] font-black">{d}</div>
@@ -150,27 +110,14 @@ function EventRow({ g, dist, today, artistId, onClick }: { g: Gig; dist: number;
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{g.venueName}</span>
-          {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
-          {g.festivalName && (
-            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]" style={{ background: "color-mix(in srgb, var(--acc) 16%, transparent)" }} title={g.festivalName}>
-              <CalendarRange size={9} strokeWidth={2.75} /> Festival
-            </span>
-          )}
-          {g.isOpenMic && (
-            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}>
-              <Mic size={9} strokeWidth={2.75} /> Open mic
-            </span>
-          )}
+          {g.cancelled && <span className="rounded bg-red-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-700 dark:text-red-300">Cancelled</span>}
+          {g.festivalName && <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]" style={{ background: "color-mix(in srgb, var(--acc) 16%, transparent)" }} title={g.festivalName}><CalendarRange size={9} strokeWidth={2.75} /> Festival</span>}
+          {g.isOpenMic && <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}><Mic size={9} strokeWidth={2.75} /> Open mic</span>}
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
         </div>
         {supporting && <div className="mt-0.5 truncate text-[12.5px] font-bold text-dim2">{supporting}</div>}
-        <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-dim">
-          <MapPin size={12} className="opacity-60" />
-          {g.venueCity ? `${g.venueCity} · ` : ""}
-          {isFinite(dist) ? formatDistance(dist) : ""}
-          {g.startTime ? ` · ${formatTime(g.startTime)}` : ""}
-        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-dim"><MapPin size={12} />{g.venueCity ? `${g.venueCity} · ` : ""}{isFinite(dist) ? formatDistance(dist) : ""}{g.startTime ? ` · ${formatTime(g.startTime)}` : ""}</div>
       </div>
       <ChevronRight size={18} className="shrink-0 text-dim2" />
     </button>
