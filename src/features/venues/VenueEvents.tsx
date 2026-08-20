@@ -16,55 +16,36 @@ import { blockFestivalGigs, type FestivalBlock } from "@/domain/festivalBlocks";
 import { FestivalBlockRow } from "@/features/festivals/FestivalBlockRow";
 import type { Gig } from "@/domain/types";
 
-/** Reads all upcoming gigs (cached) and filters to this venue — robust vs the per-venue endpoint. */
 export function VenueEvents({ venueId }: { venueId: string }) {
   const { data: allGigs = [], isLoading } = useUpcomingGigs();
   const imgMap = useArtistImageMap();
   const today = todayISO();
-  const collapse90 = addDaysISO(today, 90); // anything starting at or after this date defaults to collapsed
+  const collapse90 = addDaysISO(today, 90);
   const [selected, setSelected] = useState<Gig | null>(null);
 
-  const gigs = useMemo(
-    () => allGigs.filter((g) => g.venueId === venueId).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`)),
-    [allGigs, venueId],
-  );
-
-  // Group by month
+  const gigs = useMemo(() => allGigs.filter((g) => g.venueId === venueId).sort((a, b) => `${a.date}${a.startTime ?? ""}`.localeCompare(`${b.date}${b.startTime ?? ""}`)), [allGigs, venueId]);
   const byMonth = useMemo(() => {
     const groups: { key: string; label: string; items: Gig[]; firstDate: string }[] = [];
     for (const g of gigs) {
       const [y, m] = g.date.split("-");
       const key = `${y}-${m}`;
       let grp = groups.find((x) => x.key === key);
-      if (!grp) {
-        grp = { key, label: `${MON_FULL[Number(m) - 1]} ${y}`, items: [], firstDate: g.date };
-        groups.push(grp);
-      }
+      if (!grp) { grp = { key, label: `${MON_FULL[Number(m) - 1]} ${y}`, items: [], firstDate: g.date }; groups.push(grp); }
       grp.items.push(g);
     }
     return groups;
   }, [gigs]);
 
-  // Track which months are expanded; default collapsed for months starting 90+ days out
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
-
-  // A1 fix: set expanded months AFTER gigs load, not on mount when byMonth is empty
   useEffect(() => {
     if (byMonth.length > 0 && !initialized) {
       const expanded = new Set<string>();
-      for (const m of byMonth) {
-        if (m.firstDate < collapse90) expanded.add(m.key);
-      }
-      setExpandedMonths(expanded);
-      setInitialized(true);
+      for (const m of byMonth) if (m.firstDate < collapse90) expanded.add(m.key);
+      setExpandedMonths(expanded); setInitialized(true);
     }
   }, [byMonth, collapse90, initialized]);
-  const toggleMonth = (key: string) => setExpandedMonths((prev) => {
-    const next = new Set(prev);
-    if (next.has(key)) next.delete(key); else next.add(key);
-    return next;
-  });
+  const toggleMonth = (key: string) => setExpandedMonths((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
 
   return (
     <section className="mt-7">
@@ -74,45 +55,30 @@ export function VenueEvents({ venueId }: { venueId: string }) {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2 pt-2">
-          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-[64px] animate-pulse rounded-lg bg-white/[.04]" />)}
-        </div>
+        <div className="space-y-2 pt-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-[64px] animate-pulse rounded-lg bg-white/[.04]" />)}</div>
       ) : gigs.length ? (
         <div className="space-y-1">
           {byMonth.map((m) => {
             const isExpanded = expandedMonths.has(m.key);
+            const panelId = `venue-events-${m.key}`;
             return (
               <div key={m.key}>
-                <button
-                  onClick={() => toggleMonth(m.key)}
-                  className="flex w-full items-center justify-between rounded-md px-3 py-2"
-                  style={{ background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}
-                >
-                  <span className="flex items-center gap-2">
-                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    <span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{m.label}</span>
-                  </span>
+                <button type="button" aria-expanded={isExpanded} aria-controls={panelId} onClick={() => toggleMonth(m.key)} className="flex w-full items-center justify-between rounded-md px-3 py-2" style={{ background: "var(--dayhead-bg)", color: "var(--dayhead-fg)" }}>
+                  <span className="flex items-center gap-2">{isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}<span className="text-[12px] font-extrabold uppercase tracking-[1.5px]">{m.label}</span></span>
                   <span className="text-[11px] font-bold">{m.items.length} gig{m.items.length === 1 ? "" : "s"}</span>
                 </button>
                 {isExpanded && (
-                  <div className="mt-1">
-                    {/* A festival bill at THIS venue (several acts, one shared
-                        time) collapses to one ribbon row - the festival page
-                        owns the bill. Timed festival gigs keep their row. */}
-                    {blockFestivalGigs(m.items).map((item) =>
-                      item.kind === "gig"
-                        ? <EventRow key={item.gig.id} g={item.gig} today={today} imgMap={imgMap} onClick={() => setSelected(item.gig)} />
-                        : <VenueBlockRow key={`${item.festivalId}-${item.date}`} block={item} />,
-                    )}
+                  <div id={panelId} className="mt-1">
+                    {blockFestivalGigs(m.items).map((item) => item.kind === "gig"
+                      ? <EventRow key={item.gig.id} g={item.gig} today={today} imgMap={imgMap} onClick={() => setSelected(item.gig)} />
+                      : <VenueBlockRow key={`${item.festivalId}-${item.date}`} block={item} />)}
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-      ) : (
-        <p className="py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>
-      )}
+      ) : <p className="py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>}
 
       <GigSheet gig={selected} onClose={() => setSelected(null)} />
     </section>
@@ -122,36 +88,23 @@ export function VenueEvents({ venueId }: { venueId: string }) {
 function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap: Map<string, string>; onClick: () => void }) {
   const [, m, d] = g.date.split("-").map(Number);
   const dow = new Date(Date.UTC(Number(g.date.slice(0, 4)), m - 1, d)).getUTCDay();
-  // Feature 12: the row image belongs to the first HEADLINE act, not to artistId.
   const head = headlineActs(g)[0];
   const lead = head ? { id: head.id, src: imgMap.get(head.id) } : undefined;
   const support = supportChipLabel(g);
   return (
-    <button onClick={onClick} className={cn("group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]", g.cancelled && "opacity-50 saturate-50")}>
+    <button type="button" onClick={onClick} className={cn("group flex w-full items-center gap-4 border-l-2 border-orange/70 py-3 pl-4 pr-1 text-left transition hover:bg-white/[.03]", g.cancelled && "saturate-50")}>
       <div className="w-12 shrink-0 leading-none">
         <div className="text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{DOW[dow]}</div>
         <div className="my-0.5 text-[22px] font-black">{d}</div>
         <div className="text-[10px] font-extrabold uppercase text-dim">{MON[m - 1]}</div>
       </div>
-      {g.isOpenMic && !lead?.src ? (
-        <MicTile size={40} radius={12} />
-      ) : (
-        <Avatar id={lead?.id || g.id} name={gigDisplayName(g)} src={lead?.src} size={40} radius={12} />
-      )}
+      {g.isOpenMic && !lead?.src ? <MicTile size={40} radius={12} /> : <Avatar id={lead?.id || g.id} name={gigDisplayName(g)} src={lead?.src} size={40} radius={12} />}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("truncate text-[15px] font-extrabold", g.cancelled && "line-through")}>{gigDisplayName(g)}</span>
-          {g.cancelled && <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-400">Cancelled</span>}
-          {g.festivalName && (
-            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]" style={{ background: "color-mix(in srgb, var(--acc) 16%, transparent)" }} title={g.festivalName}>
-              <CalendarRange size={9} strokeWidth={2.75} /> Festival
-            </span>
-          )}
-          {g.isOpenMic && (
-            <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}>
-              <Mic size={9} strokeWidth={2.75} /> Open mic
-            </span>
-          )}
+          {g.cancelled && <span className="rounded bg-red-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-700 dark:text-red-300">Cancelled</span>}
+          {g.festivalName && <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]" style={{ background: "color-mix(in srgb, var(--acc) 16%, transparent)" }} title={g.festivalName}><CalendarRange size={9} strokeWidth={2.75} /> Festival</span>}
+          {g.isOpenMic && <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc2)]" style={{ background: "color-mix(in srgb, var(--acc2) 16%, transparent)" }}><Mic size={9} strokeWidth={2.75} /> Open mic</span>}
           {support && <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-dim">{support}</span>}
           <span className="rounded bg-card2 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{relativeLabel(g.date, today)}</span>
           {g.ticketed && <TicketStub price={g.ticketing?.price} />}
@@ -163,21 +116,10 @@ function EventRow({ g, today, imgMap, onClick }: { g: Gig; today: string; imgMap
   );
 }
 
-/** The collapsed bill row, wearing the same date cell as EventRow so the list scans. */
 function VenueBlockRow({ block }: { block: FestivalBlock }) {
   const [, m, d] = block.date.split("-").map(Number);
   const dow = new Date(Date.UTC(Number(block.date.slice(0, 4)), m - 1, d)).getUTCDay();
   return (
-    <FestivalBlockRow
-      block={block}
-      className="border-l-2 border-orange/70 pl-4 pr-1"
-      leading={
-        <span className="w-12 shrink-0 leading-none">
-          <span className="block text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{DOW[dow]}</span>
-          <span className="my-0.5 block text-[22px] font-black">{d}</span>
-          <span className="block text-[10px] font-extrabold uppercase text-dim">{MON[m - 1]}</span>
-        </span>
-      }
-    />
+    <FestivalBlockRow block={block} className="border-l-2 border-orange/70 pl-4 pr-1" leading={<span className="w-12 shrink-0 leading-none"><span className="block text-[10px] font-extrabold uppercase tracking-wide text-[var(--acc)]">{DOW[dow]}</span><span className="my-0.5 block text-[22px] font-black">{d}</span><span className="block text-[10px] font-extrabold uppercase text-dim">{MON[m - 1]}</span></span>} />
   );
 }
