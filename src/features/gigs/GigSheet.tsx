@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, MapPin, Mic, Navigation, Share2, Ticket, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Mic, Navigation, Share2, Ticket, User } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TicketStub } from "@/components/TicketStub";
 import { CuratorBar } from "@/features/curator/CuratorBar";
@@ -26,12 +26,6 @@ function dateParts(iso: string): { dow: string; label: string } {
   return { dow: DOW[dow], label: `${d} ${MON[m - 1]}` };
 }
 
-/**
- * Gig detail sheet. Optional `stack`: same-venue gigs within the active filter —
- * map pins at one venue overlap exactly, so a tap surfaces the whole deck as a
- * swipeable snap carousel (next card peeks in from the right as the affordance).
- * Single-gig callers (lists, profiles) are untouched.
- */
 export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   gig: Gig | null;
   distance?: number;
@@ -40,12 +34,9 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   distanceOf?: (g: Gig) => number | undefined;
 }) {
   const open = !!gig;
-  // These catalogues are sheet-only enrichment. Keep them dormant while the
-  // always-mounted Sheet is closed so hidden UI does not trigger large fetches.
   const imgMap = useArtistImageMap(open);
   const { data: artists = [] } = useArtists(open);
   const { data: venues = [] } = useVenues(open);
-  // Preserve live cancel/un-cancel behaviour once the sheet is visible.
   const { data: liveGigs = [] } = useUpcomingGigs(open);
 
   const artistsById = useMemo(() => new Map(artists.map((a) => [a.id, a])), [artists]);
@@ -63,10 +54,7 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
   };
   const venueOf = (g: Gig) => {
     const venue = venuesById.get(g.venueId);
-    return {
-      name: g.venueName || venue?.name || "",
-      city: g.venueCity || venue?.city,
-    };
+    return { name: g.venueName || venue?.name || "", city: g.venueCity || venue?.city };
   };
 
   const [idx, setIdx] = useState(0);
@@ -127,42 +115,35 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
               {stack!.map((g) => {
                 const venue = venueOf(g);
                 return (
-                  <div
-                    key={g.id}
-                    className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4"
-                    style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}
-                  >
+                  <div key={g.id} className="w-[86%] shrink-0 snap-center rounded-2xl border border-line p-4" style={{ background: "color-mix(in srgb, var(--card2) 45%, transparent)" }}>
                     <Body gig={liveOf(g)} name={nameOf(g)} venueName={venue.name} venueCity={venue.city} distance={distanceOf?.(g)} src={g.artistId ? imgMap.get(g.artistId) : undefined} onClose={onClose} />
                   </div>
                 );
               })}
             </div>
-            <button
-              onClick={() => goTo(idx - 1)}
-              disabled={idx === 0}
-              aria-label="Previous gig"
-              className="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line-hi glass-hi shadow-lg transition-opacity disabled:opacity-25 lg:flex"
-            >
+            <button type="button" onClick={() => goTo(idx - 1)} disabled={idx === 0} aria-label="Previous gig" className="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line-hi glass-hi shadow-lg transition-opacity disabled:opacity-25 lg:flex">
               <ChevronLeft size={18} />
             </button>
-            <button
-              onClick={() => goTo(idx + 1)}
-              disabled={idx === stack!.length - 1}
-              aria-label="Next gig"
-              className="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line-hi glass-hi shadow-lg transition-opacity disabled:opacity-25 lg:flex"
-            >
+            <button type="button" onClick={() => goTo(idx + 1)} disabled={idx === stack!.length - 1} aria-label="Next gig" className="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line-hi glass-hi shadow-lg transition-opacity disabled:opacity-25 lg:flex">
               <ChevronRight size={18} />
             </button>
           </div>
-          <div className="mt-3 flex justify-center gap-1.5">
+          <div className="mt-2 flex justify-center gap-0.5" role="group" aria-label="Choose gig">
             {stack!.map((_, i) => (
               <button
                 key={i}
+                type="button"
                 onClick={() => goTo(i)}
                 aria-label={`Gig ${i + 1} of ${stack!.length}`}
-                className={cn("h-1.5 rounded-full transition-all duration-300", i === idx ? "w-5" : "w-1.5")}
-                style={{ background: i === idx ? "var(--acc)" : "color-mix(in srgb, var(--dim2) 45%, transparent)" }}
-              />
+                aria-current={i === idx ? "true" : undefined}
+                className="flex h-6 w-6 items-center justify-center rounded-full"
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn("h-1.5 rounded-full transition-all duration-300", i === idx ? "w-5" : "w-1.5")}
+                  style={{ background: i === idx ? "var(--acc)" : "var(--dim2)" }}
+                />
+              </button>
             ))}
           </div>
         </>
@@ -173,11 +154,8 @@ export function GigSheet({ gig, distance, onClose, stack, distanceOf }: {
 
 function Slab({ label, value, hot }: { label: string; value: string; hot?: boolean }) {
   return (
-    <div
-      className={cn("min-w-[86px] flex-1 rounded-xl px-3 py-2 text-center sm:flex-none", hot ? "bg-acc text-on-acc" : "bg-card2")}
-      style={hot ? undefined : { boxShadow: "inset 0 2.5px 0 var(--acc)" }}
-    >
-      <div className={cn("text-[9.5px] font-extrabold uppercase tracking-[1.2px]", hot ? "opacity-85" : "text-dim")}>{label}</div>
+    <div className={cn("min-w-[86px] flex-1 rounded-xl px-3 py-2 text-center sm:flex-none", hot ? "bg-acc text-on-acc" : "bg-card2")} style={hot ? undefined : { boxShadow: "inset 0 2.5px 0 var(--acc)" }}>
+      <div className={cn("text-[9.5px] font-extrabold uppercase tracking-[1.2px]", hot ? "text-on-acc" : "text-dim")}>{label}</div>
       <div className="tnum mt-0.5 text-[15px] font-black leading-tight">{value}</div>
     </div>
   );
@@ -201,27 +179,20 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt={name} referrerPolicy="no-referrer" decoding="async" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
-              <span className="text-[44px] font-black text-white/95 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">{initials(name)}</span>
+            <div className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{ background: avatarGradient(gig.artistId || gig.venueId) }}>
+              <span aria-hidden="true" className="absolute inset-0 bg-black/20" />
+              <span className="relative z-10 text-[44px] font-black text-white drop-shadow-[0_2px_5px_rgba(0,0,0,.95)]">{initials(name)}</span>
             </div>
           )}
         </div>
         {gig.cancelled && (
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-md border-[3px] border-red-500 bg-black/60 px-5 py-1.5 text-[20px] font-black uppercase tracking-[4px] text-red-500 shadow-xl">
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6 rounded-md border-[3px] border-red-400 bg-black/80 px-5 py-1.5 text-[20px] font-black uppercase tracking-[4px] text-red-300 shadow-xl">
             Cancelled
           </span>
         )}
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {tonight && !gig.cancelled && (
-            <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">
-              Tonight
-            </span>
-          )}
-          {gig.isOpenMic && (
-            <span className="flex items-center gap-1 rounded-lg bg-acc2 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc2 shadow-lg">
-              <Mic size={11} strokeWidth={2.75} /> Open mic
-            </span>
-          )}
+          {tonight && !gig.cancelled && <span className="rounded-lg bg-acc px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc shadow-lg">Tonight</span>}
+          {gig.isOpenMic && <span className="flex items-center gap-1 rounded-lg bg-acc2 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[1.2px] text-on-acc2 shadow-lg"><Mic size={11} strokeWidth={2.75} /> Open mic</span>}
         </div>
         {gig.ticketed && !gig.cancelled && <TicketStub onCard className="absolute right-3 top-3 shadow-lg" />}
       </div>
@@ -235,11 +206,8 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
       {gig.festivalName && <FestivalRibbon name={gig.festivalName} slug={gig.festivalSlug} onNavigate={onClose} className="mb-2" />}
       <div className="text-[22px] font-black leading-tight tracking-tight">{name}</div>
       <div className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-dim">
-        <MapPin size={13} className="shrink-0 opacity-70" />
-        <span className="truncate">
-          {venueName ? <>at <span className="font-extrabold text-txt">{venueName}</span></> : "Venue TBC"}
-          {venueCity ? ` · ${venueCity}` : ""}
-        </span>
+        <MapPin size={13} className="shrink-0" />
+        <span className="truncate">{venueName ? <>at <span className="font-extrabold text-txt">{venueName}</span></> : "Venue TBC"}{venueCity ? ` · ${venueCity}` : ""}</span>
       </div>
 
       <div className="mb-4 mt-3.5 flex flex-wrap gap-2">
@@ -248,32 +216,12 @@ function Body({ gig, name, venueName, venueCity, distance, src, onClose }: { gig
         {distance !== undefined && isFinite(distance) && <Slab label="Away" value={formatDistance(distance)} />}
       </div>
 
-      {gig.ticketed && safeHref(gig.ticketUrl) && (
-        <a href={safeHref(gig.ticketUrl)} target="_blank" rel="noopener noreferrer"
-          className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
-          <Ticket size={16} /> Get tickets
-        </a>
-      )}
-      <a href={gmaps(gig.location.lat, gig.location.lng)} target="_blank" rel="noopener"
-        className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
-        <Navigation size={16} /> Directions
-      </a>
+      {gig.ticketed && safeHref(gig.ticketUrl) && <a href={safeHref(gig.ticketUrl)} target="_blank" rel="noopener noreferrer" className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]"><Ticket size={16} /> Get tickets</a>}
+      <a href={gmaps(gig.location.lat, gig.location.lng)} target="_blank" rel="noopener" className="bndy-btn mb-2.5 flex items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]"><Navigation size={16} /> Directions</a>
       <div className="flex gap-2.5">
-        {gig.artistId && (
-          <Link href={`/artists/${gig.artistId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
-            <User size={16} /> Artist
-          </Link>
-        )}
-        <Link href={`/venues/${gig.venueId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]">
-          <MapPin size={16} /> Venue
-        </Link>
-        <button
-          onClick={() => setSharing(true)}
-          aria-label="Share this gig"
-          className="bndy-btn2 flex w-[54px] shrink-0 items-center justify-center py-3.5 transition-transform active:scale-[.97]"
-        >
-          <Share2 size={16} />
-        </button>
+        {gig.artistId && <Link href={`/artists/${gig.artistId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]"><User size={16} /> Artist</Link>}
+        <Link href={`/venues/${gig.venueId}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] transition-transform active:scale-[.97]"><MapPin size={16} /> Venue</Link>
+        <button type="button" onClick={() => setSharing(true)} aria-label="Share this gig" className="bndy-btn2 flex w-[54px] shrink-0 items-center justify-center py-3.5 transition-transform active:scale-[.97]"><Share2 size={16} /></button>
       </div>
 
       <ShareSheet open={sharing} onClose={() => setSharing(false)} url={shareUrl} title="Share this gig" text={shareText} />
