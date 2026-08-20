@@ -6,6 +6,7 @@ import type { Festival } from "@/domain/types";
 import { ShareSheet } from "@/features/shared/ShareSheet";
 import { safeHref } from "@/lib/safeHref";
 import { festivalCountLine, festivalDateRange, festivalStatus } from "./festivalUtils";
+import { FestivalPosterFallback } from "./FestivalPosterFallback";
 
 export function FestivalHero({ festival }: { festival: Festival }) {
   const [sharing, setSharing] = useState(false);
@@ -26,7 +27,7 @@ export function FestivalHero({ festival }: { festival: Festival }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image} alt={`${festival.name} poster`} loading="eager" decoding="async" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
             ) : (
-              <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 28% 22%, color-mix(in srgb, var(--acc) 78%, transparent), transparent 36%), radial-gradient(circle at 72% 72%, color-mix(in srgb, var(--acc2) 55%, transparent), transparent 42%), repeating-linear-gradient(-12deg, transparent 0 20px, color-mix(in srgb, var(--line) 18%, transparent) 20px 22px), var(--card2)" }} />
+              <FestivalPosterFallback name={festival.name} slug={festival.slug} startDate={festival.startDate} />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
             <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-xl border border-white/40 bg-black/70 px-3 py-2 text-white backdrop-blur sm:bottom-4 sm:left-4">

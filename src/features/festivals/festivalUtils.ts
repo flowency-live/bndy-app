@@ -1,4 +1,4 @@
-import { DOW, MON, MON_FULL, parseISO, todayISO } from "@/domain/dates";
+import { DOW, EVENING_FROM, MON, MON_FULL, parseISO, todayISO } from "@/domain/dates";
 import { distanceMiles, formatDistance } from "@/domain/geo";
 import type { FestivalSummary, Gig, LatLng, Venue } from "@/domain/types";
 
@@ -54,6 +54,23 @@ export function groupFestivalGigs(gigs: Gig[]): { date: string; gigs: Gig[] }[] 
       gigs: items.sort((a, b) => `${a.startTime || "99:99"}|${String(a.billingOrder ?? 9999).padStart(4, "0")}|${a.title}`.localeCompare(`${b.startTime || "99:99"}|${String(b.billingOrder ?? 9999).padStart(4, "0")}|${b.title}`)),
     }));
 }
+
+/** Time-of-day section for a schedule row. Shares EVENING_FROM with isTonight. */
+export type DayPeriod = "morning" | "afternoon" | "evening" | "tba";
+
+export function dayPeriod(startTime?: string): DayPeriod {
+  if (!startTime) return "tba";
+  if (startTime < "12:00") return "morning";
+  if (startTime < EVENING_FROM) return "afternoon";
+  return "evening";
+}
+
+export const DAY_PERIOD_LABEL: Record<DayPeriod, string> = {
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+  tba: "Time to confirm",
+};
 
 export function datesForFestival(f: FestivalSummary): string[] {
   const out: string[] = [];

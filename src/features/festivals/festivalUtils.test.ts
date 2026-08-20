@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FestivalSummary, Gig } from "@/domain/types";
-import { datesForFestival, festivalCountLine, festivalDateRange, festivalProximity, festivalStatus, groupFestivalGigs } from "./festivalUtils";
+import { datesForFestival, dayPeriod, festivalCountLine, festivalDateRange, festivalProximity, festivalStatus, groupFestivalGigs } from "./festivalUtils";
+import { festivalMonogram } from "./FestivalPosterFallback";
 
 const festival: FestivalSummary = {
   id: "fest-1",
@@ -62,6 +63,31 @@ describe("festivalUtils", () => {
       gig("first", "2026-09-11", "20:00", 1),
     ]);
     expect(groups[0].gigs.map((g) => g.id)).toEqual(["first", "second"]);
+  });
+});
+
+describe("dayPeriod", () => {
+  it("splits the day at noon and the shared evening boundary", () => {
+    expect(dayPeriod("09:30")).toBe("morning");
+    expect(dayPeriod("12:00")).toBe("afternoon");
+    expect(dayPeriod("16:59")).toBe("afternoon");
+    expect(dayPeriod("17:00")).toBe("evening");
+    expect(dayPeriod("23:45")).toBe("evening");
+  });
+
+  it("no start time is its own bucket, never a guess", () => {
+    expect(dayPeriod(undefined)).toBe("tba");
+  });
+});
+
+describe("festivalMonogram", () => {
+  it("drops stop words and year, keeps three initials", () => {
+    expect(festivalMonogram("Congleton Jazz & Blues Festival 2026")).toBe("CJB");
+    expect(festivalMonogram("Bridgnorth Music & Arts Festival 2026")).toBe("BMA");
+  });
+
+  it("short names keep what they have", () => {
+    expect(festivalMonogram("Tigerfest 2026")).toBe("T");
   });
 });
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarRange, MapPin, Music2 } from "lucide-react";
 import type { FestivalSummary } from "@/domain/types";
 import { festivalCountLine, festivalDateRange, festivalStatus, festivalWhereLine, type FestivalProximity } from "./festivalUtils";
+import { FestivalPosterFallback } from "./FestivalPosterFallback";
 
 export function FestivalCard({ festival, compact = false, proximity }: { festival: FestivalSummary; compact?: boolean; proximity?: FestivalProximity }) {
   const counts = festivalCountLine(festival);
@@ -25,10 +26,7 @@ export function FestivalCard({ festival, compact = false, proximity }: { festiva
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
             />
           ) : (
-            <div
-              className="absolute inset-0"
-              style={{ background: "radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--acc) 65%, transparent), transparent 42%), radial-gradient(circle at 80% 75%, color-mix(in srgb, var(--acc2) 48%, transparent), transparent 45%), var(--card2)" }}
-            />
+            <FestivalPosterFallback name={festival.name} slug={festival.slug} startDate={festival.startDate} />
           )}
           <div className="absolute inset-x-0 top-0 h-1 bg-[var(--acc)]" />
           <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg border border-white/20 bg-black/65 px-2 py-1 text-[9px] font-black uppercase tracking-[1.25px] text-white backdrop-blur">
