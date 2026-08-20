@@ -379,7 +379,7 @@ export function MapView() {
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden" style={{ marginTop: `calc(-1.5rem - env(safe-area-inset-top, 0px))` }}>
-      <div ref={containerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
+      <div ref={containerRef} role="region" aria-label="Live music map" className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
 
       <div className="absolute left-3 right-3 top-8 z-20 flex items-center gap-2 pt-[env(safe-area-inset-top,0px)] lg:left-4 lg:right-auto lg:top-9">
         <div className="flex rounded-2xl border border-line glass p-1">
@@ -404,11 +404,12 @@ export function MapView() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             enterKeyHint="search"
+            aria-label={mode === "events" ? "Search map by artist or venue" : "Search map by venue"}
             placeholder={mode === "events" ? "Artist or venue…" : "Venue name…"}
             className="w-full rounded-2xl border border-line glass py-2.5 pl-9 pr-8 text-[13px] font-semibold outline-none placeholder:text-dim focus:border-acc/50"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-dim hover:text-txt active:scale-90">
+            <button type="button" aria-label="Clear map search" onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-dim hover:text-txt active:scale-90">
               <X size={14} />
             </button>
           )}
@@ -453,7 +454,7 @@ export function MapView() {
       {(loadingGig || gigError) && (
         <div role="status" className="pointer-events-none absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-line glass-hi px-4 py-2.5 text-[13px] font-extrabold shadow-lg">
           {gigError ? (
-            <span className="text-red-400">Could not open that gig. Tap it again.</span>
+            <span className="text-red-700 dark:text-red-300">Could not open that gig. Tap it again.</span>
           ) : (
             <><Loader2 size={15} className="animate-spin text-[var(--acc)]" /><span className="text-dim">Opening…</span></>
           )}
