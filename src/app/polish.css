@@ -7,6 +7,143 @@ html[data-family="flyer"] body::before {
   z-index: 20 !important;
 }
 
+/* --------------------------------------------------------------------------
+   WCAG 2.x AA contrast pass
+
+   `--dim2` used to be an intentionally faded tertiary grey. In every active
+   skin it fell below 4.5:1 somewhere on surface/card/card2 (often ~2.3–3.4:1),
+   despite being used for real labels, metadata and placeholders. These values
+   preserve a secondary hierarchy but clear 4.5:1 across those common surfaces.
+
+   Accent colours are also used both as fills and as foreground text. Keep the
+   bright brand fills, but expose contrast-safe foreground variants for text.
+   -------------------------------------------------------------------------- */
+:root {
+  --dim2: #606E82;
+  --acc-text: #A9541D;
+  --acc2-text: #0A7694;
+}
+
+.dark {
+  --dim2: #8E9DB2;
+  --acc-text: #F9761B;
+  --acc2-text: var(--acc2);
+}
+
+html[data-theme="bndy-light"] {
+  --dim2: #606E82;
+  --acc-text: #A9541D;
+  --acc2-text: #0A7694;
+  --on-acc: #0F172A;
+  --on-acc2: #0F172A;
+}
+
+html[data-theme="bndy-dark"] {
+  --dim2: #8E9DB2;
+  --acc-text: #F9761B;
+  --acc2-text: #06B6D4;
+  --on-acc: #0F172A;
+}
+
+/* Vibe keeps the luminous cyan/magenta as foreground colours; only its old
+   tertiary lavender and white-on-magenta ticket text needed correcting. */
+html[data-theme="openair"] {
+  --dim2: #847F9B;
+  --acc-text: #19D9F3;
+  --acc2-text: #FF2BC2;
+  --stub-fg: #180013;
+}
+
+html[data-theme="goldenhour"] {
+  --dim2: #7C5C46;
+  --acc-text: #A2472F;
+  --acc2-text: #8348AC;
+  --on-acc: #2F1B12;
+}
+
+html[data-theme="underground"] {
+  --dim2: #686D74;
+  --acc-text: #D42324;
+  --acc2-text: #10069F;
+}
+
+html[data-theme="synthwave"] {
+  --dim2: #A28EC5;
+  --acc-text: #FF7EDB;
+  --acc2-text: #36F9F6;
+}
+
+html[data-theme="poole"] {
+  --dim2: #8B8575;
+  --acc-text: #E15952;
+  --acc2-text: #F5D327;
+}
+
+html[data-theme="hyper"] {
+  --dim2: #5E667C;
+  --acc-text: #4B2EFF;
+  --acc2-text: #B32598;
+  --on-acc2: #10131C;
+}
+
+html[data-theme="roadcase"] {
+  --dim2: #888B8F;
+  --acc-text: #F4C542;
+  --acc2-text: #FF5B3D;
+}
+
+html[data-theme="flyer"] {
+  /* Flyer uses the darker paper body as well as pale cards; #5A5448 is the
+     lightest tertiary text colour that still clears AA on both. */
+  --dim2: #5A5448;
+  --acc-text: #9B2B24;
+  --acc2-text: #2A46C4;
+  --on-acc: #161514;
+  --dayhead-hot-fg: #161514;
+}
+
+/* Tailwind semantic utilities use the bright fill tokens by design. Where the
+   same tokens are explicitly requested as foreground text, substitute the
+   contrast-safe sibling without changing backgrounds, borders, map pins, etc. */
+.text-acc,
+[class~="text-[var(--acc)]"] {
+  color: var(--acc-text, var(--acc)) !important;
+}
+
+.text-acc2,
+[class~="text-[var(--acc2)]"] {
+  color: var(--acc2-text, var(--acc2)) !important;
+}
+
+/* Keyboard focus must remain obvious even on skins whose accent is close to
+   the surrounding surface. The inner text-colour ring supplies contrast; the
+   outer accent ring keeps the bndy visual identity. */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--txt) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 5px var(--acc) !important;
+}
+
+/* WCAG 2.2 target-size floor for compact labelled icon controls. This is a
+   minimum only, so normal bndy buttons keep their existing dimensions. */
+button[aria-label],
+a[aria-label] {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* MapLibre attribution is 9px text. Don't leave it sitting as low-contrast
+   tertiary copy over an unpredictable map tile. */
+.maplibregl-ctrl-attrib {
+  background: var(--glass-hi) !important;
+  color: var(--txt) !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--txt) !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Backdrop-filter is one of the most expensive bits of otherwise-simple mobile
    chrome. Keep the glass look, but use a lighter blur budget on phones/tablets.
    Flyer deliberately disables blur in its own material system. */
