@@ -1,8 +1,5 @@
 "use client";
 
-// Heart toggle for artists and venues. Signed out, it routes to /login.
-// Optimistic: the heart flips at once, the server catches up.
-
 import { useRouter, usePathname } from "next/navigation";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -28,7 +25,6 @@ export function FavouriteButton({
   const toggle = useToggleFavourite();
   const router = useRouter();
   const path = usePathname();
-
   const on = isFavourite(type, id);
 
   const onClick = (e: React.MouseEvent) => {
@@ -48,8 +44,7 @@ export function FavouriteButton({
       aria-pressed={on}
       aria-label={on ? `Remove ${name} from favourites` : `Add ${name} to favourites`}
       className={cn(
-        "flex h-7 w-7 items-center justify-center rounded-lg bg-black/55 backdrop-blur-sm transition-colors",
-        on ? "text-[var(--acc)]" : "text-white/80 hover:text-white",
+        "flex h-7 w-7 items-center justify-center rounded-lg bg-black/70 text-white backdrop-blur-sm transition-[color,transform] active:scale-95",
         className,
       )}
     >
