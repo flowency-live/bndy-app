@@ -21,6 +21,7 @@ import type { LatLng, Venue } from "@/domain/types";
 import { cn } from "@/lib/cn";
 import { LocationField, type OriginChoice } from "@/features/gigs/LocationField";
 import { FestivalCard } from "./FestivalCard";
+import { CreateFestivalButton } from "./curate/CuratorFestivalLinks";
 import { festivalProximity } from "./festivalUtils";
 
 const DEFAULT_MILES = 75;
@@ -109,6 +110,7 @@ export function FestivalIndex() {
             Allow location or type a town to sort by distance. Showing everything, soonest first.
           </p>
         )}
+        <CreateFestivalButton />
       </header>
 
       {isLoading && <div className="mt-6 grid gap-4 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-64 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" />)}</div>}

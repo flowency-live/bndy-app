@@ -24,6 +24,11 @@ export function WizardShell() {
   const params = useSearchParams();
   const prefillArtistId = params.get("artistId");
   const prefillVenueId = params.get("venueId");
+  // Festival curator builder: arriving from a festival manage page links every
+  // published gig to that festival and offers the way back.
+  const festivalId = params.get("festivalId");
+  const festivalName = params.get("festivalName");
+  const festivalSlug = params.get("festivalSlug");
   const { data: artists = [] } = useArtists();
   const { data: venues = [] } = useVenues();
   const queryClient = useQueryClient();
@@ -170,6 +175,8 @@ export function WizardShell() {
           ticketInformation: draft.ticketInfo,
           imageUrl: draft.posterUrl,
           description: draft.info,
+          festivalId: festivalId || undefined,
+          festivalName: (festivalId && festivalName) || undefined,
           hp: "",
           startedAt: startedAt.current,
         });
@@ -238,6 +245,11 @@ export function WizardShell() {
               <Share2 size={16} /> Share it
             </button>
           )}
+          {festivalSlug && (
+            <Link href={`/festivals/${festivalSlug}/manage`} className="bndy-btn2 flex items-center justify-center py-3.5 text-[14px]">
+              Back to {festivalName || "the festival"}
+            </Link>
+          )}
           <Link href="/map" className="bndy-btn2 flex items-center justify-center py-3.5 text-[14px]">See it on the map</Link>
         </div>
         <div className="mt-6 border-t border-line pt-4">
@@ -275,7 +287,10 @@ export function WizardShell() {
             <ArrowLeft size={16} />
           </button>
         )}
-        <h1 className="text-[22px] font-black tracking-tight">Add a gig</h1>
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-black tracking-tight">Add a gig</h1>
+          {festivalName && <div className="mt-0.5 truncate font-meta text-[9px] font-black uppercase tracking-[1.2px] text-[var(--acc)]">For {festivalName}</div>}
+        </div>
         {dirty && (
           <button
             onClick={startOver}

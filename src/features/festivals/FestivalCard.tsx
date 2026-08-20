@@ -3,6 +3,7 @@ import { ArrowUpRight, CalendarRange, MapPin, Music2 } from "lucide-react";
 import type { FestivalSummary } from "@/domain/types";
 import { festivalCountLine, festivalDateRange, festivalStatus, festivalWhereLine, type FestivalProximity } from "./festivalUtils";
 import { FestivalPosterFallback } from "./FestivalPosterFallback";
+import { FestivalPosterImg } from "./FestivalPosterImg";
 
 export function FestivalCard({ festival, compact = false, proximity }: { festival: FestivalSummary; compact?: boolean; proximity?: FestivalProximity }) {
   const counts = festivalCountLine(festival);
@@ -17,13 +18,12 @@ export function FestivalCard({ festival, compact = false, proximity }: { festiva
       <div className={compact ? "grid grid-cols-[96px_minmax(0,1fr)]" : ""}>
         <div className={compact ? "relative min-h-[112px]" : "relative aspect-[16/9] min-h-[150px]"}>
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <FestivalPosterImg
               src={image}
-              alt={`${festival.name} poster`}
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
+              name={festival.name}
+              slug={festival.slug}
+              startDate={festival.startDate}
+              imgClassName="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
             />
           ) : (
             <FestivalPosterFallback name={festival.name} slug={festival.slug} startDate={festival.startDate} />

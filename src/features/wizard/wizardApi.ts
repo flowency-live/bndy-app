@@ -130,6 +130,10 @@ export async function createCommunityEvent(payload: {
   ticketInformation?: string;
   imageUrl?: string;
   description?: string;
+  /** festival curator builder: a gig created from a festival's manage page is
+   *  born linked. The community endpoint already stores these (MCP parity). */
+  festivalId?: string;
+  festivalName?: string;
   /** bot traps (Addendum E): hp must arrive EMPTY (honeypot); startedAt = wizard mount epoch ms — server rejects submits <3s after open */
   hp?: string;
   startedAt?: number;

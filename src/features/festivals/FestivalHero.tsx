@@ -4,9 +4,11 @@ import { useState } from "react";
 import { CalendarRange, ExternalLink, MapPin, Share2 } from "lucide-react";
 import type { Festival } from "@/domain/types";
 import { ShareSheet } from "@/features/shared/ShareSheet";
+import { ManageFestivalChip } from "./curate/CuratorFestivalLinks";
 import { safeHref } from "@/lib/safeHref";
 import { festivalCountLine, festivalDateRange, festivalStatus } from "./festivalUtils";
 import { FestivalPosterFallback } from "./FestivalPosterFallback";
+import { FestivalPosterImg } from "./FestivalPosterImg";
 
 export function FestivalHero({ festival }: { festival: Festival }) {
   const [sharing, setSharing] = useState(false);
@@ -24,8 +26,7 @@ export function FestivalHero({ festival }: { festival: Festival }) {
         <div className="grid lg:grid-cols-[minmax(300px,.9fr)_minmax(0,1.1fr)]">
           <div className="relative min-h-[210px] border-b border-line sm:min-h-[260px] lg:min-h-[420px] lg:border-b-0 lg:border-r">
             {image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt={`${festival.name} poster`} loading="eager" decoding="async" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
+              <FestivalPosterImg src={image} name={festival.name} slug={festival.slug} startDate={festival.startDate} eager imgClassName="absolute inset-0 h-full w-full object-cover" />
             ) : (
               <FestivalPosterFallback name={festival.name} slug={festival.slug} startDate={festival.startDate} />
             )}
@@ -48,6 +49,7 @@ export function FestivalHero({ festival }: { festival: Festival }) {
             <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:mt-6">
               <button type="button" onClick={() => setSharing(true)} className="bndy-btn inline-flex items-center justify-center gap-2 px-3 py-2.5 text-[11.5px] font-black sm:px-4 sm:text-[12px]"><Share2 size={14} /> Share</button>
               {website && <a href={website} target="_blank" rel="noopener" className="bndy-btn2 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-[11.5px] font-black sm:px-4 sm:text-[12px]">Website <ExternalLink size={13} /></a>}
+              <ManageFestivalChip slug={festival.slug} />
             </div>
           </div>
         </div>
