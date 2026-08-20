@@ -125,6 +125,15 @@ html[data-theme="hyper"] .bndy-chip.on {
   color: #FFFFFF;
 }
 
+/* The favourites facet uses Tailwind red-500 as a filled state. White on that
+   red is only ~3.8:1; dark oxblood clears 4.5:1 while keeping the red identity. */
+button[aria-label="Favourites only"][aria-pressed="true"] {
+  color: #2B0808 !important;
+}
+button[aria-label="Favourites only"][aria-pressed="true"] > span {
+  color: inherit !important;
+}
+
 /* Keyboard focus must remain obvious even on skins whose accent is close to
    the surrounding surface. The inner text-colour ring supplies contrast; the
    outer accent ring keeps the bndy visual identity. */
