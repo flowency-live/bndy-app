@@ -19,9 +19,7 @@ export function FestivalBlockRow({
   className,
 }: {
   block: FestivalBlock;
-  /** "at The Rigger" line - wanted on the gigs feed, redundant on the venue's own page. */
   showVenue?: boolean;
-  /** Optional slot rendered before the ribbon, e.g. the venue page's date cell. */
   leading?: React.ReactNode;
   className?: string;
 }) {
@@ -37,11 +35,11 @@ export function FestivalBlockRow({
           boxShadow: "inset 3px 0 0 var(--acc)",
         }}
       >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/20 bg-black/15">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line-hi bg-black/15">
           <CalendarRange size={14} strokeWidth={2.6} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[8px] font-black uppercase tracking-[1.5px] opacity-75">Festival</span>
+          <span className="block text-[8px] font-black uppercase tracking-[1.5px] text-dim">Festival</span>
           <span className="block truncate text-[13.5px] font-black leading-tight">
             {block.festivalName || "Festival"}
             {showVenue && block.venueName ? <span className="font-extrabold text-dim"> at {block.venueName}</span> : null}
@@ -49,7 +47,7 @@ export function FestivalBlockRow({
         </span>
         <span className="shrink-0 text-right">
           <span className="block text-[10.5px] font-black">{blockSummary(block)}</span>
-          <span className="mt-0.5 flex items-center justify-end gap-1 text-[9px] font-extrabold uppercase tracking-[1px] opacity-70">
+          <span className="mt-0.5 flex items-center justify-end gap-1 text-[9px] font-extrabold uppercase tracking-[1px] text-dim">
             Full line up <ArrowRight size={10} />
           </span>
         </span>
