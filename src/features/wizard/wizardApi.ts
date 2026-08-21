@@ -1,9 +1,11 @@
 // Gig wizard API client — spec: Projects/bndy/GIG-WIZARD-SPEC.md §5/§6.
-// Kept separate from lib/api.ts (read paths) — these are the public community WRITE paths.
+// Kept separate from lib/api.ts (read paths) — these are the public community paths.
 // Response parsing is deliberately tolerant: field names are pinned down in the spec,
-// and the VSCode agent verifies exact shapes against the lambdas before deploy.
+// and the backend remains authoritative for identity/deduplication.
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+const BASE = typeof window !== "undefined" && window.location.hostname.endsWith("bndy.live")
+  ? ""
+  : (process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk");
 
 async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<{ status: number; body: T }> {
   const res = await fetch(`${BASE}${path}`, {
@@ -16,7 +18,53 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
   return { status: res.status, body: parsed };
 }
 
-/* ---------------- Google Places (via NEW backend proxy, workorder B1) ---------------- */
+/* ---------------- Facebook source inspection (read-only) ---------------- */
+export interface FacebookSourceExisting {
+  entityType: "artist" | "venue";
+  id: string;
+  name: string;
+}
+export interface FacebookObserved {
+  name?: string | null;
+  imageUrl?: string | null;
+  description?: string | null;
+  canonicalUrl?: string | null;
+  location?: string | null;
+  address?: string | null;
+  websiteUrl?: string | null;
+}
+export interface FacebookSourceInspection {
+  ok: boolean;
+  facebookUrl?: string;
+  facebookKey?: string;
+  existing?: FacebookSourceExisting | null;
+  observed?: FacebookObserved;
+  evidence?: Record<string, string>;
+  warnings?: string[];
+  error?: string;
+  code?: string;
+}
+export async function inspectFacebookSource(input: string, expectedType: "artist" | "venue"): Promise<FacebookSourceInspection> {
+  const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/source/inspect", { input, expectedType });
+  if (status === 200) {
+    return {
+      ok: true,
+      facebookUrl: body.facebookUrl as string | undefined,
+      facebookKey: body.facebookKey as string | undefined,
+      existing: (body.existing as FacebookSourceExisting | null | undefined) ?? null,
+      observed: (body.observed as FacebookObserved | undefined) ?? {},
+      evidence: (body.evidence as Record<string, string> | undefined) ?? {},
+      warnings: (body.warnings as string[] | undefined) ?? [],
+    };
+  }
+  return {
+    ok: false,
+    error: (body.error as string) ?? "Could not inspect that Facebook page",
+    code: body.code as string | undefined,
+  };
+}
+
+/* ---------------- Google Places (via backend proxy) ---------------- */
 export interface PlaceSuggestion { placeId: string; name: string; address: string }
 export async function placesSuggest(q: string, kind: "venue" | "town" = "venue"): Promise<PlaceSuggestion[]> {
   const { status, body } = await call<{ suggestions?: PlaceSuggestion[] }>("GET", `/api/places/suggest?q=${encodeURIComponent(q)}${kind === "town" ? "&kind=town" : ""}`);
@@ -48,7 +96,7 @@ export interface VenueResult {
   needsReview?: boolean;
   error?: string;
 }
-export async function findOrCreateVenue(input: { name: string; address?: string; city?: string; googlePlaceId?: string; latitude?: number; longitude?: number }): Promise<VenueResult> {
+export async function findOrCreateVenue(input: { name: string; address?: string; city?: string; googlePlaceId?: string; latitude?: number; longitude?: number; socialMediaUrls?: string[] }): Promise<VenueResult> {
   const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/venues/find-or-create", { ...input, source: "community_wizard" });
   const v = (body.venue ?? body) as Record<string, unknown>;
   const id = (v.id ?? body.venueId ?? body.existingId) as string | undefined;
@@ -74,7 +122,17 @@ export interface ArtistResolution {
   message?: string;
 }
 export async function resolveArtist(
-  input: { name: string; location: string; facebookUrl?: string; genres?: string[]; artistType?: string; actType?: string[]; acoustic?: boolean },
+  input: {
+    name: string;
+    location: string;
+    facebookUrl?: string;
+    profileImageUrl?: string;
+    verifiedSourceName?: boolean;
+    genres?: string[];
+    artistType?: string;
+    actType?: string[];
+    acoustic?: boolean;
+  },
   opts?: { dryRun?: boolean; confirmNew?: boolean; resolveTo?: string },
 ): Promise<ArtistResolution> {
   const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/artists/find-or-create", {
@@ -100,7 +158,7 @@ export async function resolveArtist(
   }
   if (action) return { action, artistId, artistName: (artist.name as string) ?? input.name, candidates, code: body.code as string, message: (body.message ?? body.error) as string };
   if ((status === 200 || status === 201) && artistId) return { action: "matched", artistId, artistName: input.name, candidates };
-  return { action: "error", candidates, code: body.code as string, message: (body.message ?? body.error) as string ?? `Artist lookup failed (${status})` };
+  return { action: "error", candidates, code: body.code as string, message: ((body.message ?? body.error) as string | undefined) ?? `Artist lookup failed (${status})` };
 }
 
 /* ---------------- community event create ---------------- */
@@ -142,5 +200,5 @@ export async function createCommunityEvent(payload: {
   const eventId = (body.eventId ?? (body.event as Record<string, unknown> | undefined)?.id ?? body.id) as string | undefined;
   if (status === 200 || status === 201) return { ok: true, eventId };
   if (status === 409) return { ok: false, existingEventId: (body.existingEventId ?? body.existingId) as string | undefined, error: "duplicate" };
-  return { ok: false, error: (body.error ?? body.message) as string ?? `Publish failed (${status})` };
+  return { ok: false, error: ((body.error ?? body.message) as string | undefined) ?? `Publish failed (${status})` };
 }
