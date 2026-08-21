@@ -35,8 +35,10 @@ export interface FacebookObserved {
 }
 export interface FacebookSourceInspection {
   ok: boolean;
-  facebookUrl?: string;
-  facebookKey?: string;
+  sourceUrl?: string;
+  facebookUrl?: string | null;
+  facebookKey?: string | null;
+  identityResolved?: boolean;
   existing?: FacebookSourceExisting | null;
   observed?: FacebookObserved;
   evidence?: Record<string, string>;
@@ -49,8 +51,10 @@ export async function inspectFacebookSource(input: string, expectedType: "artist
   if (status === 200) {
     return {
       ok: true,
-      facebookUrl: body.facebookUrl as string | undefined,
-      facebookKey: body.facebookKey as string | undefined,
+      sourceUrl: body.sourceUrl as string | undefined,
+      facebookUrl: (body.facebookUrl as string | null | undefined) ?? null,
+      facebookKey: (body.facebookKey as string | null | undefined) ?? null,
+      identityResolved: (body.identityResolved as boolean | undefined) ?? !!body.facebookKey,
       existing: (body.existing as FacebookSourceExisting | null | undefined) ?? null,
       observed: (body.observed as FacebookObserved | undefined) ?? {},
       evidence: (body.evidence as Record<string, string> | undefined) ?? {},
