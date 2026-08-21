@@ -16,7 +16,10 @@ import type {
 } from "@/domain/types";
 import { canonicalActTypes, canonicalArtistType } from "@/lib/artistTaxonomyCore";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+// Same-origin detection: when on bndy.live, CloudFront routes /api/* to API Gateway
+const BASE = typeof window !== 'undefined' && window.location.hostname.endsWith('bndy.live')
+  ? ''  // Same-origin, no CORS preflight needed
+  : (process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk");
 
 async function get<T>(path: string, revalidate = 60): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { next: { revalidate } });

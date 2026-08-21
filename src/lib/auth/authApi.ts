@@ -1,7 +1,10 @@
-// bndy-app auth API client. Cookie-session against api.bndy.co.uk.
-// All calls send credentials. The session cookie lives on .bndy.co.uk.
+// bndy-app auth API client. Cookie-session against api.bndy.co.uk or same-origin via CloudFront.
+// All calls send credentials. The session cookie lives on .bndy.co.uk or .bndy.live.
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+// Same-origin detection: when on bndy.live, CloudFront routes /api/* to API Gateway
+const BASE = typeof window !== 'undefined' && window.location.hostname.endsWith('bndy.live')
+  ? ''  // Same-origin, no CORS preflight needed
+  : (process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk");
 
 export type UserRole = "user" | "curator" | "owner" | "staff";
 
