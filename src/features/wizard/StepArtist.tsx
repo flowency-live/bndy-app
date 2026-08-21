@@ -8,7 +8,8 @@ import { distanceMiles } from "@/domain/geo";
 import { cn } from "@/lib/cn";
 import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { MAX_ACTS, NEW_ACT_ID, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
-import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "./wizardApi";
+import { FacebookSourceAssist } from "./FacebookSourceAssist";
+import { placesSuggest, resolveArtist, type ArtistCandidate, type FacebookSourceInspection, type PlaceSuggestion } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
  *  acts are distinguishable by place, and same-region duplicates are impossible
@@ -271,6 +272,8 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   const [region, setRegion] = useState("");
   const [artistType, setArtistType] = useState("");
   const [facebookUrl, setFacebookUrl] = useState("");
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
+  const [verifiedSourceName, setVerifiedSourceName] = useState(false);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [actType, setActType] = useState<string[]>([]);
@@ -308,10 +311,22 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     acoustic ? "Acoustic" : null,
   ].filter(Boolean).join(" · ");
 
+  const applyFacebook = (result: FacebookSourceInspection) => {
+    setError(null);
+    if (result.facebookUrl) setFacebookUrl(result.facebookUrl);
+    if (result.observed?.imageUrl) setProfileImageUrl(result.observed.imageUrl);
+    if (result.observed?.name && result.evidence?.name === "facebook_html_meta") {
+      setName(result.observed.name);
+      setVerifiedSourceName(true);
+    }
+  };
+
   const draft = (confirmNew: boolean): NewArtistDraft => ({
     name: name.trim(),
     location,
     facebookUrl: facebookUrl.trim() || undefined,
+    profileImageUrl,
+    verifiedSourceName: verifiedSourceName || undefined,
     genres,
     actType: actType.length ? actType : undefined,
     acoustic: acoustic || undefined,
@@ -326,7 +341,13 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     if (!artistType) { setError("Tell us what they are (band, duo, solo act...)."); return; }
     setChecking(true);
     setError(null);
-    const r = await resolveArtist({ name: name.trim(), location, facebookUrl: facebookUrl.trim() || undefined }, { dryRun: true });
+    const r = await resolveArtist({
+      name: name.trim(),
+      location,
+      facebookUrl: facebookUrl.trim() || undefined,
+      profileImageUrl,
+      verifiedSourceName: verifiedSourceName || undefined,
+    }, { dryRun: true });
     setChecking(false);
     if (r.action === "matched" && r.artistId) {
       onPickExisting({ id: r.artistId, name: r.artistName ?? name.trim() });
@@ -372,8 +393,17 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     <div>
       <h2 className="text-[19px] font-black tracking-tight">Add a new artist</h2>
       <div className="mt-4 space-y-4">
+        <FacebookSourceAssist
+          expectedType="artist"
+          value={facebookUrl}
+          onChange={setFacebookUrl}
+          onInspection={applyFacebook}
+          onUseExisting={(entity) => onPickExisting({ id: entity.id, name: entity.name })}
+          compact
+        />
+
         <Field label="Name">
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+          <input value={name} onChange={(e) => { setName(e.target.value); setVerifiedSourceName(false); }} className={inputCls} />
         </Field>
 
         <Field
@@ -388,6 +418,8 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
                   value={townQ}
                   onChange={(e) => { setTownQ(e.target.value); setTownPicked(null); }}
                   placeholder="Their home town…"
+                  aria-label="Artist home town"
+                  autoComplete="address-level2"
                   className={cn(inputCls, "pl-9", townPicked && "pr-9")}
                 />
                 {townPicked && <Check size={15} className="absolute right-3.5 top-[15px] text-[var(--acc)]" />}
@@ -405,16 +437,16 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
               </div>
             ) : (
               <div className="relative flex-1">
-                <select value={region} onChange={(e) => setRegion(e.target.value)} className={selectCls}>
+                <select value={region} onChange={(e) => setRegion(e.target.value)} aria-label="Artist home region" className={selectCls}>
                   <option value="">Choose a region…</option>
                   {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
                 <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
               </div>
             )}
-            <div className="flex shrink-0 gap-1 self-start rounded-2xl border border-line p-1">
+            <div className="flex shrink-0 gap-1 self-start rounded-2xl border border-line p-1" role="group" aria-label="Location precision">
               {(["town", "region"] as const).map((m) => (
-                <button key={m} onClick={() => setLocMode(m)}
+                <button key={m} onClick={() => setLocMode(m)} aria-pressed={locMode === m}
                   className={cn("rounded-xl px-2.5 py-2 text-[11px] font-extrabold uppercase tracking-wide transition-colors", locMode === m ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
                   {m === "town" ? "Town" : "Region"}
                 </button>
@@ -425,7 +457,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
 
         <Field label="They are">
           <div className="relative">
-            <select value={artistType} onChange={(e) => setArtistType(e.target.value)} className={selectCls}>
+            <select value={artistType} onChange={(e) => setArtistType(e.target.value)} aria-label="Artist type" className={selectCls}>
               <option value="">Choose one…</option>
               {taxonomy.artistTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
@@ -433,9 +465,13 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
           </div>
         </Field>
 
-        <Field label="Facebook page" optional hint="We'll pull their photo and details from it.">
-          <input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="facebook.com/…" inputMode="url" className={inputCls} />
-        </Field>
+        {profileImageUrl && (
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-card2 p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={profileImageUrl} alt="" className="h-11 w-11 rounded-xl object-cover" />
+            <div className="min-w-0 flex-1"><div className="text-[12px] font-black">Facebook photo found</div><div className="text-[11px] font-semibold text-dim">It will be offered to the backend if this artist is new.</div></div>
+          </div>
+        )}
 
         {/* Genres + act style live behind one calm accordion */}
         <div className="overflow-hidden rounded-2xl border border-line">
@@ -490,7 +526,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
         </div>
       </div>
 
-      {error && <p className="mt-3 rounded-xl bg-card2 px-3.5 py-3 text-[13px] font-bold text-[var(--acc)]">{error}</p>}
+      {error && <p role="alert" className="mt-3 rounded-xl bg-card2 px-3.5 py-3 text-[13px] font-bold text-txt">{error}</p>}
       <div className="mt-4 flex gap-2.5">
         <button onClick={check} disabled={checking || !canSubmit}
           className="bndy-btn flex flex-1 items-center justify-center gap-2 py-3.5 text-[14px] disabled:opacity-40">
