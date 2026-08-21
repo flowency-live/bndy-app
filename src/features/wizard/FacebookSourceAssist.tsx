@@ -46,13 +46,22 @@ export function FacebookSourceAssist({
       return;
     }
 
-    if (next.facebookUrl) onChange(next.facebookUrl);
+    // Only a resolved profile/page identity belongs in the entity record. A
+    // transient /share token is useful for inspection, but must never become the
+    // artist's strong Facebook uniqueness key if Facebook does not resolve it.
+    if (next.facebookUrl && next.identityResolved !== false) {
+      onChange(next.facebookUrl);
+      onInspection?.(next);
+    } else {
+      onChange("");
+    }
     setPhase("done");
-    onInspection?.(next);
   }, [expectedType, onChange, onInspection, value]);
 
-  const foundSomething = !!(result?.observed?.name || result?.observed?.imageUrl || result?.existing);
-  const warningOnly = result?.ok && !foundSomething;
+  const hasResolvedIdentity = !!(result?.ok && result.facebookUrl && result.identityResolved !== false);
+  const foundSomething = !!(hasResolvedIdentity && (result?.observed?.name || result?.observed?.imageUrl || result?.existing));
+  const unresolvedIdentity = !!(result?.ok && !hasResolvedIdentity);
+  const warningOnly = !!(result?.ok && hasResolvedIdentity && !foundSomething);
 
   return (
     <div className={cn("rounded-2xl border border-line bg-card2", compact ? "p-3" : "p-3.5 sm:p-4")}>
@@ -118,7 +127,7 @@ export function FacebookSourceAssist({
           </p>
         )}
 
-        {result?.ok && result.existing && (
+        {result?.ok && result.existing && hasResolvedIdentity && (
           <div className="mt-3 rounded-xl border border-[color-mix(in_srgb,var(--acc)_45%,var(--line))] bg-card p-3">
             <div className="flex items-center gap-3">
               {result.observed?.imageUrl ? (
@@ -161,6 +170,13 @@ export function FacebookSourceAssist({
           </div>
         )}
 
+        {unresolvedIdentity && (
+          <p className="mt-2.5 flex items-start gap-2 rounded-xl border border-line bg-card px-3 py-2.5 text-[11.5px] font-semibold text-dim">
+            <AlertCircle size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" />
+            That Facebook share link didn&apos;t resolve to a stable page. Paste the artist or venue&apos;s actual Facebook page, or continue without Facebook.
+          </p>
+        )}
+
         {warningOnly && (
           <p className="mt-2.5 flex items-start gap-2 rounded-xl border border-line bg-card px-3 py-2.5 text-[11.5px] font-semibold text-dim">
             <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" />
@@ -169,7 +185,7 @@ export function FacebookSourceAssist({
         )}
       </div>
 
-      {result?.facebookUrl && (
+      {hasResolvedIdentity && result?.facebookUrl && (
         <a href={result.facebookUrl} target="_blank" rel="noopener noreferrer" className="mt-2.5 inline-flex min-h-8 items-center gap-1.5 text-[11px] font-bold text-dim hover:text-txt">
           View Facebook page <ExternalLink size={11} />
         </a>
