@@ -121,6 +121,12 @@ export interface NewArtistDraft {
   name: string;
   location: string;
   facebookUrl?: string;
+  /** Image actually observed from the supplied Facebook page. The backend still
+   *  owns the decision to download/store it when the artist is created. */
+  profileImageUrl?: string;
+  /** True only when the name came directly from Facebook page metadata. This
+   *  activates the backend's existing verified-source-name data-quality path. */
+  verifiedSourceName?: boolean;
   genres: string[];
   /** Originals / covers / tribute. */
   actType?: string[];
