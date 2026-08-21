@@ -110,6 +110,8 @@ export function WizardShell() {
             name: draft.newArtist.name,
             location: draft.newArtist.location,
             facebookUrl: draft.newArtist.facebookUrl,
+            profileImageUrl: draft.newArtist.profileImageUrl,
+            verifiedSourceName: draft.newArtist.verifiedSourceName,
             genres: draft.newArtist.genres,
             artistType: draft.newArtist.artistType,
             actType: draft.newArtist.actType,
@@ -119,7 +121,12 @@ export function WizardShell() {
         );
         if (!((r.action === "matched" || r.action === "created") && r.artistId) && r.action !== "review") {
           const recheck = await resolveArtist(
-            { name: draft.newArtist.name, location: draft.newArtist.location, facebookUrl: draft.newArtist.facebookUrl },
+            {
+              name: draft.newArtist.name,
+              location: draft.newArtist.location,
+              facebookUrl: draft.newArtist.facebookUrl,
+              verifiedSourceName: draft.newArtist.verifiedSourceName,
+            },
             { dryRun: true },
           );
           if (recheck.action === "matched" && recheck.artistId) r = recheck;
