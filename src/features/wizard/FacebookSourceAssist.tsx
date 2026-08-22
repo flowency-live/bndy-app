@@ -81,6 +81,9 @@ export function FacebookSourceAssist({
   const foundSomething = !!(hasResolvedIdentity && (result?.observed?.name || result?.observed?.imageUrl || result?.existing));
   const unresolvedIdentity = !!(result?.ok && !hasResolvedIdentity);
   const warningOnly = !!(result?.ok && hasResolvedIdentity && !foundSomething);
+  const nameIsHandleHint = result?.evidence?.name === "facebook_handle_hint";
+  const description = result?.observed?.description?.trim();
+  const descriptionPreview = description && description.length > 180 ? `${description.slice(0, 177).trimEnd()}…` : description;
 
   return (
     <section
@@ -183,7 +186,7 @@ export function FacebookSourceAssist({
         )}
 
         {result?.ok && !result.existing && foundSomething && (
-          <div className={cn("mt-3 flex items-center gap-3", flat ? "border-t border-line pt-3" : "rounded-xl border border-line bg-card p-3")}>
+          <div className={cn("mt-3 flex items-start gap-3", flat ? "border-t border-line pt-3" : "rounded-xl border border-line bg-card p-3")}>
             {result.observed?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={result.observed.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
@@ -191,9 +194,16 @@ export function FacebookSourceAssist({
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card2 text-[var(--acc)]"><CheckCircle2 size={18} /></span>
             )}
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-black uppercase tracking-[.8px] text-[var(--acc-text)]">Found on Facebook</div>
+              <div className="text-[10px] font-black uppercase tracking-[.8px] text-[var(--acc-text)]">
+                {nameIsHandleHint ? "Facebook page recognised" : "Found on Facebook"}
+              </div>
               {result.observed?.name && <div className="mt-0.5 truncate text-[14px] font-black">{result.observed.name}</div>}
-              <div className="mt-0.5 text-[11.5px] font-semibold text-dim">Check what we found, then fill any gaps below.</div>
+              <div className="mt-0.5 text-[11.5px] font-semibold text-dim">
+                {nameIsHandleHint ? "We used the page handle as a starting name. Check it below." : "Check what we found, then fill any gaps below."}
+              </div>
+              {!nameIsHandleHint && descriptionPreview && (
+                <p className="mt-1.5 text-[11px] font-semibold leading-relaxed text-dim">{descriptionPreview}</p>
+              )}
             </div>
           </div>
         )}
