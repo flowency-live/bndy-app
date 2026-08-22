@@ -87,6 +87,30 @@ export function datesForFestival(f: FestivalSummary): string[] {
 
 /* ---------------- proximity (derived, never stored) ---------------- */
 
+type FestivalVenueLocation = Pick<Venue, "id" | "city" | "location">;
+
+/** New summary responses carry venuePoints. `undefined` means the response was
+ * produced by the older contract, so the caller should enable its venue-list
+ * compatibility fallback. An empty array is valid and must not trigger a full
+ * catalogue fetch. */
+export function festivalVenueFallbackRequired(festivals: FestivalSummary[]): boolean {
+  return festivals.some((festival) => festival.venuePoints === undefined);
+}
+
+/** Build the tiny lookup proximity needs. Fallback venues are added first, then
+ * embedded points win so a current festival response never depends on a stale
+ * venue-catalogue entry. */
+export function festivalVenueLocationMap(
+  festivals: FestivalSummary[],
+  fallbackVenues: Venue[] = [],
+): Map<string, FestivalVenueLocation> {
+  const map = new Map<string, FestivalVenueLocation>();
+  for (const venue of fallbackVenues) map.set(venue.id, venue);
+  for (const festival of festivals) {
+    for (const point of festival.venuePoints || []) map.set(point.id, point);
+  }
+  return map;
+}
 
 export interface FestivalProximity {
   /** Miles to the NEAREST festival venue. Undefined when no venue has resolved. */
@@ -102,8 +126,8 @@ export interface FestivalProximity {
  * Scope rule: venues spread over 90 miles read "UK wide"; one town reads as
  * that town; anything between reads "N towns".
  */
-export function festivalProximity(f: FestivalSummary, venueById: Map<string, Venue>, from?: LatLng): FestivalProximity {
-  const found = f.venueIds.map((id) => venueById.get(id)).filter((v): v is Venue => !!v);
+export function festivalProximity(f: FestivalSummary, venueById: Map<string, FestivalVenueLocation>, from?: LatLng): FestivalProximity {
+  const found = f.venueIds.map((id) => venueById.get(id)).filter((v): v is FestivalVenueLocation => !!v);
   if (!found.length) return {};
 
   let distance: number | undefined;
