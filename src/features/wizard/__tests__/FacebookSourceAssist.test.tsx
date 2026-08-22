@@ -57,8 +57,8 @@ describe("FacebookSourceAssist identity safety", () => {
       facebookKey: "facebook.com/the.torrists",
       identityResolved: true,
       existing: null,
-      observed: { name: "The Torrists", imageUrl: null },
-      evidence: { name: "facebook_html_meta", canonicalUrl: "facebook_resolved_identity" },
+      observed: { name: "The Torrists", imageUrl: null, description: "Live rock band from Stoke-on-Trent." },
+      evidence: { name: "facebook_html_meta", description: "facebook_html_meta", canonicalUrl: "facebook_resolved_identity" },
       warnings: [],
     });
 
@@ -70,7 +70,34 @@ describe("FacebookSourceAssist identity safety", () => {
       expect(onInspection).toHaveBeenCalledTimes(1);
     });
     expect(screen.getByText("Found on Facebook")).toBeDefined();
+    expect(screen.getByText("Live rock band from Stoke-on-Trent.")).toBeDefined();
     expect(screen.getByRole("link", { name: /view facebook page/i }).getAttribute("href")).toBe("https://www.facebook.com/the.torrists");
+  });
+
+  it("labels a handle-derived name as a starting hint rather than verified Facebook data", async () => {
+    inspectMock.mockResolvedValue({
+      ok: true,
+      sourceUrl: "https://www.facebook.com/soulskunks",
+      facebookUrl: "https://www.facebook.com/soulskunks",
+      facebookKey: "facebook.com/soulskunks",
+      identityResolved: true,
+      existing: null,
+      observed: { name: "Soulskunks", imageUrl: null },
+      evidence: { name: "facebook_handle_hint", canonicalUrl: "facebook_identity" },
+      warnings: [],
+    });
+
+    const { onChange, onInspection } = renderAssist({ value: "https://www.facebook.com/soulskunks" });
+    await clickCheck();
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith("https://www.facebook.com/soulskunks");
+      expect(onInspection).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText("Facebook page recognised")).toBeDefined();
+    expect(screen.getByText("Soulskunks")).toBeDefined();
+    expect(screen.getByText(/used the page handle as a starting name/i)).toBeDefined();
+    expect(screen.queryByText("Found on Facebook")).toBeNull();
   });
 
   it("never passes an unresolved share token into the entity form", async () => {
