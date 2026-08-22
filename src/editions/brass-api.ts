@@ -1,10 +1,9 @@
 import type { Artist, FestivalSummary, Gig, PerformerName, Production, ResolvedTicketing } from "@/domain/types";
 
-const BASE = typeof window !== "undefined" && window.location.hostname.endsWith("bndy.live")
-  ? ""
-  : (process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk");
+const BASE = (process.env.NEXT_PUBLIC_BRASS_API_URL || "").replace(/\/$/, "");
 
 async function get<T>(path: string): Promise<T> {
+  if (!BASE) throw new Error("NEXT_PUBLIC_BRASS_API_URL is required for the brass edition");
   const response = await fetch(`${BASE}${path}`, { next: { revalidate: 60 } });
   if (!response.ok) throw new Error(`GET ${path} → ${response.status}`);
   return response.json() as Promise<T>;
@@ -88,20 +87,20 @@ function toBrassConcert(raw: Raw): Gig | null {
 }
 
 export async function fetchBrassBands(): Promise<Artist[]> {
-  const rows = await get<Raw[]>("/api/brass/bands");
+  const rows = await get<Raw[]>("/bands");
   return rows.map(toBrassBand).filter((band): band is Artist => !!band);
 }
 
 export async function fetchBrassConcerts(): Promise<Gig[]> {
-  const rows = await get<Raw[]>("/api/brass/concerts");
+  const rows = await get<Raw[]>("/concerts");
   return rows.map(toBrassConcert).filter((concert): concert is Gig => !!concert);
 }
 
 export async function fetchBrassFestivals(): Promise<FestivalSummary[]> {
-  return get<FestivalSummary[]>("/api/brass/festivals");
+  return get<FestivalSummary[]>("/festivals");
 }
 
 export async function fetchBrassProductions(bandId?: string): Promise<Production[]> {
   const suffix = bandId ? `?bandId=${encodeURIComponent(bandId)}` : "";
-  return get<Production[]>(`/api/brass/productions${suffix}`);
+  return get<Production[]>(`/productions${suffix}`);
 }
