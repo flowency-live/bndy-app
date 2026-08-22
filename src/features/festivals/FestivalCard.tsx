@@ -5,7 +5,17 @@ import { festivalCountLine, festivalDateRange, festivalStatus, festivalWhereLine
 import { FestivalPosterFallback } from "./FestivalPosterFallback";
 import { FestivalPosterImg } from "./FestivalPosterImg";
 
-export function FestivalCard({ festival, compact = false, proximity }: { festival: FestivalSummary; compact?: boolean; proximity?: FestivalProximity }) {
+export function FestivalCard({
+  festival,
+  compact = false,
+  proximity,
+  eagerImage = false,
+}: {
+  festival: FestivalSummary;
+  compact?: boolean;
+  proximity?: FestivalProximity;
+  eagerImage?: boolean;
+}) {
   const counts = festivalCountLine(festival);
   const where = (proximity && festivalWhereLine(proximity)) || festival.location;
   const image = festival.posterImageUrl || festival.heroImageUrl;
@@ -23,6 +33,8 @@ export function FestivalCard({ festival, compact = false, proximity }: { festiva
               name={festival.name}
               slug={festival.slug}
               startDate={festival.startDate}
+              eager={eagerImage}
+              sizes={compact ? "(min-width: 1024px) 96px, 1px" : "(max-width: 767px) calc(100vw - 32px), (max-width: 1279px) 50vw, 33vw"}
               imgClassName="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
             />
           ) : (
