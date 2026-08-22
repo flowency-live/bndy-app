@@ -39,6 +39,16 @@ describe("FacebookSourceAssist identity safety", () => {
     inspectMock.mockReset();
   });
 
+  it("keeps raw typed/share input local until the backend verifies it", () => {
+    const { onChange } = renderAssist({ value: "" });
+    const input = screen.getByLabelText("Facebook page for this artist") as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: "https://facebook.com/share/RawToken123" } });
+
+    expect(input.value).toBe("https://facebook.com/share/RawToken123");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("replaces pasted share text with the resolved stable Facebook identity", async () => {
     inspectMock.mockResolvedValue({
       ok: true,
