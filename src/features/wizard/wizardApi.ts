@@ -3,6 +3,8 @@
 // Response parsing is deliberately tolerant: field names are pinned down in the spec,
 // and the backend remains authoritative for identity/deduplication.
 
+import { checkAuth } from "@/lib/auth/authApi";
+
 const BASE = typeof window !== "undefined" && window.location.hostname.endsWith("bndy.live")
   ? ""
   : (process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk");
@@ -16,6 +18,31 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
   let parsed: T;
   try { parsed = (await res.json()) as T; } catch { parsed = {} as T; }
   return { status: res.status, body: parsed };
+}
+
+/**
+ * The community create endpoints intentionally remain public. When the caller
+ * happens to be a logged-in curator, add creator provenance after a confirmed
+ * NEW record is created so an "own records only" policy has a trustworthy key.
+ *
+ * This is best-effort: a provenance failure must never turn a successful
+ * public create into an apparent failure or encourage a duplicate retry.
+ */
+async function recordCuratorCreation(entityType: "artist" | "venue" | "event", entityId: string | undefined): Promise<void> {
+  if (!entityId) return;
+  try {
+    const auth = await checkAuth();
+    if (auth?.user.role !== "curator") return;
+    const res = await fetch(`${BASE}/users/profile`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ curatorCreated: { entityType, entityId } }),
+    });
+    if (!res.ok) console.warn(`[curator] Could not record creator for ${entityType} ${entityId}: ${res.status}`);
+  } catch (error) {
+    console.warn(`[curator] Creator provenance failed for ${entityType} ${entityId}`, error);
+  }
 }
 
 /* ---------------- Facebook source inspection (read-only) ---------------- */
@@ -105,6 +132,7 @@ export async function findOrCreateVenue(input: { name: string; address?: string;
   const v = (body.venue ?? body) as Record<string, unknown>;
   const id = (v.id ?? body.venueId ?? body.existingId) as string | undefined;
   if ((status === 200 || status === 201) && id) {
+    if (status === 201) await recordCuratorCreation("venue", id);
     return { ok: true, venueId: id, venueName: (v.name as string) ?? input.name, city: (v.city as string) ?? input.city };
   }
   if (status === 422) return { ok: false, needsReview: true, error: (body.error as string) ?? "Venue could not be verified" };
@@ -162,8 +190,14 @@ export async function resolveArtist(
     // gate bounce: same name + same region = it already exists. That's a MATCH, not an error.
     return { action: "matched", artistId, artistName: input.name, candidates };
   }
-  if (action) return { action, artistId, artistName: (artist.name as string) ?? input.name, candidates, code: body.code as string, message: (body.message ?? body.error) as string };
-  if ((status === 200 || status === 201) && artistId) return { action: "matched", artistId, artistName: input.name, candidates };
+  if (action) {
+    if (action === "created" && artistId) await recordCuratorCreation("artist", artistId);
+    return { action, artistId, artistName: (artist.name as string) ?? input.name, candidates, code: body.code as string, message: (body.message ?? body.error) as string };
+  }
+  if ((status === 200 || status === 201) && artistId) {
+    if (status === 201) await recordCuratorCreation("artist", artistId);
+    return { action: "matched", artistId, artistName: input.name, candidates };
+  }
   return { action: "error", candidates, code: body.code as string, message: ((body.message ?? body.error) as string | undefined) ?? `Artist lookup failed (${status})` };
 }
 
@@ -204,7 +238,10 @@ export async function createCommunityEvent(payload: {
 }): Promise<EventResult> {
   const { status, body } = await call<Record<string, unknown>>("POST", "/api/community/events", { ...payload, source: "community_wizard" });
   const eventId = (body.eventId ?? (body.event as Record<string, unknown> | undefined)?.id ?? body.id) as string | undefined;
-  if (status === 200 || status === 201) return { ok: true, eventId };
+  if (status === 200 || status === 201) {
+    if (status === 201) await recordCuratorCreation("event", eventId);
+    return { ok: true, eventId };
+  }
   if (status === 409) return { ok: false, existingEventId: (body.existingEventId ?? body.existingId) as string | undefined, error: "duplicate" };
   return { ok: false, error: ((body.error ?? body.message) as string | undefined) ?? `Publish failed (${status})` };
 }
