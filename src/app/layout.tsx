@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Suspense } from "react";
 import { Archivo, Archivo_Black, Chakra_Petch, Instrument_Serif, Inter, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
@@ -20,6 +21,10 @@ const chakra = Chakra_Petch({ weight: ["600", "700"], subsets: ["latin"], variab
 const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk", display: "swap" });
 
 const FONT_VARS = `${inter.variable} ${archivoBlack.variable} ${archivo.variable} ${instrument.variable} ${spaceMono.variable} ${chakra.variable} ${grotesk.variable}`;
+
+// Cloudflare Web Analytics beacon identifiers are public by design and are
+// included in the page source for every visitor.
+const CLOUDFLARE_WEB_ANALYTICS_TOKEN = "d10ac97e9abc49b793d53253aa13f245";
 
 export const metadata: Metadata = {
   title: "bndy · live music near you",
@@ -61,6 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           <InstallPrompt />
         </Providers>
+        <Script
+          id="cloudflare-web-analytics"
+          type="module"
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
