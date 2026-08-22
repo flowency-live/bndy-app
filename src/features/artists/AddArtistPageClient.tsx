@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/cn";
 import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { FacebookSourceAssist } from "@/features/wizard/FacebookSourceAssist";
+import { artistFacebookPrefill } from "@/features/wizard/facebookArtistPrefill";
 import { REGIONS } from "@/features/wizard/lib";
 import {
   placesSuggest,
@@ -20,7 +21,7 @@ const inputCls = "w-full rounded-2xl border border-line glass px-4 py-3 text-[15
 const selectCls = "w-full appearance-none rounded-2xl border border-line glass px-4 py-3 text-[15px] font-semibold outline-none focus:border-[var(--acc)]";
 
 function cleanTown(label: string): string {
-  return label.replace(/,\s*UK$/i, "").trim();
+  return label.replace(/,\s*UK$/i, "").replace(/,\s*United Kingdom$/i, "").trim();
 }
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -50,6 +51,8 @@ export function AddArtistPageClient() {
   const [preds, setPreds] = useState<PlaceSuggestion[]>([]);
   const [region, setRegion] = useState("");
   const [artistType, setArtistType] = useState("");
+  const [bio, setBio] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [phase, setPhase] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<ArtistCandidate[]>([]);
@@ -83,27 +86,26 @@ export function AddArtistPageClient() {
   const applyInspection = (result: FacebookSourceInspection) => {
     setError(null);
     setCandidates([]);
-    if (result.facebookUrl) {
-      setFacebookUrl(result.facebookUrl);
-      setFacebookInput(result.facebookUrl);
-    }
-    if (result.observed?.imageUrl) setProfileImageUrl(result.observed.imageUrl);
+    const prefill = artistFacebookPrefill(result);
 
-    const sourceName = result.observed?.name?.trim();
-    const sourceNameEvidence = result.evidence?.name;
-    if (sourceName && ["facebook_html_meta", "facebook_basic_html", "facebook_handle_hint"].includes(sourceNameEvidence ?? "")) {
-      setName(sourceName);
-      // A real Facebook title is observed source data. A name reconstructed from
-      // the handle is only a convenience hint and must still pass normal name
-      // quality checks if the user leaves it unchanged.
-      setVerifiedSourceName(sourceNameEvidence !== "facebook_handle_hint");
+    if (prefill.facebookUrl) {
+      setFacebookUrl(prefill.facebookUrl);
+      setFacebookInput(prefill.facebookUrl);
     }
-
-    if (result.observed?.location && result.evidence?.location === "bndy_existing_artist") {
+    if (prefill.profileImageUrl) setProfileImageUrl(prefill.profileImageUrl);
+    if (prefill.name) {
+      setName(prefill.name);
+      setVerifiedSourceName(prefill.verifiedSourceName);
+    }
+    if (prefill.location) {
+      const town = cleanTown(prefill.location);
       setLocMode("town");
-      setTownQ(result.observed.location);
-      setTownPicked(result.observed.location);
+      setTownQ(town);
+      setTownPicked(town);
+      setRegion("");
     }
+    if (prefill.bio) setBio(prefill.bio);
+    if (prefill.websiteUrl) setWebsiteUrl(prefill.websiteUrl);
   };
 
   const save = async (opts?: { resolveTo?: string; confirmNew?: boolean }) => {
@@ -119,6 +121,8 @@ export function AddArtistPageClient() {
         facebookUrl: facebookUrl || undefined,
         profileImageUrl,
         verifiedSourceName: verifiedSourceName || undefined,
+        bio: bio.trim() || undefined,
+        websiteUrl: websiteUrl.trim() || undefined,
         artistType,
         genres: [],
       }, opts);
@@ -151,6 +155,8 @@ export function AddArtistPageClient() {
     setPreds([]);
     setRegion("");
     setArtistType("");
+    setBio("");
+    setWebsiteUrl("");
     setError(null);
     setCandidates([]);
     setSuccess(null);
@@ -257,6 +263,21 @@ export function AddArtistPageClient() {
             <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
           </div>
         </Field>
+
+        {(bio || websiteUrl) && (
+          <section className="space-y-4 border-t border-line pt-4" aria-label="Facebook details">
+            {bio && (
+              <Field label="Bio" hint="Found on Facebook — edit it if needed.">
+                <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} className={cn(inputCls, "resize-y leading-relaxed")} />
+              </Field>
+            )}
+            {websiteUrl && (
+              <Field label="Website" hint="Found on Facebook — check the destination before adding.">
+                <input value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} className={inputCls} inputMode="url" autoCapitalize="none" />
+              </Field>
+            )}
+          </section>
+        )}
 
         {profileImageUrl && (
           <div className="flex items-center gap-3 border-l-2 border-[var(--acc)] py-1 pl-3">
