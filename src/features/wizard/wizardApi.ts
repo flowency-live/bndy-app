@@ -132,6 +132,8 @@ export async function resolveArtist(
     facebookUrl?: string;
     profileImageUrl?: string;
     verifiedSourceName?: boolean;
+    bio?: string;
+    websiteUrl?: string;
     genres?: string[];
     artistType?: string;
     actType?: string[];
