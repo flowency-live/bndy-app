@@ -92,7 +92,8 @@ export function GigsFestivalStrip() {
         <ArrowRight size={15} className="shrink-0 text-dim" />
       </Link>
 
-      {/* Desktop: slim cards, already distance-ordered. */}
+      {/* Desktop: slim cards, already distance-ordered. The first poster is the
+          measured desktop LCP element, so only that image gets high priority. */}
       <div className="hidden lg:block">
         <div className="mb-2.5 flex items-end gap-3">
           <div className="min-w-0 flex-1">
@@ -102,7 +103,9 @@ export function GigsFestivalStrip() {
           <Link href="/festivals" className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-[10.5px] font-black text-txt transition-colors hover:border-line-hi">All festivals <ArrowRight size={13} /></Link>
         </div>
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-          {relevant.map(({ festival, prox }) => <FestivalCard key={festival.id} festival={festival} proximity={prox} compact />)}
+          {relevant.map(({ festival, prox }, index) => (
+            <FestivalCard key={festival.id} festival={festival} proximity={prox} compact eagerImage={index === 0} />
+          ))}
         </div>
       </div>
     </section>
