@@ -1,39 +1,51 @@
 "use client";
 
-import { useMemo } from "react";
-import { useArtists, useFestivals, useUpcomingGigsBasic } from "@/lib/hooks";
-import { isPublishedInEdition } from "@/domain/edition";
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchBrassBands,
+  fetchBrassConcerts,
+  fetchBrassFestivals,
+  fetchBrassProductions,
+} from "./brass-api";
 
-/**
- * Brass-only wrappers deliberately sit on top of the existing live hooks.
- * The live hooks are left untouched. Legacy records have no brass scope and
- * therefore cannot leak into these views.
- */
+const MIN = 60 * 1000;
+
 export function useBrassBands(enabled = true) {
-  const query = useArtists(enabled);
-  const data = useMemo(
-    () => (query.data ?? []).filter(
-      (artist) => artist.performerKind === "brass_band" && isPublishedInEdition(artist, "brass"),
-    ),
-    [query.data],
-  );
-  return { ...query, data };
+  return useQuery({
+    queryKey: ["brass", "bands"],
+    queryFn: fetchBrassBands,
+    enabled,
+    staleTime: 10 * MIN,
+    gcTime: 30 * MIN,
+  });
 }
 
 export function useBrassConcerts(enabled = true) {
-  const query = useUpcomingGigsBasic(enabled);
-  const data = useMemo(
-    () => (query.data ?? []).filter((gig) => isPublishedInEdition(gig, "brass")),
-    [query.data],
-  );
-  return { ...query, data };
+  return useQuery({
+    queryKey: ["brass", "concerts"],
+    queryFn: fetchBrassConcerts,
+    enabled,
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
 }
 
 export function useBrassFestivals(enabled = true) {
-  const query = useFestivals(enabled);
-  const data = useMemo(
-    () => (query.data ?? []).filter((festival) => isPublishedInEdition(festival, "brass")),
-    [query.data],
-  );
-  return { ...query, data };
+  return useQuery({
+    queryKey: ["brass", "festivals"],
+    queryFn: fetchBrassFestivals,
+    enabled,
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
+}
+
+export function useBrassProductions(bandId?: string, enabled = true) {
+  return useQuery({
+    queryKey: ["brass", "productions", bandId ?? "all"],
+    queryFn: () => fetchBrassProductions(bandId),
+    enabled,
+    staleTime: 10 * MIN,
+    gcTime: 30 * MIN,
+  });
 }
