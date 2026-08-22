@@ -21,6 +21,10 @@ const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk", 
 
 const FONT_VARS = `${inter.variable} ${archivoBlack.variable} ${archivo.variable} ${instrument.variable} ${spaceMono.variable} ${chakra.variable} ${grotesk.variable}`;
 
+// Cloudflare Web Analytics beacon identifiers are public by design and are
+// included in the page source for every visitor.
+const CLOUDFLARE_WEB_ANALYTICS_TOKEN = "d10ac97e9abc49b793d53253aa13f245";
+
 export const metadata: Metadata = {
   title: "bndy · live music near you",
   description: "Find live music: gigs, artists and venues near you.",
@@ -53,6 +57,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="bndy-dark" data-family="soft" className={`dark ${FONT_VARS}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
+        <script
+          type="module"
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })}
+        />
       </head>
       <body className="font-sans antialiased">
         <Providers>
