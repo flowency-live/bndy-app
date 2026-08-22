@@ -127,6 +127,10 @@ export interface NewArtistDraft {
   /** True only when the name came directly from Facebook page metadata. This
    *  activates the backend's existing verified-source-name data-quality path. */
   verifiedSourceName?: boolean;
+  /** Source-backed profile details can survive the rest of the gig wizard and
+   *  are only sent if the artist is genuinely created. */
+  bio?: string;
+  websiteUrl?: string;
   genres: string[];
   /** Originals / covers / tribute. */
   actType?: string[];
