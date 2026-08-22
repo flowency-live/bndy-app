@@ -192,7 +192,9 @@ export function FestivalIndex() {
 
       {!isLoading && !error && shown.length > 0 && (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {shown.map(({ festival, prox }) => <FestivalCard key={festival.id} festival={festival} proximity={prox} />)}
+          {shown.map(({ festival, prox }, index) => (
+            <FestivalCard key={festival.id} festival={festival} proximity={prox} eagerImage={index === 0} />
+          ))}
         </div>
       )}
 
