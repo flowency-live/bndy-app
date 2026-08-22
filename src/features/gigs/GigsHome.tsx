@@ -1,13 +1,17 @@
 "use client";
 
-import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Search, ChevronDown, Heart, Mic, Ticket } from "lucide-react";
-import { useUpcomingGigs, useArtistImageMap } from "@/lib/hooks";
+import { useArtists } from "@/lib/hooks";
+import { fetchFestivals } from "@/lib/api";
+import { fetchNearbyGigs, type NearbyGig } from "@/lib/nearbyGigs";
+import { artistMap, matchesMyGigFilter, useMyGigFilter } from "@/lib/myGigFilter";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles } from "@/domain/geo";
-import { DOW, MON, inWhenRange, isTonight, parseISO, todayISO, type WhenRange } from "@/domain/dates";
+import { addDaysISO, DOW, MON, inWhenRange, isTonight, parseISO, todayISO, type WhenRange } from "@/domain/dates";
 import { bucketGigs, dayHeading } from "@/domain/gigGrouping";
 import { cn } from "@/lib/cn";
 import { Deferred } from "@/components/DeferredSection";
@@ -32,10 +36,12 @@ const FACET_COLOURS = {
   tickets: { accent: "#22c55e", onText: "#052e16" },
 } as const;
 
+const CHUNK_DAYS = 90;
+const MAX_CHUNKS = 8;
+const MIN = 60 * 1000;
+
 export function GigsHome() {
-  const { data: gigs = [], isLoading } = useUpcomingGigs();
   const { location: geo, located } = useGeolocation();
-  const imgMap = useArtistImageMap();
   const today = todayISO();
 
   const [origin, setOrigin] = useState<OriginChoice>({ loc: null, label: "Current location" });
@@ -52,15 +58,133 @@ export function GigsHome() {
   const favActive = favOnly && isAuthenticated;
   const [selected, setSelected] = useState<Gig | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(["later"]));
+  const [chunkStarts, setChunkStarts] = useState<string[]>(() => [today]);
 
   const shieldRef = useRef(0);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const lastAutoScrollRef = useRef(0);
+  const tailLoadingRef = useRef(false);
   const openGig = (g: Gig) => { if (Date.now() < shieldRef.current) return; setSelected(g); };
 
   const originLoc: LatLng = useMemo(() => origin.loc ?? geo, [origin.loc, geo]);
   const usingCurrent = origin.loc === null;
-
   const dq = useDeferredValue(q);
   const dRadius = useDeferredValue(radius);
+  const loadedEnd = addDaysISO(chunkStarts[chunkStarts.length - 1], CHUNK_DAYS - 1);
+  const canLoadMore = chunkStarts.length < MAX_CHUNKS;
+
+  const gigQueries = useQueries({
+    queries: chunkStarts.map((startDate) => {
+      const endDate = addDaysISO(startDate, CHUNK_DAYS - 1);
+      return {
+        queryKey: [
+          "gigs",
+          "nearby",
+          Number(originLoc.lat.toFixed(4)),
+          Number(originLoc.lng.toFixed(4)),
+          dRadius,
+          startDate,
+          endDate,
+        ],
+        queryFn: () => fetchNearbyGigs({ center: originLoc, radiusMiles: dRadius, startDate, endDate }),
+        staleTime: 5 * MIN,
+        gcTime: 30 * MIN,
+      };
+    }),
+  });
+
+  const festivalQuery = useQuery({
+    queryKey: ["festivals", "gigs-window", today, loadedEnd],
+    queryFn: () => fetchFestivals({ startDate: today, endDate: loadedEnd }),
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
+
+  const { filter: myGigFilter, isActive: myGigFilterActive } = useMyGigFilter();
+  const { data: filterArtists = [] } = useArtists(myGigFilterActive);
+  const filterArtistsById = useMemo(() => artistMap(filterArtists), [filterArtists]);
+  const festivalById = useMemo(
+    () => new Map((festivalQuery.data ?? []).map((festival) => [festival.id, festival])),
+    [festivalQuery.data],
+  );
+
+  const rawGigs = useMemo(() => {
+    const byId = new Map<string, NearbyGig>();
+    for (const query of gigQueries) {
+      for (const gig of query.data ?? []) byId.set(gig.id, gig);
+    }
+    return [...byId.values()];
+  }, [gigQueries]);
+
+  const gigs = useMemo(() => {
+    const enriched = rawGigs.map((gig) => {
+      if (!gig.festivalId) return gig;
+      const festival = festivalById.get(gig.festivalId);
+      if (!festival) return gig;
+      return {
+        ...gig,
+        festivalName: gig.festivalName || festival.name,
+        festivalSlug: gig.festivalSlug || festival.slug,
+      };
+    });
+    return myGigFilterActive
+      ? enriched.filter((gig) => matchesMyGigFilter(gig, filterArtistsById, myGigFilter))
+      : enriched;
+  }, [rawGigs, festivalById, myGigFilterActive, filterArtistsById, myGigFilter]);
+
+  const imgMap = useMemo(() => {
+    const images = new Map<string, string>();
+    for (const gig of gigs) {
+      if (gig.artistId && gig.artistImageUrl) images.set(gig.artistId, gig.artistImageUrl);
+    }
+    return images;
+  }, [gigs]);
+
+  const isLoading = gigQueries[0]?.isLoading ?? true;
+  const initialError = gigQueries[0]?.isError ?? false;
+  const tailLoading = gigQueries[gigQueries.length - 1]?.isFetching ?? false;
+  tailLoadingRef.current = tailLoading;
+
+  useEffect(() => {
+    if (!dateSel) return;
+    setChunkStarts((prev) => {
+      const next = [...prev];
+      while (next.length < MAX_CHUNKS && addDaysISO(next[next.length - 1], CHUNK_DAYS - 1) < dateSel.end) {
+        next.push(addDaysISO(next[next.length - 1], CHUNK_DAYS));
+      }
+      return next.length === prev.length ? prev : next;
+    });
+  }, [dateSel]);
+
+  useEffect(() => {
+    if (dateSel || !canLoadMore) return;
+    const el = loadMoreRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || tailLoadingRef.current) return;
+        const y = window.scrollY;
+        if (y < 200 || Math.abs(y - lastAutoScrollRef.current) < 120) return;
+        lastAutoScrollRef.current = y;
+        setChunkStarts((prev) => {
+          if (prev.length >= MAX_CHUNKS) return prev;
+          return [...prev, addDaysISO(prev[prev.length - 1], CHUNK_DAYS)];
+        });
+      },
+      { rootMargin: "500px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [dateSel, canLoadMore, loadedEnd]);
+
+  const appendNextChunk = () => {
+    if (tailLoading) return;
+    setChunkStarts((prev) => {
+      if (prev.length >= MAX_CHUNKS) return prev;
+      return [...prev, addDaysISO(prev[prev.length - 1], CHUNK_DAYS)];
+    });
+  };
+
   const eligible = useMemo(() => {
     const query = dq.trim().toLowerCase();
     let out = gigs.filter((g) => g.date >= today);
@@ -108,7 +232,7 @@ export function GigsHome() {
         <header className="mb-5 hidden lg:block lg:mb-0">
           <h1 className="font-disp text-[38px] font-black leading-none tracking-tight">Gigs near you</h1>
           <p className="mt-1.5 text-[13px] font-semibold text-dim">
-            {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label}`}
+            {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label} · next ${chunkStarts.length * 3} months`}
             {usingCurrent && !located ? " · allow location for near-you results" : ""}
           </p>
         </header>
@@ -271,7 +395,11 @@ export function GigsHome() {
         </div>
       </div>
 
-      {isLoading ? (
+      {initialError ? (
+        <div className="rounded-[var(--rad-lg)] border border-line bg-card p-8 text-center font-semibold text-dim">
+          Couldn&apos;t load nearby gigs right now.
+        </div>
+      ) : isLoading ? (
         <div>
           {Array.from({ length: 7 }).map((_, i) => <div key={i} className="h-[100px] animate-pulse border-b border-line bg-card/40" />)}
         </div>
@@ -344,8 +472,22 @@ export function GigsHome() {
         })
       ) : (
         <div className="py-16 text-center">
-          <p className="font-semibold text-dim">No gigs within {radius} mi of {origin.label}.</p>
-          <p className="mt-1 text-[13px] text-dim2">Drag the radius wider, pick another location, or change the dates.</p>
+          <p className="font-semibold text-dim">No gigs within {radius} mi of {origin.label} in the loaded period.</p>
+          <p className="mt-1 text-[13px] text-dim2">Drag the radius wider, pick another location, change the dates, or load the next three months.</p>
+        </div>
+      )}
+
+      {!isLoading && !initialError && !dateSel && canLoadMore && (
+        <div ref={loadMoreRef} className="mt-9 flex flex-col items-center gap-2 py-3">
+          <button
+            type="button"
+            onClick={appendNextChunk}
+            disabled={tailLoading}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-[12px] font-black text-txt transition-colors hover:border-line-hi disabled:cursor-wait disabled:opacity-60"
+          >
+            {tailLoading ? "Loading next 3 months…" : "Show next 3 months"}
+          </button>
+          <span className="text-[10.5px] font-semibold text-dim2">Loaded through {loadedEnd}</span>
         </div>
       )}
 

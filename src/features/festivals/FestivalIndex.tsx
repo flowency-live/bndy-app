@@ -12,10 +12,12 @@
 // are a travel surface. With no location at all the list falls back to soonest first.
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { CalendarDays, MapPin } from "lucide-react";
-import { useFestivals, useVenues } from "@/lib/hooks";
-import { todayISO } from "@/domain/dates";
+import { fetchFestivals } from "@/lib/api";
+import { useVenues } from "@/lib/hooks";
+import { addDaysISO, todayISO } from "@/domain/dates";
 import { useGeolocation } from "@/lib/useGeolocation";
 import type { LatLng, Venue } from "@/domain/types";
 import { cn } from "@/lib/cn";
@@ -26,15 +28,61 @@ import { festivalProximity } from "./festivalUtils";
 
 const DEFAULT_MILES = 75;
 const MAX_MILES = 250;
+const CHUNK_DAYS = 90;
+const MAX_DISCOVERY_DAYS = 720;
+const MIN = 60 * 1000;
 
 export function FestivalIndex() {
-  const { data: festivals = [], isLoading, error } = useFestivals();
   const { data: venues = [] } = useVenues();
   const { location: geo, located } = useGeolocation();
   const today = todayISO();
+  const [rangeEnd, setRangeEnd] = useState(() => addDaysISO(today, CHUNK_DAYS - 1));
+  const maxRangeEnd = addDaysISO(today, MAX_DISCOVERY_DAYS - 1);
+  const canLoadMore = rangeEnd < maxRangeEnd;
   const [origin, setOrigin] = useState<OriginChoice>({ loc: null, label: "Current location" });
   const [radius, setRadius] = useState(DEFAULT_MILES);
   const [showAll, setShowAll] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const lastAutoScrollRef = useRef(0);
+  const fetchingRef = useRef(false);
+
+  const { data: festivals = [], isLoading, isFetching, error } = useQuery({
+    queryKey: ["festivals", "index", today, rangeEnd],
+    queryFn: () => fetchFestivals({ startDate: today, endDate: rangeEnd }),
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+    placeholderData: keepPreviousData,
+  });
+  fetchingRef.current = isFetching;
+
+  const appendNextRange = () => {
+    if (isFetching || !canLoadMore) return;
+    setRangeEnd((current) => {
+      const next = addDaysISO(current, CHUNK_DAYS);
+      return next > maxRangeEnd ? maxRangeEnd : next;
+    });
+  };
+
+  useEffect(() => {
+    if (!canLoadMore) return;
+    const el = loadMoreRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || fetchingRef.current) return;
+        const y = window.scrollY;
+        if (y < 200 || Math.abs(y - lastAutoScrollRef.current) < 120) return;
+        lastAutoScrollRef.current = y;
+        setRangeEnd((current) => {
+          const next = addDaysISO(current, CHUNK_DAYS);
+          return next > maxRangeEnd ? maxRangeEnd : next;
+        });
+      },
+      { rootMargin: "500px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [canLoadMore, rangeEnd, maxRangeEnd]);
 
   const originLoc: LatLng | undefined = origin.loc ?? (located ? geo : undefined);
   const venueById = useMemo(() => new Map<string, Venue>(venues.map((v) => [v.id, v])), [venues]);
@@ -119,8 +167,16 @@ export function FestivalIndex() {
       {!isLoading && !error && upcoming.length === 0 && (
         <div className="mt-6 rounded-[var(--rad-lg)] border border-line bg-card p-8 text-center">
           <CalendarDays size={28} className="mx-auto text-[var(--acc)]" />
-          <h2 className="mt-3 text-xl font-black">No upcoming grassroots festivals listed yet.</h2>
-          <Link href="/gigs" className="mt-4 inline-flex rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[12px] font-black text-on-acc">Browse gigs instead</Link>
+          <h2 className="mt-3 text-xl font-black">No festivals in the loaded period.</h2>
+          <p className="mt-2 text-[12px] font-semibold text-dim">We start with the next three months so this page stays fast.</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {canLoadMore && (
+              <button type="button" onClick={appendNextRange} className="inline-flex rounded-xl bg-[var(--acc)] px-4 py-2.5 text-[12px] font-black text-on-acc">
+                Look 3 months further
+              </button>
+            )}
+            <Link href="/gigs" className="inline-flex rounded-xl border border-line bg-card2 px-4 py-2.5 text-[12px] font-black text-txt">Browse gigs instead</Link>
+          </div>
         </div>
       )}
 
@@ -137,6 +193,20 @@ export function FestivalIndex() {
       {!isLoading && !error && shown.length > 0 && (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map(({ festival, prox }) => <FestivalCard key={festival.id} festival={festival} proximity={prox} />)}
+        </div>
+      )}
+
+      {!isLoading && !error && canLoadMore && (
+        <div ref={loadMoreRef} className="mt-8 flex flex-col items-center gap-2 py-3">
+          <button
+            type="button"
+            onClick={appendNextRange}
+            disabled={isFetching}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-[12px] font-black text-txt transition-colors hover:border-line-hi disabled:cursor-wait disabled:opacity-60"
+          >
+            {isFetching ? "Loading next 3 months…" : "Show next 3 months"}
+          </button>
+          <span className="text-[10.5px] font-semibold text-dim2">Loaded through {rangeEnd}</span>
         </div>
       )}
 

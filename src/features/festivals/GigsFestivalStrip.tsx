@@ -13,7 +13,9 @@
 import Link from "next/link";
 import { ArrowRight, CalendarRange } from "lucide-react";
 import { useMemo } from "react";
-import { useFestivals, useVenues } from "@/lib/hooks";
+import { useQuery } from "@tanstack/react-query";
+import { fetchFestivals } from "@/lib/api";
+import { useVenues } from "@/lib/hooks";
 import { addDaysISO, todayISO } from "@/domain/dates";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { formatDistance } from "@/domain/geo";
@@ -24,13 +26,19 @@ import { festivalProximity, festivalStatus } from "./festivalUtils";
 const STRIP_MILES = 50;
 const STRIP_WEEKS = 8;
 const STRIP_MAX = 3;
+const MIN = 60 * 1000;
 
 export function GigsFestivalStrip() {
-  const { data: festivals = [], isLoading } = useFestivals();
-  const { data: venues = [] } = useVenues();
-  const { location, located } = useGeolocation();
   const today = todayISO();
   const horizon = addDaysISO(today, STRIP_WEEKS * 7);
+  const { data: festivals = [], isLoading } = useQuery({
+    queryKey: ["festivals", "gigs-strip", today, horizon],
+    queryFn: () => fetchFestivals({ startDate: today, endDate: horizon }),
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
+  const { data: venues = [] } = useVenues();
+  const { location, located } = useGeolocation();
 
   const venueById = useMemo(() => new Map<string, Venue>(venues.map((v) => [v.id, v])), [venues]);
 
@@ -48,7 +56,14 @@ export function GigsFestivalStrip() {
       .slice(0, STRIP_MAX);
   }, [festivals, today, horizon, venueById, located, location]);
 
-  if (isLoading || relevant.length === 0) return null;
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-content px-4 pt-[calc(env(safe-area-inset-top,0px)+34px)] lg:px-8 lg:pt-3" aria-hidden>
+        <div className="h-[41px] animate-pulse rounded-xl border border-line bg-card/50 lg:h-[158px]" />
+      </section>
+    );
+  }
+  if (relevant.length === 0) return null;
 
   const first = relevant[0];
   const bannerWhen = festivalStatus(first.festival, today);
