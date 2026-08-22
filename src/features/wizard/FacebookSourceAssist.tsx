@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, ExternalLink, Link2, Loader2, Search } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, Link2, Loader2, MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { inspectFacebookSource, type FacebookSourceInspection } from "./wizardApi";
+
+function websiteLabel(url?: string | null): string | null {
+  if (!url) return null;
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return null; }
+}
 
 export function FacebookSourceAssist({
   expectedType,
@@ -78,12 +83,16 @@ export function FacebookSourceAssist({
   }, [expectedType, inputValue, onChange, onInspection]);
 
   const hasResolvedIdentity = !!(result?.ok && result.facebookUrl && result.identityResolved !== false);
-  const foundSomething = !!(hasResolvedIdentity && (result?.observed?.name || result?.observed?.imageUrl || result?.existing));
+  const observed = result?.observed;
+  const foundSomething = !!(hasResolvedIdentity && (
+    observed?.name || observed?.imageUrl || observed?.description || observed?.location || observed?.websiteUrl || result?.existing
+  ));
   const unresolvedIdentity = !!(result?.ok && !hasResolvedIdentity);
   const warningOnly = !!(result?.ok && hasResolvedIdentity && !foundSomething);
   const nameIsHandleHint = result?.evidence?.name === "facebook_handle_hint";
-  const description = result?.observed?.description?.trim();
+  const description = observed?.description?.trim();
   const descriptionPreview = description && description.length > 180 ? `${description.slice(0, 177).trimEnd()}…` : description;
+  const siteLabel = websiteLabel(observed?.websiteUrl);
 
   return (
     <section
@@ -161,9 +170,9 @@ export function FacebookSourceAssist({
         {result?.ok && result.existing && hasResolvedIdentity && (
           <div className={cn("mt-3", flat ? "border-t border-line pt-3" : "rounded-xl border border-[color-mix(in_srgb,var(--acc)_45%,var(--line))] bg-card p-3")}>
             <div className="flex items-center gap-3">
-              {result.observed?.imageUrl ? (
+              {observed?.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={result.observed.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
+                <img src={observed.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
               ) : (
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-acc text-sm font-black text-on-acc">
                   {result.existing.name.slice(0, 1).toUpperCase()}
@@ -174,7 +183,7 @@ export function FacebookSourceAssist({
                   <CheckCircle2 size={12} /> Already on bndy
                 </div>
                 <div className="mt-0.5 truncate text-[14px] font-black">{result.existing.name}</div>
-                {result.observed?.location && <div className="truncate text-[11.5px] font-semibold text-dim">{result.observed.location}</div>}
+                {observed?.location && <div className="truncate text-[11.5px] font-semibold text-dim">{observed.location}</div>}
               </div>
               {onUseExisting && (
                 <button type="button" onClick={() => onUseExisting(result.existing!)} className="bndy-btn flex min-h-11 shrink-0 items-center px-3 text-[11.5px]">
@@ -187,9 +196,9 @@ export function FacebookSourceAssist({
 
         {result?.ok && !result.existing && foundSomething && (
           <div className={cn("mt-3 flex items-start gap-3", flat ? "border-t border-line pt-3" : "rounded-xl border border-line bg-card p-3")}>
-            {result.observed?.imageUrl ? (
+            {observed?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={result.observed.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+              <img src={observed.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
             ) : (
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card2 text-[var(--acc)]"><CheckCircle2 size={18} /></span>
             )}
@@ -197,12 +206,22 @@ export function FacebookSourceAssist({
               <div className="text-[10px] font-black uppercase tracking-[.8px] text-[var(--acc-text)]">
                 {nameIsHandleHint ? "Facebook page recognised" : "Found on Facebook"}
               </div>
-              {result.observed?.name && <div className="mt-0.5 truncate text-[14px] font-black">{result.observed.name}</div>}
+              {observed?.name && <div className="mt-0.5 truncate text-[14px] font-black">{observed.name}</div>}
               <div className="mt-0.5 text-[11.5px] font-semibold text-dim">
                 {nameIsHandleHint ? "We used the page handle as a starting name. Check it below." : "Check what we found, then fill any gaps below."}
               </div>
-              {!nameIsHandleHint && descriptionPreview && (
+              {observed?.location && (
+                <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-txt">
+                  <MapPin size={11} className="shrink-0 text-[var(--acc)]" /> {observed.location}
+                </div>
+              )}
+              {descriptionPreview && (
                 <p className="mt-1.5 text-[11px] font-semibold leading-relaxed text-dim">{descriptionPreview}</p>
+              )}
+              {observed?.websiteUrl && siteLabel && (
+                <a href={observed.websiteUrl} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex min-h-8 items-center gap-1 text-[11px] font-bold text-[var(--acc-text)] hover:underline">
+                  {siteLabel} <ExternalLink size={10} />
+                </a>
               )}
             </div>
           </div>
