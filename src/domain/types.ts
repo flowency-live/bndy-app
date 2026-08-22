@@ -1,9 +1,16 @@
 // bndy domain model — pure types, ubiquitous language matching the backend.
 // No React, no fetch here.
 
+import type { EditionId } from '../editions/types';
+
 export interface LatLng {
   lat: number;
   lng: number;
+}
+
+export interface EditionScoped {
+  /** Omitted on legacy records; omission always means the existing live edition. */
+  publicationScopes?: EditionId[];
 }
 
 /** Resolved ticketing info from backend (server-side resolution). */
@@ -36,7 +43,7 @@ export interface FestivalLineupSlot {
 }
 
 /** Lightweight festival data used by discovery/list/calendar surfaces. */
-export interface FestivalSummary {
+export interface FestivalSummary extends EditionScoped {
   id: string;
   slug: string;
   name: string;
@@ -66,8 +73,8 @@ export interface Festival extends FestivalSummary {
   theme?: unknown;
 }
 
-/** A live music event at a venue. */
-export interface Gig {
+/** A live music event at a venue. Brass presents this same canonical object as a Concert. */
+export interface Gig extends EditionScoped {
   id: string;
   title: string;
   artistId?: string;
@@ -104,14 +111,61 @@ export interface Gig {
   /** Which acts are BILLED as headline. Every other act on the bill is support.
    *  Absent means [artistId] — so a legacy gig reads as one headline act. */
   headlineArtistIds?: string[];
+  /** Optional first-class branded production, e.g. a live-cinema or themed programme. */
+  productionId?: string;
+  productionName?: string;
+  /** Optional engagement-specific conductor; does not imply permanent band MD. */
+  conductorName?: string;
 }
 
-/** A performing act. An artist plays many gigs; act qualifiers live on the gig title. */
-export interface Artist {
+export type PerformerKind =
+  | 'band'
+  | 'brass_band'
+  | 'solo'
+  | 'duo'
+  | 'trio'
+  | 'group'
+  | 'dj'
+  | 'collective';
+
+export type PerformerNameType =
+  | 'current_official'
+  | 'former_official'
+  | 'common'
+  | 'sponsored'
+  | 'alternate';
+
+export interface PerformerName {
+  name: string;
+  nameType: PerformerNameType;
+  validFrom?: string;
+  validTo?: string;
+  sourceUrl?: string;
+  confidence?: number;
+}
+
+export interface BrassBandProfile {
+  organisationType: 'brass_band';
+  town?: string;
+  county?: string;
+  country?: string;
+  officialWebsiteUrl?: string;
+  sourceRefs?: string[];
+}
+
+/** A performing identity. Existing records may omit performerKind and edition fields. */
+export interface Artist extends EditionScoped {
   id: string;
   name: string;
   genres?: string[];
   artistType?: string;
+  /** Additive domain discriminator. Existing artists remain valid without it. */
+  performerKind?: PerformerKind;
+  /** Historical, sponsored and common names for canonical identity resolution. */
+  names?: PerformerName[];
+  domainProfiles?: {
+    brass?: BrassBandProfile;
+  };
   /** Originals / covers / tribute. Acoustic is deliberately NOT an act type. */
   actType?: string[];
   /** Performance capability: this artist can perform acoustically. */
@@ -127,6 +181,26 @@ export interface Artist {
   whatsappNumber?: string | null;
 }
 
+export type ProductionKind =
+  | 'standard_concert'
+  | 'themed_concert'
+  | 'live_cinema'
+  | 'collaboration'
+  | 'other';
+
+/** A separately branded performance proposition belonging to a performer. */
+export interface Production extends EditionScoped {
+  id: string;
+  performerId: string;
+  name: string;
+  slug: string;
+  productionKind?: ProductionKind;
+  description?: string;
+  imageUrl?: string | null;
+  websiteUrl?: string;
+  status?: 'active' | 'inactive';
+}
+
 /** An artist's available date for booking. */
 export interface AvailabilityDate {
   id: string;
@@ -136,8 +210,22 @@ export interface AvailabilityDate {
   notes?: string;
 }
 
+export type VenueKind =
+  | 'pub'
+  | 'club'
+  | 'music_venue'
+  | 'band_club'
+  | 'town_hall'
+  | 'concert_hall'
+  | 'theatre'
+  | 'arena'
+  | 'church'
+  | 'community_hall'
+  | 'outdoor'
+  | 'other';
+
 /** A place that hosts gigs. */
-export interface Venue {
+export interface Venue extends EditionScoped {
   id: string;
   name: string;
   address?: string;
@@ -147,6 +235,10 @@ export interface Venue {
   website?: string;
   profileImageUrl?: string | null;
   socials?: SocialLink[];
+  /** Optional; legacy venues retain their existing live behaviour when omitted. */
+  venueKind?: VenueKind;
+  /** Explicit graph-expansion permission. New brass venues default to []. */
+  discoveryScopes?: EditionId[];
   /** derived: has at least one upcoming gig */
   hasUpcoming?: boolean;
   /** venue-level ticketing: true if most gigs require tickets */
