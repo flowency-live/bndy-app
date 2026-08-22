@@ -131,14 +131,14 @@ export function AddVenuePageClient() {
 
   if (success) {
     return (
-      <main className="mx-auto max-w-xl px-4 pb-28 pt-6 lg:pt-10">
-        <div className="rounded-[var(--rad-lg)] border border-line bg-card p-6 text-center shadow-[var(--shadow)] sm:p-8">
+      <main className="mx-auto max-w-xl px-4 pb-36 pt-8 lg:pt-12">
+        <div className="py-8 text-center sm:py-12">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-acc text-on-acc"><CheckCircle2 size={26} /></span>
           <div className="mt-4 font-meta text-[9px] font-black uppercase tracking-[1.5px] text-[var(--acc-text)]">Venue ready</div>
-          <h1 className="mt-1 text-[26px] font-black tracking-tight">{success.name}</h1>
+          <h1 className="mt-1 text-[28px] font-black tracking-tight">{success.name}</h1>
           {success.city && <p className="mt-1 text-[13px] font-semibold text-dim">{success.city}</p>}
-          <p className="mt-2 text-[13px] font-semibold text-dim">The Facebook page helped us get there, but Google Places remains the physical venue identity in bndy.</p>
-          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <p className="mx-auto mt-2 max-w-md text-[13px] font-semibold text-dim">The Facebook page helped us get there, but Google Places remains the physical venue identity in bndy.</p>
+          <div className="mx-auto mt-6 grid max-w-md gap-2 sm:grid-cols-2">
             <Link href={`/venues/${success.id}`} className="bndy-btn2 flex min-h-11 items-center justify-center px-4 text-[13px]">View venue</Link>
             <button type="button" onClick={reset} className="bndy-btn flex min-h-11 items-center justify-center gap-2 px-4 text-[13px]"><RotateCcw size={14} /> Add another venue</button>
           </div>
@@ -149,40 +149,41 @@ export function AddVenuePageClient() {
 
   if (confirming) {
     return (
-      <main className="mx-auto max-w-xl px-4 pb-28 pt-5 lg:pt-9">
-        <header className="mb-5">
+      <main className="mx-auto max-w-xl px-4 pb-36 pt-5 lg:pt-9">
+        <header className="mb-7">
           <div className="font-meta text-[9px] font-black uppercase tracking-[1.8px] text-[var(--acc-text)]">Confirm the building</div>
           <h1 className="font-disp mt-1 text-[34px] font-black leading-none tracking-tight">Is this the venue?</h1>
         </header>
-        <div className="rounded-[var(--rad-lg)] border border-line bg-card p-4 shadow-[var(--shadow)] sm:p-5">
-          <div className="rounded-2xl border border-line bg-card2 p-4">
-            <div className="text-[17px] font-black">{confirming.name}</div>
-            <div className="mt-1 flex items-start gap-1.5 text-[13px] font-semibold text-dim"><MapPin size={14} className="mt-0.5 shrink-0" />{confirming.address}</div>
-          </div>
-          {confirming.typeWarning && <p className="mt-3 rounded-xl border border-line bg-card2 px-3.5 py-3 text-[12.5px] font-bold text-txt">Heads up: Google thinks this looks like {confirming.typeWarning}. Double-check it really hosts live music.</p>}
-          {facebookUrl && <p className="mt-3 text-[11.5px] font-semibold text-dim">We&apos;ll keep the Facebook page with the new venue if this is a new bndy record.</p>}
-          {error && <p role="alert" className="mt-3 rounded-xl border border-line bg-card2 px-3.5 py-3 text-[12.5px] font-bold text-txt">{error}</p>}
-          <div className="mt-4 flex gap-2.5">
-            <button type="button" onClick={() => void confirmPlace()} disabled={creating} className="bndy-btn flex min-h-12 flex-1 items-center justify-center gap-2 text-[13px]">
-              {creating ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Yes, that&apos;s it
-            </button>
-            <button type="button" onClick={() => setConfirming(null)} disabled={creating} className="bndy-btn2 min-h-12 flex-1 text-[13px]">Go back</button>
-          </div>
+
+        <section className="border-y border-line py-4" aria-label="Venue to confirm">
+          <div className="text-[18px] font-black">{confirming.name}</div>
+          <div className="mt-1 flex items-start gap-1.5 text-[13px] font-semibold text-dim"><MapPin size={14} className="mt-0.5 shrink-0" />{confirming.address}</div>
+        </section>
+
+        {confirming.typeWarning && <p className="mt-4 border-l-2 border-[var(--acc)] py-1 pl-3 text-[12.5px] font-bold text-txt">Heads up: Google thinks this looks like {confirming.typeWarning}. Double-check it really hosts live music.</p>}
+        {facebookUrl && <p className="mt-4 text-[11.5px] font-semibold text-dim">We&apos;ll keep the Facebook page with the new venue if this is a new bndy record.</p>}
+        {error && <p role="alert" className="mt-4 border-l-2 border-[var(--acc)] py-1 pl-3 text-[12.5px] font-bold text-txt">{error}</p>}
+
+        <div className="mt-6 flex gap-2.5">
+          <button type="button" onClick={() => void confirmPlace()} disabled={creating} className="bndy-btn flex min-h-12 flex-1 items-center justify-center gap-2 text-[13px]">
+            {creating ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Yes, that&apos;s it
+          </button>
+          <button type="button" onClick={() => setConfirming(null)} disabled={creating} className="bndy-btn2 min-h-12 flex-1 text-[13px]">Go back</button>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-28 pt-5 lg:pt-9">
-      <header className="mb-5">
+    <main className="mx-auto max-w-xl px-4 pb-36 pt-5 lg:pt-9">
+      <header className="mb-7">
         <div className="font-meta text-[9px] font-black uppercase tracking-[1.8px] text-[var(--acc-text)]">Help grow bndy</div>
         <h1 className="font-disp mt-1 text-[34px] font-black leading-none tracking-tight">Add a venue</h1>
-        <p className="mt-2 max-w-lg text-[13px] font-semibold leading-relaxed text-dim">Paste its Facebook page if you have it. We&apos;ll use the page as a clue, then you confirm the real place through Google.</p>
+        <p className="mt-3 max-w-lg text-[13px] font-semibold leading-relaxed text-dim">Paste its Facebook page if you have it. We&apos;ll use the page as a clue, then you confirm the real place through Google.</p>
       </header>
 
-      <div key={formKey} className="space-y-4 rounded-[var(--rad-lg)] border border-line bg-card p-4 shadow-[var(--shadow)] sm:p-5">
-        <FacebookSourceAssist expectedType="venue" value={facebookInput} onChange={(value) => { setFacebookInput(value); if (value !== facebookUrl) setFacebookUrl(""); }} onInspection={applyInspection} />
+      <div key={formKey} className="space-y-5">
+        <FacebookSourceAssist expectedType="venue" value={facebookInput} onChange={(value) => { setFacebookInput(value); if (value !== facebookUrl) setFacebookUrl(""); }} onInspection={applyInspection} flat />
 
         <div>
           <label htmlFor="venue-search" className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">Venue name or town</label>
@@ -193,16 +194,18 @@ export function AddVenuePageClient() {
         </div>
 
         {local.length > 0 && (
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-black uppercase tracking-[1px] text-dim">Already on bndy</div>
-            {local.map(({ venue, distance }) => (
-              <Link key={venue.id} href={`/venues/${venue.id}`} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-line bg-card2 px-3.5 py-3 text-left transition-colors hover:border-line-hi">
-                <MapPin size={15} className="shrink-0 text-[var(--acc2)]" />
-                <span className="min-w-0 flex-1"><span className="block truncate text-[14.5px] font-extrabold">{venue.name}</span>{(venue.city || isFinite(distance)) && <span className="block truncate text-[12px] font-semibold text-dim">{venue.city}{venue.city && isFinite(distance) ? " · " : ""}{isFinite(distance) ? formatDistance(distance) : ""}</span>}</span>
-                <span className="text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">View</span>
-              </Link>
-            ))}
-          </div>
+          <section>
+            <div className="mb-1.5 text-[10px] font-black uppercase tracking-[1px] text-dim">Already on bndy</div>
+            <div className="divide-y divide-line border-y border-line">
+              {local.map(({ venue, distance }) => (
+                <Link key={venue.id} href={`/venues/${venue.id}`} className="flex min-h-12 w-full items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-card2">
+                  <MapPin size={15} className="shrink-0 text-[var(--acc2)]" />
+                  <span className="min-w-0 flex-1"><span className="block truncate text-[14.5px] font-extrabold">{venue.name}</span>{(venue.city || isFinite(distance)) && <span className="block truncate text-[12px] font-semibold text-dim">{venue.city}{venue.city && isFinite(distance) ? " · " : ""}{isFinite(distance) ? formatDistance(distance) : ""}</span>}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">View</span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {q.trim().length >= 3 && (
@@ -212,20 +215,22 @@ export function AddVenuePageClient() {
                 {searchingPlaces ? <Loader2 size={15} className="animate-spin" /> : <Globe size={15} />}{local.length ? "Not there? Search Google Places" : "Search Google Places"}
               </button>
             ) : placesResults.length ? (
-              <div className="space-y-1.5">
-                <div className="text-[10px] font-black uppercase tracking-[1px] text-dim">Physical places</div>
-                {placesResults.map((place) => (
-                  <button key={place.placeId} type="button" onClick={() => void pickPlace(place)} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-line bg-card2 px-3.5 py-3 text-left transition-colors hover:border-line-hi">
-                    <Globe size={15} className="shrink-0 text-dim" />
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[14.5px] font-extrabold">{place.name}</span><span className="block truncate text-[12px] font-semibold text-dim">{place.address}</span></span>
-                  </button>
-                ))}
-              </div>
-            ) : <p className="rounded-xl border border-line bg-card2 px-3.5 py-3 text-[12.5px] font-semibold text-dim">Nothing found for “{q}”. Add the town or check the spelling.</p>}
+              <section>
+                <div className="mb-1.5 text-[10px] font-black uppercase tracking-[1px] text-dim">Physical places</div>
+                <div className="divide-y divide-line border-y border-line">
+                  {placesResults.map((place) => (
+                    <button key={place.placeId} type="button" onClick={() => void pickPlace(place)} className="flex min-h-12 w-full items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-card2">
+                      <Globe size={15} className="shrink-0 text-dim" />
+                      <span className="min-w-0 flex-1"><span className="block truncate text-[14.5px] font-extrabold">{place.name}</span><span className="block truncate text-[12px] font-semibold text-dim">{place.address}</span></span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : <p className="border-l-2 border-line-hi py-1 pl-3 text-[12.5px] font-semibold text-dim">Nothing found for “{q}”. Add the town or check the spelling.</p>}
           </div>
         )}
 
-        {error && <p role="alert" className="rounded-xl border border-line bg-card2 px-3.5 py-3 text-[12.5px] font-bold text-txt">{error}</p>}
+        {error && <p role="alert" className="border-l-2 border-[var(--acc)] py-1 pl-3 text-[12.5px] font-bold text-txt">{error}</p>}
       </div>
     </main>
   );
