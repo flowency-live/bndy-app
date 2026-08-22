@@ -15,16 +15,20 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { CalendarDays, MapPin } from "lucide-react";
-import { fetchFestivals } from "@/lib/api";
+import { fetchFestivalDiscoverySummaries } from "@/lib/festivalDiscovery";
 import { useVenues } from "@/lib/hooks";
 import { addDaysISO, todayISO } from "@/domain/dates";
 import { useGeolocation } from "@/lib/useGeolocation";
-import type { LatLng, Venue } from "@/domain/types";
+import type { LatLng } from "@/domain/types";
 import { cn } from "@/lib/cn";
 import { LocationField, type OriginChoice } from "@/features/gigs/LocationField";
 import { FestivalCard } from "./FestivalCard";
 import { CreateFestivalButton } from "./curate/CuratorFestivalLinks";
-import { festivalProximity } from "./festivalUtils";
+import {
+  festivalProximity,
+  festivalVenueFallbackRequired,
+  festivalVenueLocationMap,
+} from "./festivalUtils";
 
 const DEFAULT_MILES = 75;
 const MAX_MILES = 250;
@@ -33,7 +37,6 @@ const MAX_DISCOVERY_DAYS = 720;
 const MIN = 60 * 1000;
 
 export function FestivalIndex() {
-  const { data: venues = [] } = useVenues();
   const { location: geo, located } = useGeolocation();
   const today = todayISO();
   const [rangeEnd, setRangeEnd] = useState(() => addDaysISO(today, CHUNK_DAYS - 1));
@@ -47,13 +50,18 @@ export function FestivalIndex() {
   const fetchingRef = useRef(false);
 
   const { data: festivals = [], isLoading, isFetching, error } = useQuery({
-    queryKey: ["festivals", "index", today, rangeEnd],
-    queryFn: () => fetchFestivals({ startDate: today, endDate: rangeEnd }),
+    queryKey: ["festivals", "index", today, rangeEnd, "venue-points"],
+    queryFn: () => fetchFestivalDiscoverySummaries({ startDate: today, endDate: rangeEnd }),
     staleTime: 5 * MIN,
     gcTime: 30 * MIN,
     placeholderData: keepPreviousData,
   });
   fetchingRef.current = isFetching;
+
+  const needsVenueFallback = !isLoading && festivalVenueFallbackRequired(festivals);
+  const fallbackVenues = useVenues(needsVenueFallback);
+  const venues = fallbackVenues.data ?? [];
+  const proximityLoading = isLoading || (needsVenueFallback && fallbackVenues.isLoading);
 
   const appendNextRange = () => {
     if (isFetching || !canLoadMore) return;
@@ -85,7 +93,7 @@ export function FestivalIndex() {
   }, [canLoadMore, rangeEnd, maxRangeEnd]);
 
   const originLoc: LatLng | undefined = origin.loc ?? (located ? geo : undefined);
-  const venueById = useMemo(() => new Map<string, Venue>(venues.map((v) => [v.id, v])), [venues]);
+  const venueById = useMemo(() => festivalVenueLocationMap(festivals, venues), [festivals, venues]);
 
   const upcoming = useMemo(() => {
     const list = festivals
@@ -161,10 +169,10 @@ export function FestivalIndex() {
         <CreateFestivalButton />
       </header>
 
-      {isLoading && <div className="mt-6 grid gap-4 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-64 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" />)}</div>}
+      {proximityLoading && <div className="mt-6 grid gap-4 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-64 animate-pulse rounded-[var(--rad-lg)] border border-line bg-card" />)}</div>}
       {error && <div className="mt-6 rounded-[var(--rad-lg)] border border-line bg-card p-6 text-center font-bold text-dim">Couldn&apos;t load festivals right now.</div>}
 
-      {!isLoading && !error && upcoming.length === 0 && (
+      {!proximityLoading && !error && upcoming.length === 0 && (
         <div className="mt-6 rounded-[var(--rad-lg)] border border-line bg-card p-8 text-center">
           <CalendarDays size={28} className="mx-auto text-[var(--acc)]" />
           <h2 className="mt-3 text-xl font-black">No festivals in the loaded period.</h2>
@@ -180,7 +188,7 @@ export function FestivalIndex() {
         </div>
       )}
 
-      {!isLoading && !error && upcoming.length > 0 && shown.length === 0 && (
+      {!proximityLoading && !error && upcoming.length > 0 && shown.length === 0 && (
         <div className="mt-6 rounded-[var(--rad-lg)] border border-line bg-card p-8 text-center">
           <CalendarDays size={28} className="mx-auto text-[var(--acc)]" />
           <h2 className="mt-3 text-xl font-black">Nothing within {radius} mi of {origin.label}.</h2>
@@ -190,7 +198,7 @@ export function FestivalIndex() {
         </div>
       )}
 
-      {!isLoading && !error && shown.length > 0 && (
+      {!proximityLoading && !error && shown.length > 0 && (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map(({ festival, prox }, index) => (
             <FestivalCard key={festival.id} festival={festival} proximity={prox} eagerImage={index === 0} />
@@ -198,7 +206,7 @@ export function FestivalIndex() {
         </div>
       )}
 
-      {!isLoading && !error && canLoadMore && (
+      {!proximityLoading && !error && canLoadMore && (
         <div ref={loadMoreRef} className="mt-8 flex flex-col items-center gap-2 py-3">
           <button
             type="button"
@@ -212,7 +220,7 @@ export function FestivalIndex() {
         </div>
       )}
 
-      {!isLoading && upcoming.length > 0 && (
+      {!proximityLoading && upcoming.length > 0 && (
         <footer className="mt-8 flex items-start gap-2 rounded-xl border border-line bg-card2 px-4 py-3 text-[11px] font-semibold text-dim">
           <MapPin size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" />
           Festivals are deliberately broader than your normal gig radius. This page is for finding programmes you might travel to.
