@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { ArtistProfile } from "@/features/artists/ArtistProfile";
 import { fetchArtist, fetchArtistGigs, fetchArtistAvailability } from "@/lib/api";
 import { todayISO, addDaysISO } from "@/domain/dates";
 
 export const revalidate = 300;
+const IS_BRASS = process.env.NEXT_PUBLIC_BNDY_EDITION === "brass";
 
 export async function generateMetadata({ params }: { params: Promise<{ artistId: string }> }): Promise<Metadata> {
+  if (IS_BRASS) return { title: "Band · bndy Brass", description: "Brass Band profile on bndy Brass." };
   const { artistId } = await params;
   try {
     const a = await fetchArtist(artistId);
     const title = `${a.name} · bndy`;
     const description = a.bio || `See ${a.name}'s upcoming gigs on bndy.`;
     const image = a.profileImageUrl || "/og-card.png";
-    // 3b: rich preview card for chat and social shares
     return {
       title,
       description,
@@ -26,8 +28,9 @@ export async function generateMetadata({ params }: { params: Promise<{ artistId:
 
 export default async function ArtistPage({ params }: { params: Promise<{ artistId: string }> }) {
   const { artistId } = await params;
+  if (IS_BRASS) redirect(`/bands/${encodeURIComponent(artistId)}`);
   const today = todayISO();
-  const end = addDaysISO(today, 90); // A9 fix: use helper to avoid UTC/local mixing
+  const end = addDaysISO(today, 90);
 
   const [artist, gigs, availability] = await Promise.all([
     fetchArtist(artistId).catch(() => null),
