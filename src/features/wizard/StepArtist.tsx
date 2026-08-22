@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { MAX_ACTS, NEW_ACT_ID, REGIONS, rankArtists, type NewArtistDraft } from "./lib";
 import { FacebookSourceAssist } from "./FacebookSourceAssist";
+import { artistFacebookPrefill } from "./facebookArtistPrefill";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type FacebookSourceInspection, type PlaceSuggestion } from "./wizardApi";
 
 /** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
@@ -238,7 +239,7 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, bill, headlineI
 
 /** Strip Google's ", UK" suffix for storage: bndy locations are "Stoke-on-Trent", not "Stoke-on-Trent, UK". */
 function cleanTown(label: string): string {
-  return label.replace(/,\s*UK$/i, "").trim();
+  return label.replace(/,\s*UK$/i, "").replace(/,\s*United Kingdom$/i, "").trim();
 }
 
 /** Shared field shell: label + control, one visual rhythm for the whole form. */
@@ -274,6 +275,8 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   const [facebookUrl, setFacebookUrl] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
   const [verifiedSourceName, setVerifiedSourceName] = useState(false);
+  const [bio, setBio] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [actType, setActType] = useState<string[]>([]);
@@ -313,17 +316,22 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
 
   const applyFacebook = (result: FacebookSourceInspection) => {
     setError(null);
-    if (result.facebookUrl) setFacebookUrl(result.facebookUrl);
-    if (result.observed?.imageUrl) setProfileImageUrl(result.observed.imageUrl);
-
-    const sourceName = result.observed?.name?.trim();
-    const sourceNameEvidence = result.evidence?.name;
-    if (sourceName && ["facebook_html_meta", "facebook_basic_html", "facebook_handle_hint"].includes(sourceNameEvidence ?? "")) {
-      setName(sourceName);
-      // Handle-derived names are only convenience hints; real Facebook titles
-      // can be treated as observed source data.
-      setVerifiedSourceName(sourceNameEvidence !== "facebook_handle_hint");
+    const prefill = artistFacebookPrefill(result);
+    if (prefill.facebookUrl) setFacebookUrl(prefill.facebookUrl);
+    if (prefill.profileImageUrl) setProfileImageUrl(prefill.profileImageUrl);
+    if (prefill.name) {
+      setName(prefill.name);
+      setVerifiedSourceName(prefill.verifiedSourceName);
     }
+    if (prefill.location) {
+      const town = cleanTown(prefill.location);
+      setLocMode("town");
+      setTownQ(town);
+      setTownPicked(town);
+      setRegion("");
+    }
+    if (prefill.bio) setBio(prefill.bio);
+    if (prefill.websiteUrl) setWebsiteUrl(prefill.websiteUrl);
   };
 
   const draft = (confirmNew: boolean): NewArtistDraft => ({
@@ -332,6 +340,8 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     facebookUrl: facebookUrl.trim() || undefined,
     profileImageUrl,
     verifiedSourceName: verifiedSourceName || undefined,
+    bio: bio.trim() || undefined,
+    websiteUrl: websiteUrl.trim() || undefined,
     genres,
     actType: actType.length ? actType : undefined,
     acoustic: acoustic || undefined,
@@ -352,6 +362,8 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
       facebookUrl: facebookUrl.trim() || undefined,
       profileImageUrl,
       verifiedSourceName: verifiedSourceName || undefined,
+      bio: bio.trim() || undefined,
+      websiteUrl: websiteUrl.trim() || undefined,
     }, { dryRun: true });
     setChecking(false);
     if (r.action === "matched" && r.artistId) {
@@ -469,6 +481,21 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
             <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
           </div>
         </Field>
+
+        {(bio || websiteUrl) && (
+          <div className="space-y-4 border-t border-line pt-4">
+            {bio && (
+              <Field label="Bio" optional hint="Found on Facebook — edit it if needed.">
+                <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className={cn(inputCls, "resize-y leading-relaxed")} />
+              </Field>
+            )}
+            {websiteUrl && (
+              <Field label="Website" optional hint="Found on Facebook — check it if needed.">
+                <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} inputMode="url" autoCapitalize="none" className={inputCls} />
+              </Field>
+            )}
+          </div>
+        )}
 
         {profileImageUrl && (
           <div className="flex items-center gap-3 rounded-xl border border-line bg-card2 p-3">
