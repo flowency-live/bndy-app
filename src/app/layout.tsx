@@ -10,6 +10,7 @@ import "./polish.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/app-shell";
+import { BrassAppShell } from "@/components/brass-app-shell";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -21,12 +22,20 @@ const chakra = Chakra_Petch({ weight: ["600", "700"], subsets: ["latin"], variab
 const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk", display: "swap" });
 
 const FONT_VARS = `${inter.variable} ${archivoBlack.variable} ${archivo.variable} ${instrument.variable} ${spaceMono.variable} ${chakra.variable} ${grotesk.variable}`;
+const IS_BRASS = process.env.NEXT_PUBLIC_BNDY_EDITION === "brass";
 
 // Cloudflare Web Analytics beacon identifiers are public by design and are
 // included in the page source for every visitor.
 const CLOUDFLARE_WEB_ANALYTICS_TOKEN = "d10ac97e9abc49b793d53253aa13f245";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = IS_BRASS ? {
+  title: "bndy Brass · brass bands and concerts near you",
+  description: "Discover brass bands, concerts and festivals on the bndy Brass map.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://brass.bndy.live"),
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg", apple: [{ url: "/pwa-icon-192", sizes: "192x192", type: "image/png" }] },
+  appleWebApp: { capable: true, title: "bndy Brass", statusBarStyle: "black-translucent" },
+} : {
   title: "bndy · live music near you",
   description: "Find live music: gigs, artists and venues near you.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gigmap.bndy.co.uk"),
@@ -49,30 +58,20 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-/** Sets skin attributes before first paint — no flash of wrong theme.
- *  Family/mode map must stay in sync with src/lib/appSkins.ts. */
+/** Sets skin attributes before first paint. Family/mode map must stay in sync with src/lib/appSkins.ts. */
 const NO_FLASH = `(function(){try{var M={"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],openair:["soft","dark"],roadcase:["roadcase","dark"],flyer:["flyer","light"],goldenhour:["soft","light"],underground:["mono","light"],synthwave:["soft","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(!M[s])s="bndy-dark";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const Shell = IS_BRASS ? BrassAppShell : AppShell;
   return (
     <html lang="en" data-theme="bndy-dark" data-family="soft" className={`dark ${FONT_VARS}`} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
-      </head>
+      <head><script dangerouslySetInnerHTML={{ __html: NO_FLASH }} /></head>
       <body className="font-sans antialiased">
         <Providers>
-          <Suspense>
-            <AppShell>{children}</AppShell>
-          </Suspense>
+          <Suspense><Shell>{children}</Shell></Suspense>
           <InstallPrompt />
         </Providers>
-        <Script
-          id="cloudflare-web-analytics"
-          type="module"
-          src="https://static.cloudflareinsights.com/beacon.min.js"
-          data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })}
-          strategy="afterInteractive"
-        />
+        <Script id="cloudflare-web-analytics" type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })} strategy="afterInteractive" />
       </body>
     </html>
   );
