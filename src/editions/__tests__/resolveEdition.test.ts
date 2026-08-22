@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { resolveEdition } from '../resolveEdition';
 
 describe('resolveEdition', () => {
