@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { FestivalPageClient } from "@/features/festivals/FestivalPageClient";
+import { BrassFestivalDetail } from "@/features/brass-festivals/BrassFestivalDetail";
+import { currentEditionId } from "@/editions";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+const IS_BRASS = currentEditionId() === "brass";
 
 interface FestivalMetaDTO {
   name?: string;
@@ -17,6 +20,7 @@ interface FestivalMetaDTO {
 }
 
 async function metaFestival(slug: string): Promise<FestivalMetaDTO | null> {
+  if (IS_BRASS) return null;
   try {
     const res = await fetch(`${API}/api/festivals/slug/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } });
     if (!res.ok) return null;
@@ -29,6 +33,7 @@ async function metaFestival(slug: string): Promise<FestivalMetaDTO | null> {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  if (IS_BRASS) return { title: "Brass Festival | bndy", alternates: { canonical: `/festivals/${slug}` } };
   const festival = await metaFestival(slug);
   if (!festival?.name) return { title: "Festival | bndy" };
   const location = festival.location || festival.town;
@@ -52,5 +57,5 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function FestivalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return <FestivalPageClient slug={slug} />;
+  return IS_BRASS ? <BrassFestivalDetail slug={slug} /> : <FestivalPageClient slug={slug} />;
 }
