@@ -112,6 +112,8 @@ export function WizardShell() {
             facebookUrl: draft.newArtist.facebookUrl,
             profileImageUrl: draft.newArtist.profileImageUrl,
             verifiedSourceName: draft.newArtist.verifiedSourceName,
+            bio: draft.newArtist.bio,
+            websiteUrl: draft.newArtist.websiteUrl,
             genres: draft.newArtist.genres,
             artistType: draft.newArtist.artistType,
             actType: draft.newArtist.actType,
@@ -126,6 +128,8 @@ export function WizardShell() {
               location: draft.newArtist.location,
               facebookUrl: draft.newArtist.facebookUrl,
               verifiedSourceName: draft.newArtist.verifiedSourceName,
+              bio: draft.newArtist.bio,
+              websiteUrl: draft.newArtist.websiteUrl,
             },
             { dryRun: true },
           );
