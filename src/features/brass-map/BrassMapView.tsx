@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import maplibregl from "maplibre-gl";
 import { Heart, MapPin, Music, Search } from "lucide-react";
 import { useBrassBands, useBrassConcerts } from "@/editions/hooks";
@@ -46,7 +47,7 @@ export function BrassMapView() {
       style: basemapFor(appSkin),
       center: [location.lng, location.lat],
       zoom: 8,
-      attributionControl: true,
+      attributionControl: {},
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
     map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false }), "bottom-right");
@@ -179,7 +180,7 @@ export function BrassMapView() {
   );
 }
 
-function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
   return (
     <button type="button" onClick={onClick} className={cn("flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-extrabold transition-colors", active ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
       {icon}{label}
