@@ -82,6 +82,8 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
 
       {/* ---- body ---- */}
       <div className="mx-auto max-w-content px-4 lg:px-8">
+        <VenueTicketingBanner venue={venue} />
+
         {venue && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <CuratorBar target={{ kind: "venue", venue }} />
@@ -111,7 +113,6 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
             <MapPin size={15} className="shrink-0 opacity-60" /> {venue.address}
           </div>
         )}
-        <VenueTicketingBanner venue={venue} />
         <VenueEvents venueId={id} />
       </div>
     </div>
