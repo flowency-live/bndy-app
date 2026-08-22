@@ -6,6 +6,7 @@ import { Search, ChevronDown, Heart, Mic, Ticket } from "lucide-react";
 import { useArtists } from "@/lib/hooks";
 import { fetchFestivals } from "@/lib/api";
 import { fetchNearbyGigs, type NearbyGig } from "@/lib/nearbyGigs";
+import { needsDirectDateRangeFetch } from "@/lib/gigDiscoveryWindow";
 import { artistMap, matchesMyGigFilter, useMyGigFilter } from "@/lib/myGigFilter";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
@@ -38,6 +39,7 @@ const FACET_COLOURS = {
 
 const CHUNK_DAYS = 90;
 const MAX_CHUNKS = 8;
+const RADIUS_DEBOUNCE_MS = 180;
 const MIN = 60 * 1000;
 
 export function GigsHome() {
@@ -46,6 +48,7 @@ export function GigsHome() {
 
   const [origin, setOrigin] = useState<OriginChoice>({ loc: null, label: "Current location" });
   const [radius, setRadius] = useState(5);
+  const [queryRadius, setQueryRadius] = useState(5);
   const [when, setWhen] = useState<WhenRange>("all");
   const [dateSel, setDateSel] = useState<DateSel | null>(null);
   const [whenMenuOpen, setWhenMenuOpen] = useState(false);
@@ -69,9 +72,27 @@ export function GigsHome() {
   const originLoc: LatLng = useMemo(() => origin.loc ?? geo, [origin.loc, geo]);
   const usingCurrent = origin.loc === null;
   const dq = useDeferredValue(q);
-  const dRadius = useDeferredValue(radius);
   const loadedEnd = addDaysISO(chunkStarts[chunkStarts.length - 1], CHUNK_DAYS - 1);
   const canLoadMore = chunkStarts.length < MAX_CHUNKS;
+  const selectedRangeNeeded = needsDirectDateRangeFetch(dateSel, loadedEnd);
+
+  // A slider can emit dozens of values in one drag. Keep the number responsive,
+  // but wait briefly before changing the network scope. Reset sequential coverage
+  // at the same time so a previously deep-scrolled feed does not refetch every
+  // historical chunk at the new radius.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (queryRadius === radius) return;
+      setChunkStarts([today]);
+      setQueryRadius(radius);
+    }, RADIUS_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [radius, queryRadius, today]);
+
+  const changeOrigin = (next: OriginChoice) => {
+    setChunkStarts([today]);
+    setOrigin(next);
+  };
 
   const gigQueries = useQueries({
     queries: chunkStarts.map((startDate) => {
@@ -82,15 +103,36 @@ export function GigsHome() {
           "nearby",
           Number(originLoc.lat.toFixed(4)),
           Number(originLoc.lng.toFixed(4)),
-          dRadius,
+          queryRadius,
           startDate,
           endDate,
         ],
-        queryFn: () => fetchNearbyGigs({ center: originLoc, radiusMiles: dRadius, startDate, endDate }),
+        queryFn: () => fetchNearbyGigs({ center: originLoc, radiusMiles: queryRadius, startDate, endDate }),
         staleTime: 5 * MIN,
         gcTime: 30 * MIN,
       };
     }),
+  });
+
+  const selectedGigQuery = useQuery({
+    queryKey: [
+      "gigs",
+      "nearby-selected",
+      Number(originLoc.lat.toFixed(4)),
+      Number(originLoc.lng.toFixed(4)),
+      queryRadius,
+      dateSel?.start ?? null,
+      dateSel?.end ?? null,
+    ],
+    queryFn: () => fetchNearbyGigs({
+      center: originLoc,
+      radiusMiles: queryRadius,
+      startDate: dateSel!.start,
+      endDate: dateSel!.end,
+    }),
+    enabled: selectedRangeNeeded,
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
   });
 
   const festivalQuery = useQuery({
@@ -100,21 +142,31 @@ export function GigsHome() {
     gcTime: 30 * MIN,
   });
 
+  const selectedFestivalQuery = useQuery({
+    queryKey: ["festivals", "gigs-selected", dateSel?.start ?? null, dateSel?.end ?? null],
+    queryFn: () => fetchFestivals({ startDate: dateSel!.start, endDate: dateSel!.end }),
+    enabled: selectedRangeNeeded,
+    staleTime: 5 * MIN,
+    gcTime: 30 * MIN,
+  });
+
   const { filter: myGigFilter, isActive: myGigFilterActive } = useMyGigFilter();
   const { data: filterArtists = [] } = useArtists(myGigFilterActive);
   const filterArtistsById = useMemo(() => artistMap(filterArtists), [filterArtists]);
-  const festivalById = useMemo(
-    () => new Map((festivalQuery.data ?? []).map((festival) => [festival.id, festival])),
-    [festivalQuery.data],
-  );
+  const festivalById = useMemo(() => {
+    const map = new Map((festivalQuery.data ?? []).map((festival) => [festival.id, festival]));
+    for (const festival of selectedFestivalQuery.data ?? []) map.set(festival.id, festival);
+    return map;
+  }, [festivalQuery.data, selectedFestivalQuery.data]);
 
   const rawGigs = useMemo(() => {
     const byId = new Map<string, NearbyGig>();
     for (const query of gigQueries) {
       for (const gig of query.data ?? []) byId.set(gig.id, gig);
     }
+    for (const gig of selectedGigQuery.data ?? []) byId.set(gig.id, gig);
     return [...byId.values()];
-  }, [gigQueries]);
+  }, [gigQueries, selectedGigQuery.data]);
 
   const gigs = useMemo(() => {
     const enriched = rawGigs.map((gig) => {
@@ -140,21 +192,12 @@ export function GigsHome() {
     return images;
   }, [gigs]);
 
-  const isLoading = gigQueries[0]?.isLoading ?? true;
-  const initialError = gigQueries[0]?.isError ?? false;
+  const baseLoading = gigQueries[0]?.isLoading ?? true;
+  const baseError = gigQueries[0]?.isError ?? false;
+  const isLoading = selectedRangeNeeded ? selectedGigQuery.isLoading : baseLoading;
+  const initialError = selectedRangeNeeded ? selectedGigQuery.isError : baseError;
   const tailLoading = gigQueries[gigQueries.length - 1]?.isFetching ?? false;
   tailLoadingRef.current = tailLoading;
-
-  useEffect(() => {
-    if (!dateSel) return;
-    setChunkStarts((prev) => {
-      const next = [...prev];
-      while (next.length < MAX_CHUNKS && addDaysISO(next[next.length - 1], CHUNK_DAYS - 1) < dateSel.end) {
-        next.push(addDaysISO(next[next.length - 1], CHUNK_DAYS));
-      }
-      return next.length === prev.length ? prev : next;
-    });
-  }, [dateSel]);
 
   useEffect(() => {
     if (dateSel || !canLoadMore) return;
@@ -192,8 +235,8 @@ export function GigsHome() {
     if (openMicOnly) out = out.filter((g) => g.isOpenMic);
     if (favActive) out = out.filter((g) => (g.artistId && favArtists.has(g.artistId)) || favVenues.has(g.venueId));
     if (query) out = out.filter((g) => `${g.artistName ?? ""} ${g.venueName} ${g.title} ${g.festivalName ?? ""}`.toLowerCase().includes(query));
-    return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= dRadius);
-  }, [gigs, ticketOnly, openMicOnly, favActive, favArtists, favVenues, dq, originLoc, dRadius, today]);
+    return out.map((g) => ({ gig: g, dist: distanceMiles(originLoc, g.location) })).filter((x) => x.dist <= radius);
+  }, [gigs, ticketOnly, openMicOnly, favActive, favArtists, favVenues, dq, originLoc, radius, today]);
 
   const dayCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -214,6 +257,7 @@ export function GigsHome() {
   const buckets = useMemo(() => bucketGigs(filtered.map((x) => x.gig), today), [filtered, today]);
   const total = filtered.length;
   const mobileWhenLabel = dateSel ? gigDateLabel(dateSel, today) : (WHENS.find((w) => w.k === when)?.l ?? "Anytime");
+  const coverageLabel = dateSel ? gigDateLabel(dateSel, today) : `next ${chunkStarts.length * 3} months`;
   const toggle = (k: string) => setCollapsed((prev) => {
     const n = new Set(prev);
     if (n.has(k)) n.delete(k); else n.add(k);
@@ -232,7 +276,7 @@ export function GigsHome() {
         <header className="mb-5 hidden lg:block lg:mb-0">
           <h1 className="font-disp text-[38px] font-black leading-none tracking-tight">Gigs near you</h1>
           <p className="mt-1.5 text-[13px] font-semibold text-dim">
-            {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label} · next ${chunkStarts.length * 3} months`}
+            {isLoading ? "Finding gigs…" : `${total} gig${total === 1 ? "" : "s"} within ${radius} mi of ${origin.label} · ${coverageLabel}`}
             {usingCurrent && !located ? " · allow location for near-you results" : ""}
           </p>
         </header>
@@ -266,7 +310,7 @@ export function GigsHome() {
             />
           </div>
 
-          <LocationField value={origin} onChange={setOrigin} />
+          <LocationField value={origin} onChange={changeOrigin} />
 
           <div className="flex min-w-[180px] items-center gap-2.5 sm:col-span-2 lg:col-span-1 lg:px-1">
             <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[1.3px] text-dim2">within</span>
@@ -472,8 +516,16 @@ export function GigsHome() {
         })
       ) : (
         <div className="py-16 text-center">
-          <p className="font-semibold text-dim">No gigs within {radius} mi of {origin.label} in the loaded period.</p>
-          <p className="mt-1 text-[13px] text-dim2">Drag the radius wider, pick another location, change the dates, or load the next three months.</p>
+          <p className="font-semibold text-dim">
+            {dateSel
+              ? `No gigs within ${radius} mi of ${origin.label} for ${gigDateLabel(dateSel, today)}.`
+              : `No gigs within ${radius} mi of ${origin.label} in the loaded period.`}
+          </p>
+          <p className="mt-1 text-[13px] text-dim2">
+            {dateSel
+              ? "Try a wider radius, another location, or different dates."
+              : "Drag the radius wider, pick another location, change the dates, or load the next three months."}
+          </p>
         </div>
       )}
 
