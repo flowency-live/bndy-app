@@ -12,6 +12,7 @@ export function FacebookSourceAssist({
   onInspection,
   onUseExisting,
   compact = false,
+  flat = false,
 }: {
   expectedType: "artist" | "venue";
   value: string;
@@ -19,6 +20,8 @@ export function FacebookSourceAssist({
   onInspection?: (result: FacebookSourceInspection) => void;
   onUseExisting?: (entity: { entityType: "artist" | "venue"; id: string; name: string }) => void;
   compact?: boolean;
+  /** Use section/divider treatment instead of another card when the parent page is already a form surface. */
+  flat?: boolean;
 }) {
   // Keep pasted/share text local until the backend has resolved a stable page
   // identity. Parent state is the persistable Facebook identity, not a scratch
@@ -80,9 +83,15 @@ export function FacebookSourceAssist({
   const warningOnly = !!(result?.ok && hasResolvedIdentity && !foundSomething);
 
   return (
-    <div className={cn("rounded-2xl border border-line bg-card2", compact ? "p-3" : "p-3.5 sm:p-4")}>
+    <section
+      className={cn(
+        flat ? "border-b border-line pb-5" : "rounded-2xl border border-line bg-card2",
+        !flat && (compact ? "p-3" : "p-3.5 sm:p-4"),
+      )}
+      aria-label="Facebook page lookup"
+    >
       <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-card text-[var(--acc)]">
+        <span className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--acc)]", flat ? "bg-card2" : "bg-card")}>
           <Link2 size={16} />
         </span>
         <div className="min-w-0 flex-1">
@@ -141,13 +150,13 @@ export function FacebookSourceAssist({
         )}
 
         {phase === "error" && message && (
-          <p className="mt-2.5 flex items-start gap-2 rounded-xl border border-line bg-card px-3 py-2.5 text-[11.5px] font-bold text-txt">
+          <p className={cn("mt-2.5 flex items-start gap-2 text-[11.5px] font-bold text-txt", flat ? "border-l-2 border-[var(--acc)] py-1 pl-3" : "rounded-xl border border-line bg-card px-3 py-2.5")}>
             <AlertCircle size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" /> {message}
           </p>
         )}
 
         {result?.ok && result.existing && hasResolvedIdentity && (
-          <div className="mt-3 rounded-xl border border-[color-mix(in_srgb,var(--acc)_45%,var(--line))] bg-card p-3">
+          <div className={cn("mt-3", flat ? "border-t border-line pt-3" : "rounded-xl border border-[color-mix(in_srgb,var(--acc)_45%,var(--line))] bg-card p-3")}>
             <div className="flex items-center gap-3">
               {result.observed?.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -174,7 +183,7 @@ export function FacebookSourceAssist({
         )}
 
         {result?.ok && !result.existing && foundSomething && (
-          <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-card p-3">
+          <div className={cn("mt-3 flex items-center gap-3", flat ? "border-t border-line pt-3" : "rounded-xl border border-line bg-card p-3")}>
             {result.observed?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={result.observed.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
@@ -190,14 +199,14 @@ export function FacebookSourceAssist({
         )}
 
         {unresolvedIdentity && (
-          <p className="mt-2.5 flex items-start gap-2 rounded-xl border border-line bg-card px-3 py-2.5 text-[11.5px] font-semibold text-dim">
+          <p className={cn("mt-2.5 flex items-start gap-2 text-[11.5px] font-semibold text-dim", flat ? "border-l-2 border-[var(--acc)] py-1 pl-3" : "rounded-xl border border-line bg-card px-3 py-2.5")}>
             <AlertCircle size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" />
             That Facebook share link didn&apos;t resolve to a stable page. Paste the artist or venue&apos;s actual Facebook page, or continue without Facebook.
           </p>
         )}
 
         {warningOnly && (
-          <p className="mt-2.5 flex items-start gap-2 rounded-xl border border-line bg-card px-3 py-2.5 text-[11.5px] font-semibold text-dim">
+          <p className={cn("mt-2.5 flex items-start gap-2 text-[11.5px] font-semibold text-dim", flat ? "border-l-2 border-[var(--acc)] py-1 pl-3" : "rounded-xl border border-line bg-card px-3 py-2.5")}>
             <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" />
             We found the Facebook page, but Facebook didn&apos;t expose useful details. No problem — keep going below.
           </p>
@@ -209,6 +218,6 @@ export function FacebookSourceAssist({
           View Facebook page <ExternalLink size={11} />
         </a>
       )}
-    </div>
+    </section>
   );
 }

@@ -150,15 +150,15 @@ export function AddArtistPageClient() {
 
   if (success) {
     return (
-      <main className="mx-auto max-w-xl px-4 pb-28 pt-6 lg:pt-10">
-        <div className="rounded-[var(--rad-lg)] border border-line bg-card p-6 text-center shadow-[var(--shadow)] sm:p-8">
+      <main className="mx-auto max-w-xl px-4 pb-36 pt-8 lg:pt-12">
+        <div className="py-8 text-center sm:py-12">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-acc text-on-acc"><CheckCircle2 size={26} /></span>
           <div className="mt-4 font-meta text-[9px] font-black uppercase tracking-[1.5px] text-[var(--acc-text)]">{success.existing ? "Already on bndy" : "Artist added"}</div>
-          <h1 className="mt-1 text-[26px] font-black tracking-tight">{success.name}</h1>
-          <p className="mt-2 text-[13px] font-semibold text-dim">
+          <h1 className="mt-1 text-[28px] font-black tracking-tight">{success.name}</h1>
+          <p className="mx-auto mt-2 max-w-md text-[13px] font-semibold text-dim">
             {success.existing ? "That Facebook page already belongs to an artist in bndy." : "They're in bndy and available for gigs. New public records still go through normal review."}
           </p>
-          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <div className="mx-auto mt-6 grid max-w-md gap-2 sm:grid-cols-2">
             <Link href={`/artists/${success.id}`} className="bndy-btn2 flex min-h-11 items-center justify-center px-4 text-[13px]">View artist</Link>
             <button type="button" onClick={reset} className="bndy-btn flex min-h-11 items-center justify-center gap-2 px-4 text-[13px]"><RotateCcw size={14} /> Add another artist</button>
           </div>
@@ -168,20 +168,21 @@ export function AddArtistPageClient() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-28 pt-5 lg:pt-9">
-      <header className="mb-5">
+    <main className="mx-auto max-w-xl px-4 pb-36 pt-5 lg:pt-9">
+      <header className="mb-7">
         <div className="font-meta text-[9px] font-black uppercase tracking-[1.8px] text-[var(--acc-text)]">Help grow bndy</div>
         <h1 className="font-disp mt-1 text-[34px] font-black leading-none tracking-tight">Add an artist</h1>
-        <p className="mt-2 max-w-lg text-[13px] font-semibold leading-relaxed text-dim">Got their Facebook page? Paste it first and we&apos;ll fill what we can. If Facebook gives us nothing useful, the normal form still works.</p>
+        <p className="mt-3 max-w-lg text-[13px] font-semibold leading-relaxed text-dim">Got their Facebook page? Paste it first and we&apos;ll fill what we can. If Facebook gives us nothing useful, the normal form still works.</p>
       </header>
 
-      <div key={formKey} className="space-y-4 rounded-[var(--rad-lg)] border border-line bg-card p-4 shadow-[var(--shadow)] sm:p-5">
+      <div key={formKey} className="space-y-5">
         <FacebookSourceAssist
           expectedType="artist"
           value={facebookInput}
           onChange={(value) => { setFacebookInput(value); if (value !== facebookUrl) setFacebookUrl(""); }}
           onInspection={applyInspection}
           onUseExisting={(entity) => setSuccess({ id: entity.id, name: entity.name, existing: true })}
+          flat
         />
 
         <Field label="Artist or band name">
@@ -249,7 +250,7 @@ export function AddArtistPageClient() {
         </Field>
 
         {profileImageUrl && (
-          <div className="flex items-center gap-3 rounded-xl border border-line bg-card2 p-3">
+          <div className="flex items-center gap-3 border-l-2 border-[var(--acc)] py-1 pl-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={profileImageUrl} alt="" className="h-12 w-12 rounded-xl object-cover" />
             <div className="min-w-0 flex-1"><div className="text-[12px] font-black">Facebook photo found</div><div className="text-[11px] font-semibold text-dim">We&apos;ll use it if the artist is created.</div></div>
@@ -257,23 +258,23 @@ export function AddArtistPageClient() {
         )}
 
         {candidates.length > 0 && (
-          <div className="rounded-2xl border border-line bg-card2 p-3.5" aria-live="polite">
+          <section className="border-t border-line pt-4" aria-live="polite">
             <div className="text-[13px] font-black">Is it one of these?</div>
             <p className="mt-0.5 text-[11.5px] font-semibold text-dim">Same or similar artists already exist. Check the location before creating another.</p>
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-3 divide-y divide-line border-y border-line">
               {candidates.map((candidate) => (
-                <button key={candidate.id} type="button" onClick={() => void save({ resolveTo: candidate.id })} className="flex min-h-11 w-full items-center gap-2.5 rounded-xl border border-line bg-card px-3 py-2.5 text-left hover:border-line-hi">
+                <button key={candidate.id} type="button" onClick={() => void save({ resolveTo: candidate.id })} className="flex min-h-12 w-full items-center gap-2.5 px-1 py-3 text-left transition-colors hover:bg-card2">
                   <Music2 size={14} className="shrink-0 text-[var(--acc)]" />
                   <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-extrabold">{candidate.name}</span><span className="block truncate text-[11px] font-semibold text-dim">{candidate.location || "Location unknown"}</span></span>
                   <span className="text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">Use</span>
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => void save({ confirmNew: true })} className="mt-2.5 min-h-11 w-full rounded-xl border border-line-hi px-3 py-2.5 text-[12px] font-black text-txt hover:bg-card">No — this is a different artist</button>
-          </div>
+            <button type="button" onClick={() => void save({ confirmNew: true })} className="mt-3 min-h-11 w-full rounded-xl border border-line-hi px-3 py-2.5 text-[12px] font-black text-txt hover:bg-card2">No — this is a different artist</button>
+          </section>
         )}
 
-        {error && <p role="alert" className="rounded-xl border border-line bg-card2 px-3.5 py-3 text-[12.5px] font-bold text-txt">{error}</p>}
+        {error && <p role="alert" className="border-l-2 border-[var(--acc)] py-1 pl-3 text-[12.5px] font-bold text-txt">{error}</p>}
 
         <button type="button" onClick={() => void save()} disabled={!canSave || candidates.length > 0} className="bndy-btn flex min-h-12 w-full items-center justify-center gap-2 px-4 text-[14px] disabled:opacity-45">
           {phase === "saving" ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Add artist
