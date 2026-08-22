@@ -20,13 +20,18 @@ export function FacebookSourceAssist({
   onUseExisting?: (entity: { entityType: "artist" | "venue"; id: string; name: string }) => void;
   compact?: boolean;
 }) {
+  // Keep pasted/share text local until the backend has resolved a stable page
+  // identity. Parent state is the persistable Facebook identity, not a scratch
+  // field: this prevents a transient /share token leaking into artist/venue data
+  // if inspection fails or the user continues manually.
+  const [inputValue, setInputValue] = useState(value);
   const [phase, setPhase] = useState<"idle" | "checking" | "done" | "error">("idle");
   const [result, setResult] = useState<FacebookSourceInspection | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const requestRef = useRef(0);
 
   const inspect = useCallback(async (raw?: string) => {
-    const input = (raw ?? value).trim();
+    const input = (raw ?? inputValue).trim();
     if (!input) {
       setPhase("error");
       setMessage("Paste a Facebook page first.");
@@ -50,13 +55,14 @@ export function FacebookSourceAssist({
     // transient /share token is useful for inspection, but must never become the
     // artist's strong Facebook uniqueness key if Facebook does not resolve it.
     if (next.facebookUrl && next.identityResolved !== false) {
+      setInputValue(next.facebookUrl);
       onChange(next.facebookUrl);
       onInspection?.(next);
     } else {
       onChange("");
     }
     setPhase("done");
-  }, [expectedType, onChange, onInspection, value]);
+  }, [expectedType, inputValue, onChange, onInspection]);
 
   const hasResolvedIdentity = !!(result?.ok && result.facebookUrl && result.identityResolved !== false);
   const foundSomething = !!(hasResolvedIdentity && (result?.observed?.name || result?.observed?.imageUrl || result?.existing));
@@ -79,9 +85,12 @@ export function FacebookSourceAssist({
 
       <div className="mt-3 flex gap-2">
         <input
-          value={value}
+          value={inputValue}
           onChange={(event) => {
-            onChange(event.target.value);
+            setInputValue(event.target.value);
+            // Editing a previously resolved page invalidates that identity until
+            // the new input is checked. Never hand raw input to the parent.
+            if (value) onChange("");
             if (phase !== "idle") {
               setPhase("idle");
               setResult(null);
@@ -106,7 +115,7 @@ export function FacebookSourceAssist({
         <button
           type="button"
           onClick={() => void inspect()}
-          disabled={phase === "checking" || !value.trim()}
+          disabled={phase === "checking" || !inputValue.trim()}
           className="bndy-btn flex min-h-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[12px] disabled:opacity-45"
         >
           {phase === "checking" ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
