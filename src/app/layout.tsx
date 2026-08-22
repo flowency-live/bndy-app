@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Suspense } from "react";
 import { Archivo, Archivo_Black, Chakra_Petch, Instrument_Serif, Inter, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
@@ -57,11 +58,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="bndy-dark" data-family="soft" className={`dark ${FONT_VARS}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
-        <script
-          type="module"
-          src="https://static.cloudflareinsights.com/beacon.min.js"
-          data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })}
-        />
       </head>
       <body className="font-sans antialiased">
         <Providers>
@@ -70,6 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           <InstallPrompt />
         </Providers>
+        <Script
+          id="cloudflare-web-analytics"
+          type="module"
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
