@@ -8,7 +8,7 @@ import { useFavourites } from "@/lib/favourites";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { distanceMiles } from "@/domain/geo";
 import { inWhenRange, todayISO, type WhenRange } from "@/domain/dates";
-import { bucketGigs } from "@/domain/gigGrouping";
+import { bucketGigs, dayHeading } from "@/domain/gigGrouping";
 import { GigCard } from "@/features/gigs/GigCard";
 import { GigDatePicker, gigDateLabel, type DateSel } from "@/features/gigs/GigDatePicker";
 import { LocationField, type OriginChoice } from "@/features/gigs/LocationField";
@@ -145,15 +145,20 @@ export function ConcertsHome() {
         buckets.map((bucket) => (
           <section key={bucket.key} className="mt-7 first:mt-0">
             <h2 className="mb-2 text-[13px] font-black uppercase tracking-[1.2px] text-dim">{bucket.label}</h2>
-            <div>
-              {bucket.gigs.map((concert) => (
-                <GigCard
-                  key={concert.id}
-                  gig={concert}
-                  distance={distanceById.get(concert.id)}
-                  tonight={concert.date === today}
-                  onClick={() => setSelected(concert)}
-                />
+            <div className="space-y-5">
+              {bucket.days.map((day) => (
+                <div key={day.date}>
+                  <h3 className="mb-1 px-2 text-[11px] font-extrabold text-dim2">{dayHeading(day.date, today)}</h3>
+                  {day.gigs.map((concert) => (
+                    <GigCard
+                      key={concert.id}
+                      gig={concert}
+                      distance={distanceById.get(concert.id)}
+                      tonight={concert.date === today}
+                      onClick={() => setSelected(concert)}
+                    />
+                  ))}
+                </div>
               ))}
             </div>
           </section>
