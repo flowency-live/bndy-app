@@ -6,14 +6,24 @@ import { avatarGradient, initials } from "@/domain/avatar";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Artist } from "@/domain/types";
 
-export const ArtistTile = memo(function ArtistTile({ artist, gigging }: { artist: Artist; gigging?: boolean }) {
+export const ArtistTile = memo(function ArtistTile({
+  artist,
+  gigging,
+  hrefBase = "/artists",
+  activeLabel = "Gigging soon",
+}: {
+  artist: Artist;
+  gigging?: boolean;
+  hrefBase?: string;
+  activeLabel?: string;
+}) {
   const [failed, setFailed] = useState(false);
   const showImg = !!artist.profileImageUrl && !failed;
   const act = artist.actType?.[0];
 
   return (
     <div className="bndy-card group relative aspect-square overflow-hidden rounded-xl border border-line bg-card">
-      <Link href={`/artists/${artist.id}`} aria-label={`View ${artist.name}`} className="absolute inset-0 z-0 block">
+      <Link href={`${hrefBase}/${artist.id}`} aria-label={`View ${artist.name}`} className="absolute inset-0 z-0 block">
         {showImg ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -36,7 +46,7 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging }: { artist
         {gigging && (
           <>
             <span aria-hidden="true" className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border border-black/40 bg-[var(--acc2)] shadow-[0_0_8px_var(--acc2)]" />
-            <span className="sr-only">Gigging soon</span>
+            <span className="sr-only">{activeLabel}</span>
           </>
         )}
 
