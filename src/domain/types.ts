@@ -35,6 +35,13 @@ export interface FestivalLineupSlot {
   resolved?: boolean;
 }
 
+/** Minimal venue geometry embedded in festival discovery summaries. */
+export interface FestivalVenuePoint {
+  id: string;
+  city?: string;
+  location: LatLng;
+}
+
 /** Lightweight festival data used by discovery/list/calendar surfaces. */
 export interface FestivalSummary {
   id: string;
@@ -44,6 +51,9 @@ export interface FestivalSummary {
   endDate: string;
   location?: string;
   venueIds: string[];
+  /** Present on the newer public summary contract. Undefined means an older
+   * cached/API response and callers may fall back to the venue catalogue. */
+  venuePoints?: FestivalVenuePoint[];
   posterImageUrl?: string;
   heroImageUrl?: string;
   actCount?: number;
