@@ -2,6 +2,11 @@ import type { Artist, FestivalSummary, Gig, PerformerName, Production, ResolvedT
 
 const BASE = (process.env.NEXT_PUBLIC_BRASS_API_URL || "").replace(/\/$/, "");
 
+export type BrassBand = Artist & {
+  locationLat?: number | null;
+  locationLng?: number | null;
+};
+
 async function get<T>(path: string): Promise<T> {
   if (!BASE) throw new Error("NEXT_PUBLIC_BRASS_API_URL is required for the brass edition");
   const response = await fetch(`${BASE}${path}`, { next: { revalidate: 60 } });
@@ -24,7 +29,7 @@ function publicationScopes(raw: Raw): Array<"live" | "brass"> | undefined {
   return scopes.length ? scopes : undefined;
 }
 
-function toBrassBand(raw: Raw): Artist | null {
+function toBrassBand(raw: Raw): BrassBand | null {
   if (typeof raw.id !== "string" || typeof raw.name !== "string") return null;
   const kind = raw.performerKind === "brass_band" ? "brass_band" : undefined;
   if (kind !== "brass_band") return null;
@@ -41,6 +46,8 @@ function toBrassBand(raw: Raw): Artist | null {
     names,
     artistType: typeof raw.artistType === "string" ? raw.artistType : typeof raw.artist_type === "string" ? raw.artist_type : "band",
     location: typeof raw.location === "string" ? raw.location : undefined,
+    locationLat: typeof raw.locationLat === "number" ? raw.locationLat : null,
+    locationLng: typeof raw.locationLng === "number" ? raw.locationLng : null,
     profileImageUrl: typeof raw.profileImageUrl === "string" ? raw.profileImageUrl : null,
     bio: typeof raw.bio === "string" ? raw.bio : undefined,
     domainProfiles: raw.domainProfiles && typeof raw.domainProfiles === "object" ? raw.domainProfiles as Artist["domainProfiles"] : undefined,
@@ -86,9 +93,9 @@ function toBrassConcert(raw: Raw): Gig | null {
   };
 }
 
-export async function fetchBrassBands(): Promise<Artist[]> {
+export async function fetchBrassBands(): Promise<BrassBand[]> {
   const rows = await get<Raw[]>("/bands");
-  return rows.map(toBrassBand).filter((band): band is Artist => !!band);
+  return rows.map(toBrassBand).filter((band): band is BrassBand => !!band);
 }
 
 export async function fetchBrassConcerts(): Promise<Gig[]> {
