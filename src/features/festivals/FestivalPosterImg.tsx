@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
+import { canUseNextImage } from "@/lib/nextImage";
 import { FestivalPosterFallback } from "./FestivalPosterFallback";
 
 /**
@@ -9,6 +11,11 @@ import { FestivalPosterFallback } from "./FestivalPosterFallback";
  * leaves alt text over an empty card (Lichfield, 2026-08-20). On error this
  * swaps to the generated fallback instead, so a dead link can never make a
  * card look broken.
+ *
+ * Images on our trusted host families go through Next's optimiser so small
+ * discovery cards do not download the original full-size poster. Arbitrary
+ * organiser URLs deliberately stay as plain images rather than opening the
+ * bndy image optimiser to every host on the internet.
  */
 export function FestivalPosterImg({
   src,
@@ -16,6 +23,7 @@ export function FestivalPosterImg({
   slug,
   startDate,
   eager = false,
+  sizes = "100vw",
   imgClassName,
 }: {
   src: string;
@@ -23,10 +31,26 @@ export function FestivalPosterImg({
   slug?: string;
   startDate?: string;
   eager?: boolean;
+  sizes?: string;
   imgClassName: string;
 }) {
   const [broken, setBroken] = useState(false);
   if (broken) return <FestivalPosterFallback name={name} slug={slug} startDate={startDate} />;
+
+  if (canUseNextImage(src)) {
+    return (
+      <Image
+        src={src}
+        alt={`${name} poster`}
+        fill
+        sizes={sizes}
+        priority={eager}
+        onError={() => setBroken(true)}
+        className={imgClassName}
+      />
+    );
+  }
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
