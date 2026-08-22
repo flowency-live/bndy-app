@@ -88,10 +88,17 @@ export function AddArtistPageClient() {
       setFacebookInput(result.facebookUrl);
     }
     if (result.observed?.imageUrl) setProfileImageUrl(result.observed.imageUrl);
-    if (result.observed?.name && result.evidence?.name === "facebook_html_meta") {
-      setName(result.observed.name);
-      setVerifiedSourceName(true);
+
+    const sourceName = result.observed?.name?.trim();
+    const sourceNameEvidence = result.evidence?.name;
+    if (sourceName && ["facebook_html_meta", "facebook_basic_html", "facebook_handle_hint"].includes(sourceNameEvidence ?? "")) {
+      setName(sourceName);
+      // A real Facebook title is observed source data. A name reconstructed from
+      // the handle is only a convenience hint and must still pass normal name
+      // quality checks if the user leaves it unchanged.
+      setVerifiedSourceName(sourceNameEvidence !== "facebook_handle_hint");
     }
+
     if (result.observed?.location && result.evidence?.location === "bndy_existing_artist") {
       setLocMode("town");
       setTownQ(result.observed.location);
@@ -107,7 +114,9 @@ export function AddArtistPageClient() {
       const result = await resolveArtist({
         name: name.trim(),
         location,
-        facebookUrl: facebookUrl || facebookInput.trim() || undefined,
+        // FacebookSourceAssist only writes a resolved canonical identity into
+        // parent state. Never fall back to unverified scratch/paste text here.
+        facebookUrl: facebookUrl || undefined,
         profileImageUrl,
         verifiedSourceName: verifiedSourceName || undefined,
         artistType,
