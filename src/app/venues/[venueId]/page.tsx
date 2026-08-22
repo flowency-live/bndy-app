@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { VenueProfile } from "@/features/venues/VenueProfile";
 import { fetchVenue, fetchVenueGigs } from "@/lib/api";
 import { todayISO } from "@/domain/dates";
@@ -6,13 +7,13 @@ import { todayISO } from "@/domain/dates";
 export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ venueId: string }> }): Promise<Metadata> {
+  if (process.env.NEXT_PUBLIC_BNDY_EDITION === "brass") return { title: "Venue · bndy Brass" };
   const { venueId } = await params;
   try {
     const v = await fetchVenue(venueId);
     const title = `${v?.name ?? "Venue"} · bndy`;
     const description = v ? `What's on at ${v.name}: upcoming gigs on bndy.` : undefined;
     const image = v?.profileImageUrl || "/og-card.png";
-    // 3b: rich preview card for chat and social shares
     return {
       title,
       description,
@@ -26,6 +27,8 @@ export async function generateMetadata({ params }: { params: Promise<{ venueId: 
 
 export default async function VenuePage({ params }: { params: Promise<{ venueId: string }> }) {
   const { venueId } = await params;
+  if (process.env.NEXT_PUBLIC_BNDY_EDITION === "brass") redirect("/map");
+
   const [venue, gigs] = await Promise.all([
     fetchVenue(venueId).catch(() => null),
     fetchVenueGigs(venueId, todayISO()).catch(() => [] as Awaited<ReturnType<typeof fetchVenueGigs>>),
