@@ -120,7 +120,7 @@ export function FacebookSourceAssist({
           autoCorrect="off"
           spellCheck={false}
           placeholder="facebook.com/…"
-          className="min-w-0 flex-1 rounded-xl border border-line bg-card px-3.5 py-2.5 text-[14px] font-semibold outline-none placeholder:text-dim focus:border-[var(--acc)]"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-card px-3.5 py-2.5 text-[14px] font-semibold outline-none placeholder:text-dim focus:border-[var(--acc)]"
         />
         <button
           type="button"
@@ -165,7 +165,7 @@ export function FacebookSourceAssist({
                 {result.observed?.location && <div className="truncate text-[11.5px] font-semibold text-dim">{result.observed.location}</div>}
               </div>
               {onUseExisting && (
-                <button type="button" onClick={() => onUseExisting(result.existing!)} className="bndy-btn shrink-0 px-3 py-2 text-[11.5px]">
+                <button type="button" onClick={() => onUseExisting(result.existing!)} className="bndy-btn flex min-h-11 shrink-0 items-center px-3 text-[11.5px]">
                   Use this
                 </button>
               )}
@@ -205,7 +205,7 @@ export function FacebookSourceAssist({
       </div>
 
       {hasResolvedIdentity && result?.facebookUrl && (
-        <a href={result.facebookUrl} target="_blank" rel="noopener noreferrer" className="mt-2.5 inline-flex min-h-8 items-center gap-1.5 text-[11px] font-bold text-dim hover:text-txt">
+        <a href={result.facebookUrl} target="_blank" rel="noopener noreferrer" className="mt-2.5 inline-flex min-h-11 items-center gap-1.5 text-[11px] font-bold text-dim hover:text-txt">
           View Facebook page <ExternalLink size={11} />
         </a>
       )}
