@@ -95,7 +95,7 @@ describe("FacebookSourceAssist identity safety", () => {
     expect(screen.queryByRole("link", { name: /view facebook page/i })).toBeNull();
   });
 
-  it("keeps the manual flow intact when inspection fails", async () => {
+  it("keeps the manual flow intact when the inspector returns an error", async () => {
     inspectMock.mockResolvedValue({
       ok: false,
       error: "Facebook could not be reached right now.",
@@ -105,6 +105,21 @@ describe("FacebookSourceAssist identity safety", () => {
     await clickCheck();
 
     expect(await screen.findByText("Facebook could not be reached right now.")).toBeDefined();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onInspection).not.toHaveBeenCalled();
+  });
+
+  it("recovers from a rejected network request instead of getting stuck checking", async () => {
+    inspectMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    const { onChange, onInspection } = renderAssist({ value: "" });
+    const input = screen.getByLabelText("Facebook page for this artist") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "https://facebook.com/share/RawToken123" } });
+    await clickCheck();
+
+    expect(await screen.findByText("We couldn't check Facebook right now. You can keep going without it.")).toBeDefined();
+    expect(input.value).toBe("https://facebook.com/share/RawToken123");
+    expect(screen.queryByText("Checking the page…")).toBeNull();
     expect(onChange).not.toHaveBeenCalled();
     expect(onInspection).not.toHaveBeenCalled();
   });
