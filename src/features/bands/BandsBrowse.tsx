@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import { Heart, Search } from "lucide-react";
-import { useArtists, useUpcomingGigsBasic } from "@/lib/hooks";
+import { useBrassBands, useBrassConcerts } from "@/editions/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
 import { ArtistTile } from "@/features/artists/ArtistTile";
@@ -11,10 +11,9 @@ import { cn } from "@/lib/cn";
 import { Deferred } from "@/components/DeferredSection";
 
 export function BandsBrowse() {
-  const { data: allArtists = [], isLoading } = useArtists();
-  const bands = useMemo(() => allArtists.filter((artist) => artist.performerKind === "brass_band"), [allArtists]);
-  const { data: gigs = [] } = useUpcomingGigsBasic();
-  const performing = useMemo(() => new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)), [gigs]);
+  const { data: bands = [], isLoading } = useBrassBands();
+  const { data: concerts = [] } = useBrassConcerts();
+  const performing = useMemo(() => new Set(concerts.map((g) => g.artistId).filter((x): x is string => !!x)), [concerts]);
   const [q, setQ] = useState("");
   const { isAuthenticated } = useAuth();
   const { artistSet: favArtists } = useFavourites();
