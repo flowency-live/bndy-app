@@ -315,9 +315,14 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     setError(null);
     if (result.facebookUrl) setFacebookUrl(result.facebookUrl);
     if (result.observed?.imageUrl) setProfileImageUrl(result.observed.imageUrl);
-    if (result.observed?.name && result.evidence?.name === "facebook_html_meta") {
-      setName(result.observed.name);
-      setVerifiedSourceName(true);
+
+    const sourceName = result.observed?.name?.trim();
+    const sourceNameEvidence = result.evidence?.name;
+    if (sourceName && ["facebook_html_meta", "facebook_basic_html", "facebook_handle_hint"].includes(sourceNameEvidence ?? "")) {
+      setName(sourceName);
+      // Handle-derived names are only convenience hints; real Facebook titles
+      // can be treated as observed source data.
+      setVerifiedSourceName(sourceNameEvidence !== "facebook_handle_hint");
     }
   };
 
