@@ -41,7 +41,17 @@ export function FacebookSourceAssist({
     const requestId = ++requestRef.current;
     setPhase("checking");
     setMessage(null);
-    const next = await inspectFacebookSource(input, expectedType);
+
+    let next: FacebookSourceInspection;
+    try {
+      next = await inspectFacebookSource(input, expectedType);
+    } catch {
+      if (requestRef.current !== requestId) return;
+      setResult(null);
+      setPhase("error");
+      setMessage("We couldn't check Facebook right now. You can keep going without it.");
+      return;
+    }
     if (requestRef.current !== requestId) return;
 
     setResult(next);
