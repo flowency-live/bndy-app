@@ -14,14 +14,18 @@ import Link from "next/link";
 import { ArrowRight, CalendarRange } from "lucide-react";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchFestivals } from "@/lib/api";
+import { fetchFestivalDiscoverySummaries } from "@/lib/festivalDiscovery";
 import { useVenues } from "@/lib/hooks";
 import { addDaysISO, todayISO } from "@/domain/dates";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { formatDistance } from "@/domain/geo";
-import type { Venue } from "@/domain/types";
 import { FestivalCard } from "./FestivalCard";
-import { festivalProximity, festivalStatus } from "./festivalUtils";
+import {
+  festivalProximity,
+  festivalStatus,
+  festivalVenueFallbackRequired,
+  festivalVenueLocationMap,
+} from "./festivalUtils";
 
 const STRIP_MILES = 50;
 const STRIP_WEEKS = 8;
@@ -32,15 +36,17 @@ export function GigsFestivalStrip() {
   const today = todayISO();
   const horizon = addDaysISO(today, STRIP_WEEKS * 7);
   const { data: festivals = [], isLoading } = useQuery({
-    queryKey: ["festivals", "gigs-strip", today, horizon],
-    queryFn: () => fetchFestivals({ startDate: today, endDate: horizon }),
+    queryKey: ["festivals", "gigs-strip", today, horizon, "venue-points"],
+    queryFn: () => fetchFestivalDiscoverySummaries({ startDate: today, endDate: horizon }),
     staleTime: 5 * MIN,
     gcTime: 30 * MIN,
   });
-  const { data: venues = [] } = useVenues();
+  const needsVenueFallback = !isLoading && festivalVenueFallbackRequired(festivals);
+  const fallbackVenues = useVenues(needsVenueFallback);
+  const venues = fallbackVenues.data ?? [];
   const { location, located } = useGeolocation();
 
-  const venueById = useMemo(() => new Map<string, Venue>(venues.map((v) => [v.id, v])), [venues]);
+  const venueById = useMemo(() => festivalVenueLocationMap(festivals, venues), [festivals, venues]);
 
   const relevant = useMemo(() => {
     return festivals
@@ -56,7 +62,8 @@ export function GigsFestivalStrip() {
       .slice(0, STRIP_MAX);
   }, [festivals, today, horizon, venueById, located, location]);
 
-  if (isLoading) {
+  const proximityLoading = isLoading || (needsVenueFallback && fallbackVenues.isLoading);
+  if (proximityLoading) {
     return (
       <section className="mx-auto max-w-content px-4 pt-[calc(env(safe-area-inset-top,0px)+34px)] lg:px-8 lg:pt-3" aria-hidden>
         <div className="h-[41px] animate-pulse rounded-xl border border-line bg-card/50 lg:h-[158px]" />
