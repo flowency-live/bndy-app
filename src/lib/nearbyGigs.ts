@@ -4,7 +4,7 @@ import { fetchGigsInView, toGig, type BBox } from "./api";
 
 /** A gig hydrated through the batch endpoint, including the primary artist image
  * when one exists. Kept local to discovery so the core Gig contract stays lean. */
-export type NearbyGig = Gig & { artistImageUrl?: string };
+export type NearbyGig = Gig & { artistImageUrl: string | undefined };
 
 const BASE = typeof window !== "undefined" && window.location.hostname.endsWith("bndy.live")
   ? ""
@@ -39,19 +39,19 @@ async function fetchEventsBatchWithImages(ids: string[]): Promise<NearbyGig[]> {
     });
     if (!res.ok) throw new Error(`POST /api/events/batch → ${res.status}`);
     const data = await res.json() as { events?: Array<Record<string, unknown>> };
-    return (data.events || []).map((raw) => {
+    return (data.events || []).map((raw): NearbyGig | null => {
       const gig = toGig(raw as never);
       if (!gig) return null;
       const artist = raw.artist as { profileImageUrl?: string | null } | null | undefined;
       return {
         ...gig,
         artistImageUrl: artist?.profileImageUrl || undefined,
-      } satisfies NearbyGig;
+      };
     }).filter((gig): gig is NearbyGig => gig !== null);
   }));
 
-  const byId = new Map(results.flat().map((gig) => [gig.id, gig]));
-  return unique.map((id) => byId.get(id)).filter((gig): gig is NearbyGig => !!gig);
+  const byId = new Map<string, NearbyGig>(results.flat().map((gig) => [gig.id, gig]));
+  return unique.map((id) => byId.get(id)).filter((gig): gig is NearbyGig => gig !== undefined);
 }
 
 /** Fetch one bounded discovery window. The geo endpoint keeps the cold path on
