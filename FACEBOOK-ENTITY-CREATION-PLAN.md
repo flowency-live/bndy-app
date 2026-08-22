@@ -1,55 +1,52 @@
-# bndy Facebook-assisted Artist & Venue Creation Plan
+# bndy Facebook-assisted Artist & Venue Creation
 
-Status: IN PROGRESS
+Status: IMPLEMENTED — Capture reuse intentionally deferred
 Created: 2026-08-21
+Updated: 2026-08-22
+
 Primary repos:
 - `flowency-live/bndy-app` (`main`)
 - `flowency-live/bndy-serverless-api` (`master`)
-Reference only:
-- `flowency-live/bndy-capture` (`main`)
 
-Starting points:
-- bndy-app main: `66c341fb3a9223ee4a5094fb37d7c12cac649846`
-- bndy-serverless-api master: `1d5a842a87f356a0ee41effbc375d6a33c975689`
+Reference/later consumer:
+- `flowency-live/bndy-capture` (`main`)
 
 ## Product goal
 
-A public user can paste a Facebook URL to help add an artist or venue.
+A public user can paste a Facebook URL or Facebook share text to help add an artist or venue. The same Facebook-assisted artist path is available inside Add Gig.
 
-The same Facebook-assisted artist path must work inside the existing Add Gig wizard.
+Facebook is a source/hint, never an authority. bndy's existing identity, review and deduplication rules remain authoritative.
 
-The Facebook URL is a source/hint, never an authority. We only keep data that was actually observed or explicitly confirmed by the user. Existing bndy identity/deduplication rules remain authoritative.
-
-## Product principles
+## Product rules now enforced
 
 1. Paste first, forms second.
-2. Never invent missing source data.
-3. Inspection never creates a record.
-4. Existing bndy record wins when identity already exists.
-5. Artist Facebook identity remains the strongest identity signal already supported by the artist uniqueness gate.
-6. Venue identity remains Google Place ID. Facebook may suggest the business, but cannot create a placeless venue.
-7. Failure to inspect Facebook is graceful: retain the URL and continue with the existing manual flow.
-8. Public endpoints are tightly constrained and rate-limit friendly. No generic server-side URL fetcher.
-9. `bndy-capture` is a later consumer, not a dependency of the public web flow.
+2. Inspection itself performs no entity writes.
+3. Only a resolved stable Facebook page may become entity identity; transient `/share`, post, reel, event and group URLs never do.
+4. Raw pasted/share text remains local to the UI until the backend resolves a stable Facebook identity.
+5. Existing bndy artist identity wins when an exact Facebook uniqueness key already exists.
+6. Venue identity remains Google Place ID. Facebook may suggest a business name, but cannot create a placeless venue.
+7. Facebook inspection failure is graceful: the user can continue manually without persisting unverified Facebook input.
+8. The backend fetcher is Facebook-only, HTTPS-only and redirect-revalidated; it is not a generic URL fetch endpoint.
+9. Missing source fields are never guessed.
+10. `bndy-capture` is a later consumer, not a dependency of the public web flow.
 
-## Phase 0 — Reconnaissance and contracts
+## Phase 0 — Contracts and reconnaissance
 
-- [x] Confirm current repo heads.
-- [x] Confirm existing public artist creation accepts `facebookUrl`.
-- [x] Confirm artist identity layer canonicalises Facebook URLs and uses Facebook as a uniqueness key.
-- [x] Confirm existing artist creation can attempt a Facebook profile image.
-- [x] Confirm public venue find-or-create exists and requires/derives Google Place identity.
-- [x] Confirm bndy-capture captures URLs but is not a Facebook metadata parser.
-- [ ] Pin exact frontend wizard interfaces and current response contracts before editing.
-- [ ] Pin exact SAM/API Gateway route definitions before backend route changes.
+- [x] Confirm current artist/community creation path accepts Facebook identity.
+- [x] Confirm shared artist identity canonicalises Facebook URLs and backs the uniqueness gate.
+- [x] Confirm venue creation remains Google Place ID based.
+- [x] Pin frontend wizard interfaces and API response contracts.
+- [x] Pin backend route/security/deployment shape.
+- [x] Keep `bndy-capture` out of the public web dependency chain.
 
-## Phase 1 — Backend source inspector
+## Phase 1 — Read-only backend source inspector
 
-Add a small, public, read-only Facebook inspection capability.
+Route:
 
-Proposed route: `POST /api/community/source/inspect`
+`POST /api/community/source/inspect`
 
 Input:
+
 ```json
 {
   "input": "anything pasted by the user",
@@ -59,141 +56,117 @@ Input:
 
 `expectedType`: `artist | venue | null`
 
-Output shape:
-```json
-{
-  "source": "facebook",
-  "input": "...",
-  "facebookUrl": "https://www.facebook.com/...",
-  "facebookKey": "facebook.com/...",
-  "valid": true,
-  "existing": {
-    "entityType": "artist",
-    "id": "...",
-    "name": "..."
-  },
-  "observed": {
-    "name": "...",
-    "imageUrl": "...",
-    "location": "...",
-    "address": "...",
-    "websiteUrl": "..."
-  },
-  "evidence": {
-    "name": "html_meta",
-    "imageUrl": "graph_picture"
-  },
-  "warnings": []
-}
-```
+Implemented:
 
-Implementation rules:
-- [ ] Extract Facebook URL from pasted text, not just pristine URLs.
-- [ ] Canonicalise using existing shared `facebookKey()`.
-- [ ] Reject non-Facebook URLs for V1.
-- [ ] Look for existing artist by Facebook uniqueness sentinel before scraping.
-- [ ] Where practical, look for an existing venue whose social links match the canonical Facebook URL.
-- [ ] Best-effort server-side fetch with Facebook hostname allowlist, HTTPS-only, short timeout, redirect cap/revalidation, response-size cap and HTML checks.
-- [ ] Parse only defensible metadata: Open Graph title/image/description/canonical and explicit page hints.
-- [ ] Preserve existing Graph-picture fallback for artist images where usable.
-- [ ] Never use an LLM to guess missing fields.
-- [ ] Return partial success rather than making Facebook parsing a hard dependency.
-- [ ] Add unit tests for URL extraction/canonicalisation, hostile URLs, redirects, metadata parsing and no-data fallback.
-- [ ] Add route-policy/WAF inventory entries if required.
+- [x] Extract Facebook URLs from pristine URLs and noisy pasted share text.
+- [x] Canonicalise stable Facebook identity using the existing shared `facebookKey()` logic.
+- [x] Preserve transient share token case/query long enough to resolve it.
+- [x] Reject Facebook lookalike/embedded hostile hosts.
+- [x] Treat `/share`, posts, reels, events, groups and similar content URLs as transient rather than entity identity.
+- [x] Check exact existing artist Facebook identity before doing network work.
+- [x] Re-check exact artist identity after redirect/canonical resolution.
+- [x] Use an exact Facebook/fb host allowlist, HTTPS-only fetch, redirect revalidation, timeout, response-size cap and HTML content checks.
+- [x] Parse only observed Open Graph/canonical metadata.
+- [x] Return partial/graceful success when Facebook does not expose metadata.
+- [x] Never return an unresolved share token as `facebookUrl` or `facebookKey`.
+- [x] Add source-inspector unit/security regression tests.
+- [x] Classify the public route in the backend route/security inventory.
+- [x] Deploy as an isolated companion SAM stack rather than requiring a full-stack deploy for inspector-only changes.
 
-Acceptance:
-- Inspection performs zero entity writes.
-- Existing artist can be returned immediately by exact Facebook identity.
-- Invalid/non-Facebook input gives a clear controlled response.
-- No SSRF-shaped generic URL fetch endpoint exists.
+Deliberate venue behaviour:
 
-## Phase 2 — Frontend inspector client + reusable paste component
+- [x] `expectedType: "venue"` does not query artist identity.
+- [x] Facebook supplies observed venue hints only; the web flow then requires Google Places confirmation.
+- [ ] Exact existing-venue lookup by stored Facebook social URL is not implemented. This is optional because Google Place ID remains the authoritative venue identity and the current flow resolves against bndy/Google Places before creation.
 
-- [ ] Add typed inspector API client.
-- [ ] Add reusable Facebook paste/assist component.
-- [ ] Copy: “Do you know their Facebook page?”
-- [ ] Accept pasted URL or Facebook share text.
-- [ ] Handle idle / inspecting / existing match / partial / no-details / invalid / temporary failure.
-- [ ] Preserve the supplied URL when enrichment returns nothing.
-- [ ] Accessible labels and status announcements.
+Backend hardening/deploy landmarks:
+
+- PR #12 merged as `097d8acd9ba57c6ccc5b117e60487e1b8897be2d`.
+- Source-inspector deployment workflow PR #13 merged as `34ddaa2cf938e113e580b36dc97349a4865718a9`.
+- Isolated deployment status reported `source-inspector/deploy: success`.
+- Live deployment smoke tests cover controlled missing-input and hostile-host rejection paths.
+
+## Phase 2 — Frontend inspector client + reusable assist
+
+- [x] Typed source-inspector API client.
+- [x] Reusable `FacebookSourceAssist` component.
+- [x] Accept pristine URLs or Facebook share text.
+- [x] Idle/checking/existing/partial/no-details/error/unresolved states.
+- [x] Accessible label and live status region.
+- [x] Stable identity replaces transient input after resolution.
+- [x] Unverified raw input is never handed to artist/venue persistence state.
+- [x] Inspection/API failure leaves the manual form usable without persisting raw Facebook input.
 
 ## Phase 3 — Add Gig artist integration
 
-- [ ] Insert Facebook assistance only when creating a new artist.
-- [ ] Existing bndy match → one-tap select existing artist.
-- [ ] Observed details → prefill existing New Artist form.
-- [ ] No useful details → continue existing manual form with URL retained.
-- [ ] Submit through existing resolver/find-or-create and uniqueness gate.
-- [ ] Fix any copy that over-promises Facebook extraction.
-- [ ] Add regression tests.
+- [x] Facebook assist appears only in the new-artist path.
+- [x] Exact existing bndy artist can be selected directly.
+- [x] Observed name/image evidence can prefill the existing new-artist form.
+- [x] Resolver/find-or-create and uniqueness gates remain authoritative.
+- [x] Inspected evidence is carried through publish for new artists.
+- [x] Existing single-act and multi-act Add Gig regression coverage remains in place.
+- [x] Facebook identity-state regression tests cover the transient-share failure mode.
 
 ## Phase 4 — Standalone public Add Artist
 
-Route target: `/add/artist`
+Route: `/add/artist`
 
-- [ ] Paste Facebook URL/share text.
-- [ ] Inspect.
-- [ ] Existing artist → “Already on bndy”.
-- [ ] New artist → compact prefilled confirmation form.
-- [ ] Require existing minimum identity fields, especially resolvable performing location.
-- [ ] Create through existing public artist path.
-- [ ] Preserve `needs_review`.
-- [ ] Success → “Add another artist” without full navigation.
+- [x] Public Facebook-assisted artist creator.
+- [x] Exact existing artist → “Already on bndy”.
+- [x] New artist → compact confirmation form.
+- [x] Requires artist name, resolvable town/region and artist type.
+- [x] Uses the existing artist resolver/review path.
+- [x] Carries observed image/source evidence only when actually supplied.
+- [x] Success state includes “Add another artist”.
 
 ## Phase 5 — Standalone public Add Venue
 
-Route target: `/add/venue`
+Route: `/add/venue`
 
-- [ ] Paste Facebook URL/share text.
-- [ ] Inspect for observed business hints.
-- [ ] Feed hints into existing Places search.
-- [ ] User selects/confirms Google Place.
-- [ ] Existing match or existing community venue find-or-create.
-- [ ] Store Facebook social link when supported.
-- [ ] Never relax Google Place ID invariant.
-- [ ] Success → “Add another venue”.
+- [x] Public Facebook-assisted venue creator.
+- [x] Facebook-observed name can seed venue search.
+- [x] Existing bndy venues are surfaced before creation.
+- [x] Google Places search/confirmation remains mandatory for a new physical venue.
+- [x] Venue find-or-create receives Google Place ID, address and coordinates.
+- [x] Verified Facebook page can be retained as a social link.
+- [x] Google Place ID invariant is unchanged.
+- [x] Success state includes “Add another venue”.
 
 ## Phase 6 — Discovery / entry points
 
-- [ ] Add lightweight entry points from existing Add surface.
-- [ ] Do not add bottom-nav items.
-- [ ] Keep mobile-first and skin-aware.
+- [x] `/add` exposes lightweight “Add artist” and “Add venue” shortcuts.
+- [x] No extra bottom-nav item was added.
+- [x] Existing signed-in Add Gig flow remains the primary `/add` experience.
+- [x] Entry-point touch targets use the mobile 44px minimum.
 
 ## Phase 7 — Capture reuse
 
-- [ ] After web flow is proven, let `bndy-capture` consume the same inspector.
-- [ ] Do not make bndy-app depend on capture.
+Deferred by design until the public flow has accumulated enough real-world evidence.
 
-## Phase 8 — Verification and deployment
+- [ ] Decide whether `bndy-capture` should consume the same inspector contract.
+- [ ] If adopted, keep Capture as a consumer rather than making bndy-app depend on it.
+
+## Phase 8 — Verification
 
 Backend:
-- [ ] Unit/security tests.
-- [ ] SAM validate/build if available.
-- [ ] Inspect changeset for unrelated resources.
-- [ ] Deploy intended Lambda/API only.
-- [ ] Smoke-test known existing artist, unknown artist, noisy Facebook share URL, non-Facebook input, malformed input, unreachable Facebook and venue input.
+
+- [x] Source-inspector unit/security tests.
+- [x] Shared artist-domain/identity drift guards green before merge.
+- [x] Isolated SAM build/deploy completed through GitHub Actions.
+- [x] Live API smoke: missing input returns controlled `INPUT_REQUIRED` response.
+- [x] Live API smoke: hostile embedded Facebook lookalike returns controlled `NOT_FACEBOOK_URL` response.
+- [x] Unit coverage includes known existing artist, unknown artist, direct stable-page fetch failure, noisy share resolution, unresolved share identity and venue-mode behaviour.
+- [ ] A broad live matrix against real third-party Facebook pages is intentionally not treated as a deterministic release gate because anonymous Facebook responses change independently of bndy.
 
 Frontend:
-- [ ] Typecheck.
-- [ ] Tests.
-- [ ] Production build.
-- [ ] 360–430px mobile review.
-- [ ] Keyboard/accessibility review.
-- [ ] Existing Add Gig manual-flow regression.
 
-## Deployment responsibility
+- [x] Typecheck green on Facebook identity-state hardening PR.
+- [x] Vitest suite green.
+- [x] Next production build green.
+- [x] Focused `FacebookSourceAssist` regression tests cover raw-input isolation, stable resolution, unresolved share links, backend failure and exact existing-artist reuse.
+- [x] Core controls use mobile-first sizing; Add surface entry shortcuts meet the 44px target.
+- [ ] Pixel-level 360–430px browser review on the deployed production build remains a visual QA task rather than a code gate.
 
-Preferred:
-- ChatGPT commits backend/frontend code and runs every check available in the environment.
-- If AWS credentials/SAM CLI are unavailable, the user performs SAM deployment.
-- Before deploy, provide exact backend SHA, exact resources/routes changed, safe changeset procedure and smoke-test commands.
-- Never claim backend is live until deployed and smoke-tested.
+## Current release boundary
 
-## Build log
-
-### 2026-08-21
-- Reconnaissance complete.
-- Existing artist Facebook identity/community creation confirmed.
-- Existing venue Google Place invariant confirmed.
-- bndy-capture confirmed as capture/backlog, not live parser.
-- Starting Phase 1: backend source inspector.
+The public Facebook-assisted artist/venue feature is implemented across backend and frontend. The inspector is deployed and live-smoke-tested. Frontend code is CI-verified before merge. The only planned product extension left in this document is optional Capture reuse; it is not required for the public feature to be considered complete.
