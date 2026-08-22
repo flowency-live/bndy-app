@@ -8,6 +8,7 @@ import { useArtistImageMap } from "@/lib/hooks";
 import { formatTime, DOW, MON } from "@/domain/dates";
 import { gigDisplayName } from "@/domain/gigName";
 import { MicTile } from "@/features/shared/MicTile";
+import { VenueTicketingBanner } from "./VenueTicketingBanner";
 import { safeHref } from "@/lib/safeHref";
 import type { Gig, Venue } from "@/domain/types";
 function dateParts(iso: string) { const [y, m, d] = iso.split("-").map(Number); const dt = new Date(y, m - 1, d); return { dow: DOW[dt.getDay()], day: d, mon: MON[m - 1] }; }
@@ -45,6 +46,8 @@ export function VenueSheet({ venue, gigs, live, onClose, onGigClick }: {
             </div>
           </div>
 
+          <VenueTicketingBanner venue={venue} className="mb-4 mt-0" />
+
           <div className="mb-4 flex gap-2.5">
             <a href={gmaps(venue.location.lat, venue.location.lng)} target="_blank" rel="noopener"
               className="bndy-btn flex flex-1 items-center justify-center gap-2 py-3 text-[13.5px] transition-transform active:scale-[.97]">
@@ -53,7 +56,7 @@ export function VenueSheet({ venue, gigs, live, onClose, onGigClick }: {
             <Link href={`/venues/${venue.id}`} onClick={onClose} className="bndy-btn2 flex flex-1 items-center justify-center gap-2 py-3 text-[13.5px] transition-transform active:scale-[.97]">
               <Calendar size={16} /> View gigs
             </Link>
-            <button onClick={share} aria-label="Share venue" className="bndy-btn2 flex w-12 items-center justify-center transition-transform active:scale-[.94]">
+            <button type="button" onClick={share} aria-label="Share venue" className="bndy-btn2 flex w-12 items-center justify-center transition-transform active:scale-[.94]">
               <Share2 size={17} />
             </button>
           </div>
@@ -68,7 +71,7 @@ export function VenueSheet({ venue, gigs, live, onClose, onGigClick }: {
               {gigs.slice(0, 12).map((g) => {
                 const dp = dateParts(g.date);
                 return (
-                  <button key={g.id} onClick={() => onGigClick(g)} className="flex w-full items-center gap-3 py-2.5 text-left transition active:opacity-70">
+                  <button type="button" key={g.id} onClick={() => onGigClick(g)} className="flex w-full items-center gap-3 py-2.5 text-left transition active:opacity-70">
                     <div className="w-[46px] shrink-0 rounded-xl border border-[var(--acc2)] py-1.5 text-center leading-none">
                       <div className="text-[9px] font-extrabold uppercase text-[var(--acc2)]">{dp.dow}</div>
                       <div className="my-0.5 text-[17px] font-black">{dp.day}</div>
