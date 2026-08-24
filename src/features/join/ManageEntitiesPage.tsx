@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Building2, Check, Clipboard, ExternalLink, Loader2, MailPlus, Music2, RefreshCw, Shield, Trash2, UserCog } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
+import { trackJoin } from "./joinAnalytics";
 import { VenueOwnershipTransfer } from "./VenueOwnershipTransfer";
 import {
   createArtistInviteLink,
@@ -120,6 +121,7 @@ function VenueManageCard({ venue }: { venue: ManagedVenue }) {
     try {
       const result = await createVenueDelegateInvite(venue.id, email.trim(), "admin");
       setInviteLink(result.inviteLink);
+      trackJoin("delegate_invitation_created", { entityType: "venue", step: "manage" });
       setEmail("");
       setOpen(true);
     } catch (err) {
@@ -133,7 +135,7 @@ function VenueManageCard({ venue }: { venue: ManagedVenue }) {
   };
   const revoke = async (member: EntityMember) => {
     setLoading(true); setError(null);
-    try { await revokeVenueDelegate(member.membership_id); setMembers(await getVenueMembers(venue.id)); }
+    try { await revokeVenueDelegate(member.membership_id); trackJoin("delegate_revoked", { entityType: "venue", step: "manage" }); setMembers(await getVenueMembers(venue.id)); }
     catch (err) { setError(err instanceof Error ? err.message : "Could not remove delegate."); }
     finally { setLoading(false); }
   };
