@@ -1,5 +1,5 @@
 exit_code=0
-checked_at=2026-08-24T20:21:54Z
+checked_at=2026-08-24T20:31:13Z
 --- tail ---
 === TYPECHECK ===
 
@@ -15,35 +15,35 @@ checked_at=2026-08-24T20:21:54Z
 
 [1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/home/runner/work/bndy-app/bndy-app[39m
 
- [32m✓[39m src/features/festivals/curate/GigsSection.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 12[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/lineup.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 13[2mms[22m[39m
- [32m✓[39m src/features/wizard/__tests__/FacebookSourceAssist.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 342[2mms[22m[39m
- [32m✓[39m src/features/wizard/__tests__/StepArtist.bill.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 303[2mms[22m[39m
- [32m✓[39m src/features/wizard/__tests__/festivalPrefill.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 8[2mms[22m[39m
- [32m✓[39m src/lib/curator.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 176[2mms[22m[39m
- [32m✓[39m src/features/festivals/festivalUtils.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 14[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/festivalBlocks.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 14[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/recurrence.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 13[2mms[22m[39m
- [32m✓[39m src/features/festivals/FestivalPosterFallback.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/features/festivals/curate/GigsSection.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/lineup.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/FacebookSourceAssist.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 345[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/StepArtist.bill.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 313[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/festivalPrefill.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/features/festivals/festivalUtils.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/lib/curator.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 195[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/festivalBlocks.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/features/festivals/FestivalPosterFallback.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/recurrence.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 16[2mms[22m[39m
  [32m✓[39m src/lib/__tests__/transforms.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 9[2mms[22m[39m
  [32m✓[39m src/domain/__tests__/calendar.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 10[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/dates.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 12[2mms[22m[39m
- [32m✓[39m src/features/wizard/__tests__/facebookArtistPrefill.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 5[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/mapdate.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 9[2mms[22m[39m
- [32m✓[39m src/lib/festivalDiscovery.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 7[2mms[22m[39m
- [32m✓[39m src/lib/api.festivals.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 5[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/gigName.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
- [32m✓[39m src/features/venues/__tests__/VenueTicketingBanner.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 128[2mms[22m[39m
- [32m✓[39m src/lib/nearbyGigs.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 5[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/geo.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
- [32m✓[39m src/lib/nextImage.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 12[2mms[22m[39m
- [32m✓[39m src/domain/__tests__/grouping.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 20[2mms[22m[39m
- [32m✓[39m src/lib/gigDiscoveryWindow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/dates.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/facebookArtistPrefill.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/mapdate.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/lib/festivalDiscovery.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/lib/api.festivals.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/features/venues/__tests__/VenueTicketingBanner.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 161[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/gigName.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/lib/nearbyGigs.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/geo.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/lib/nextImage.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/grouping.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/lib/gigDiscoveryWindow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 4[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m24 passed[39m[22m[90m (24)[39m
 [2m      Tests [22m [1m[32m228 passed[39m[22m[90m (228)[39m
-[2m   Start at [22m 20:21:04
-[2m   Duration [22m 8.97s[2m (transform 859ms, setup 0ms, collect 4.60s, tests 1.14s, environment 13.45s, prepare 2.36s)[22m
+[2m   Start at [22m 20:30:25
+[2m   Duration [22m 9.01s[2m (transform 963ms, setup 0ms, collect 4.76s, tests 1.21s, environment 13.67s, prepare 2.11s)[22m
 
 === BUILD ===
 
@@ -72,8 +72,8 @@ https://nextjs.org/telemetry
 46:9  Warning: The 'venues' logical expression could make the dependencies of useMemo Hook (at line 49) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'venues' in its own useMemo() Hook.  react-hooks/exhaustive-deps
 
 ./src/features/join/ManageEntitiesPage.tsx
-100:238  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-143:237  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+101:238  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+144:237  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
 
 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
    Collecting page data ...
@@ -108,11 +108,11 @@ Route (app)                              Size     First Load JS
 ├ ○ /icon.svg                            0 B                0 B
 ├ ○ /join                                3.27 kB         113 kB
 ├ ○ /join/artist                         6.81 kB         189 kB
-├ ƒ /join/invite/[token]                 2.84 kB         185 kB
+├ ƒ /join/invite/[token]                 2.86 kB         185 kB
 ├ ○ /join/venue                          5.09 kB         187 kB
 ├ ○ /list-a-gig                          218 B           218 kB
 ├ ○ /login                               4.71 kB         175 kB
-├ ○ /manage                              5.56 kB         188 kB
+├ ○ /manage                              6.35 kB         189 kB
 ├ ○ /manifest.webmanifest                0 B                0 B
 ├ ○ /map                                 1.42 kB         107 kB
 ├ ƒ /pwa-icon-192                        161 B           106 kB
