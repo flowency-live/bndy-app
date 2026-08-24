@@ -67,4 +67,42 @@ describe("artistFacebookPrefill", () => {
     expect(result.bio).toBeUndefined();
     expect(result.websiteUrl).toBeUndefined();
   });
+
+  it("prefills A Hundred Endings from grounded Backline evidence", () => {
+    const prefill = artistFacebookPrefill({
+      ok: true,
+      facebookUrl: "https://www.facebook.com/ahundredendings",
+      observed: {
+        name: "A Hundred Endings",
+        location: "Stoke-on-Trent",
+        description: "Alternative rock band from Stoke-on-Trent.",
+        websiteUrl: "https://ahundredendings.com",
+        artistType: "Band",
+        actTypes: ["Originals"],
+        genres: ["Alternative", "Rock"],
+        acoustic: false,
+      },
+      evidence: {
+        name: "backline_grounded_search",
+        location: "backline_grounded_search",
+        description: "backline_grounded_search",
+        websiteUrl: "backline_grounded_search",
+        artistType: "backline_grounded_search",
+        actTypes: "backline_grounded_search",
+        genres: "backline_grounded_search",
+        acoustic: "backline_grounded_search",
+      },
+    });
+
+    expect(prefill).toMatchObject({
+      name: "A Hundred Endings",
+      verifiedSourceName: true,
+      location: "Stoke-on-Trent",
+      artistType: "Band",
+      actTypes: ["Originals"],
+      genres: ["Alternative", "Rock"],
+      acoustic: false,
+    });
+  });
+
 });
