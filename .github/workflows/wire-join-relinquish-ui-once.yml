@@ -31,7 +31,6 @@ jobs:
             if (!s.includes(transferImport)) throw new Error('Venue transfer import missing');
             s = s.replace(transferImport, transferImport + '\nimport { RelinquishOwnership } from "./RelinquishOwnership";');
           }
-
           const artistEnd = '{error && <p className="mt-2 text-[10.5px] font-bold text-red-500">{error}</p>}</div> : null}</article>;';
           const artistNew = '{error && <p className="mt-2 text-[10.5px] font-bold text-red-500">{error}</p>}</div> : null}{artist.role === "owner" && <RelinquishOwnership entityType="artist" entityId={artist.id} entityName={artist.name} onRelinquished={() => window.location.reload()} />}</article>;';
           if (!s.includes('entityType="artist"')) {
@@ -39,7 +38,6 @@ jobs:
             if (idx < 0) throw new Error('Artist card anchor missing');
             s = s.slice(0, idx) + artistNew + s.slice(idx + artistEnd.length);
           }
-
           const venueAnchor = '<VenueOwnershipTransfer venueId={venue.id} venueName={venue.name} />';
           if (!s.includes('entityType="venue"')) {
             if (!s.includes(venueAnchor)) throw new Error('Venue transfer anchor missing');
@@ -57,3 +55,5 @@ jobs:
           git commit -m 'Add Artist and Venue relinquish ownership UI'
           git pull --rebase --autostash origin main
           git push origin HEAD:main
+
+# trigger revision 1
