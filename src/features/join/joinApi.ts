@@ -29,7 +29,18 @@ export async function joinArtist(input: JoinArtistInput): Promise<JoinArtistResu
   return { ok: false, kind: "error", message: (body.error as string | undefined) ?? `Join failed (${response.status})`, code: body.code as string | undefined };
 }
 
-export interface JoinVenueIdentity { name: string; address: string; city?: string; googlePlaceId: string; latitude: number; longitude: number }
+export interface JoinVenueIdentity {
+  name: string;
+  address: string;
+  city?: string;
+  googlePlaceId: string;
+  latitude: number;
+  longitude: number;
+  website?: string;
+  phone?: string;
+  postcode?: string;
+  socialMediaUrls?: string[];
+}
 export interface JoinVenueCandidate { id: string; name: string; address?: string; city?: string; googlePlaceId?: string; matchMethod?: string; matchConfidence?: number }
 
 export async function checkJoinVenue(input: JoinVenueIdentity): Promise<{ existing: JoinVenueCandidate | null; clear: boolean; message?: string }> {
