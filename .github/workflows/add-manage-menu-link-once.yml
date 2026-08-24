@@ -1,0 +1,40 @@
+name: Add manage menu link once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run manage menu link')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Add managed entities account link
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'src/features/auth/UserButton.tsx';
+          let s = fs.readFileSync(p, 'utf8');
+          s = s.replace('import { CircleHelp, History, LogOut, Settings, SlidersHorizontal, UserRound, X } from "lucide-react";', 'import { CircleHelp, History, LogOut, Settings, SlidersHorizontal, UserCog, UserRound, X } from "lucide-react";');
+          const anchor = '<button role="menuitem" type="button" onClick={() => { setOpen(false); openGigFilterPreferences(); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"><SlidersHorizontal size={16} className="text-[#e93d94]" />My Filters</button>';
+          const link = '<Link role="menuitem" href="/manage" onClick={() => setOpen(false)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"><UserCog size={16} />Artists & venues</Link>';
+          if (!s.includes(link)) {
+            if (!s.includes(anchor)) throw new Error('menu anchor missing');
+            s = s.replace(anchor, anchor + '\n          ' + link);
+          }
+          fs.writeFileSync(p, s);
+          NODE
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/auth/UserButton.tsx
+          git commit -m 'Link account menu to managed entities'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
