@@ -46,6 +46,16 @@ export type EntityMember = {
   user?: { email?: string | null; displayName?: string | null } | null;
 };
 
+export type EntityInvite = {
+  token: string;
+  entityType: "venue";
+  entityId: string;
+  entityName: string;
+  role: "admin" | "member";
+  emailHint?: string | null;
+  expiresAt: number;
+};
+
 export async function getManagedArtists(): Promise<ManagedArtist[]> {
   const body = await request<{ artists?: Array<Record<string, unknown>> }>("/api/memberships/me");
   return (body.artists || []).map((membership) => {
@@ -77,6 +87,21 @@ export async function addVenueDelegate(venueId: string, email: string, role: "ad
     body: JSON.stringify({ entityType: "venue", email, role }),
   });
   return body.membership;
+}
+
+export async function createVenueDelegateInvite(venueId: string, email: string, role: "admin" | "member" = "admin"): Promise<{ invite: EntityInvite; inviteLink: string }> {
+  return request<{ invite: EntityInvite; inviteLink: string }>(`/api/managed-entities/${venueId}/invites`, {
+    method: "POST",
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export async function getEntityInvite(token: string): Promise<EntityInvite> {
+  return request<EntityInvite>(`/api/entity-invites/${encodeURIComponent(token)}`);
+}
+
+export async function acceptEntityInvite(token: string): Promise<{ action: "accepted" | "already_member"; membership: EntityMember; entity?: { id: string; type: string; name: string } }> {
+  return request<{ action: "accepted" | "already_member"; membership: EntityMember; entity?: { id: string; type: string; name: string } }>(`/api/entity-invites/${encodeURIComponent(token)}/accept`, { method: "POST", body: JSON.stringify({}) });
 }
 
 export async function revokeVenueDelegate(membershipId: string): Promise<EntityMember> {
