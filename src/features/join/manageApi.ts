@@ -112,6 +112,13 @@ export async function revokeVenueDelegate(membershipId: string): Promise<EntityM
   return body.membership;
 }
 
+export async function transferVenueOwnership(venueId: string, email: string): Promise<{ entityId: string; ownerUserId: string; previousOwnerRole: string }> {
+  return request<{ entityId: string; ownerUserId: string; previousOwnerRole: string }>(`/api/managed-entities/${venueId}/transfer`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function createArtistInviteLink(artistId: string): Promise<string> {
   const body = await request<{ inviteLink: string }>(`/api/artists/${artistId}/invites/general`, { method: "POST", body: JSON.stringify({}) });
   return body.inviteLink;
