@@ -43,3 +43,5 @@ jobs:
           git commit -m 'Instrument Join delegate management'
           git pull --rebase --autostash origin main
           git push origin HEAD:main
+
+# trigger revision 1
