@@ -119,6 +119,13 @@ export async function transferVenueOwnership(venueId: string, email: string): Pr
   });
 }
 
+export async function relinquishOwnership(entityType: "artist" | "venue", entityId: string): Promise<{ action: "relinquished"; entityType: "artist" | "venue"; entityId: string; entityName: string; claimStatus: "unclaimed"; publicRecordRetained: true }> {
+  return request<{ action: "relinquished"; entityType: "artist" | "venue"; entityId: string; entityName: string; claimStatus: "unclaimed"; publicRecordRetained: true }>(`/api/managed-entities/${entityType}/${entityId}/relinquish`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
 export async function createArtistInviteLink(artistId: string): Promise<string> {
   const body = await request<{ inviteLink: string }>(`/api/artists/${artistId}/invites/general`, { method: "POST", body: JSON.stringify({}) });
   return body.inviteLink;
