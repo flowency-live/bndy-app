@@ -1,0 +1,49 @@
+name: Smoke Join production UI once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    if: contains(github.event.head_commit.message, 'Run Join production UI smoke')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check public Join routes
+        run: |
+          set +e
+          ROOT=$(curl -L -sS -o /tmp/join.html -w '%{http_code}' https://bndy.live/join)
+          ARTIST=$(curl -L -sS -o /tmp/artist.html -w '%{http_code}' https://bndy.live/join/artist)
+          VENUE=$(curl -L -sS -o /tmp/venue.html -w '%{http_code}' https://bndy.live/join/venue)
+          MANAGE=$(curl -L -sS -o /tmp/manage.html -w '%{http_code}' https://bndy.live/manage)
+          set -e
+          PASS=true
+          [[ "$ROOT" == '200' ]] || PASS=false
+          [[ "$ARTIST" == '200' ]] || PASS=false
+          [[ "$VENUE" == '200' ]] || PASS=false
+          [[ "$MANAGE" == '200' ]] || PASS=false
+          grep -q 'Join bndy' /tmp/join.html || PASS=false
+          grep -q 'artist' /tmp/artist.html || PASS=false
+          grep -q 'venue' /tmp/venue.html || PASS=false
+          {
+            echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "pass=$PASS"
+            echo "join=$ROOT"
+            echo "artist=$ARTIST"
+            echo "venue=$VENUE"
+            echo "manage=$MANAGE"
+          } > JOIN-BNDY-PRODUCTION-UI-SMOKE.txt
+      - name: Commit result
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add JOIN-BNDY-PRODUCTION-UI-SMOKE.txt
+          git commit -m 'Record Join production UI smoke'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
