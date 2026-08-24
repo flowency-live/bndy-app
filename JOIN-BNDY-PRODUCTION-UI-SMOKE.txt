@@ -1,0 +1,6 @@
+checked_at=2026-08-24T20:21:33Z
+pass=true
+join=200
+artist=200
+venue=200
+manage=200
