@@ -27,7 +27,13 @@ jobs:
 
           function patchFile(path, entity) {
             let s = fs.readFileSync(path, 'utf8');
-            s = s.replace(`import { join${entity === 'artist' ? 'Artist' : 'Venue'} } from "./joinApi";`, `import { join${entity === 'artist' ? 'Artist' : 'Venue'}, requestJoinClaim } from "./joinApi";`);
+            if (!s.includes('requestJoinClaim')) {
+              if (entity === 'artist') {
+                s = s.replace('import { joinArtist } from "./joinApi";', 'import { joinArtist, requestJoinClaim } from "./joinApi";');
+              } else {
+                s = s.replace('import { checkJoinVenue, joinVenue, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";', 'import { checkJoinVenue, joinVenue, requestJoinClaim, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";');
+              }
+            }
 
             const stateAnchor = entity === 'artist'
               ? '  const [joined, setJoined] = useState<JoinedArtist | null>(null);\n'
@@ -40,16 +46,13 @@ jobs:
             const handlerAnchor = entity === 'artist' ? '  const createOwnedArtist = async () => {' : '  const createOwnedVenue = async () => {';
             if (!s.includes('const submitClaim = async () =>')) {
               const handler = entity === 'artist'
-                ? `  const submitClaim = async () => {\n    if (!claimCandidate) return;\n    setLoading(true); setError(null);\n    const result = await requestJoinClaim({ entityType: "artist", entityId: claimCandidate.id, requestedRole: "owner", evidenceHints: { searchedName: name, searchedLocation: location } }).catch(() => ({ ok: false as const, message: "Network hiccup. Try again." }));\n    setLoading(false);\n    if (!result.ok) { setError(result.message); return; }\n    clearJoinState();\n    setClaimSubmitted(true);\n  };\n\n`
-                : `  const submitClaim = async () => {\n    if (!candidate) return;\n    setLoading(true); setError(null);\n    const result = await requestJoinClaim({ entityType: "venue", entityId: candidate.id, requestedRole: "owner", evidenceHints: { address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" } }).catch(() => ({ ok: false as const, message: "Network hiccup. Try again." }));\n    setLoading(false);\n    if (!result.ok) { setError(result.message); return; }\n    clearJoinState();\n    setClaimSubmitted(true);\n  };\n\n`;
+                ? `  const submitClaim = async () => {\n    if (!claimCandidate) return;\n    setLoading(true); setError(null);\n    try {\n      const result = await requestJoinClaim({ entityType: "artist", entityId: claimCandidate.id, requestedRole: "owner", evidenceHints: { searchedName: name, searchedLocation: location } });\n      if (!result.ok) { setError(result.message); return; }\n      clearJoinState();\n      setClaimSubmitted(true);\n    } catch { setError("Network hiccup. Try again."); }\n    finally { setLoading(false); }\n  };\n\n`
+                : `  const submitClaim = async () => {\n    if (!candidate) return;\n    setLoading(true); setError(null);\n    try {\n      const result = await requestJoinClaim({ entityType: "venue", entityId: candidate.id, requestedRole: "owner", evidenceHints: { address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" } });\n      if (!result.ok) { setError(result.message); return; }\n      clearJoinState();\n      setClaimSubmitted(true);\n    } catch { setError("Network hiccup. Try again."); }\n    finally { setLoading(false); }\n  };\n\n`;
               if (!s.includes(handlerAnchor)) throw new Error(`Missing handler anchor in ${path}`);
               s = s.replace(handlerAnchor, handler + handlerAnchor);
             }
 
-            // Replace the disabled placeholder button, keeping the surrounding screen intact.
-            const placeholder = entity === 'artist'
-              ? '<button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button>'
-              : '<button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button>';
+            const placeholder = '<button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button>';
             const active = `<button type="button" disabled={loading || claimSubmitted} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading ? <Loader2 size={14} className="animate-spin" /> : claimSubmitted ? <CheckCircle2 size={14} /> : null}{claimSubmitted ? "Claim requested" : "Request claim"}</button>`;
             if (s.includes(placeholder)) s = s.replace(placeholder, active);
             else if (!s.includes('onClick={submitClaim}')) throw new Error(`Missing claim button placeholder in ${path}`);
@@ -57,22 +60,17 @@ jobs:
             const textOld = entity === 'artist'
               ? 'The existing page stays untouched while the claim is verified. The Claim Request persistence/review endpoint is being built as the next backend slice.'
               : 'The existing venue remains untouched until ownership is verified. Claim persistence and review are the next controlled slice.';
-            const textNew = claimText(entity);
-            s = s.replace(textOld, textNew);
-
-            // Insert user feedback after the claim info sentence if not present.
-            if (!s.includes('Your claim is in.')) {
-              const activeButton = active;
-              s = s.replace(activeButton, `{claimSubmitted && <p className="mt-4 rounded-xl border border-[var(--acc)] px-3 py-2 text-[11.5px] font-bold text-[var(--acc-text)]">Your claim is in. The page stays unchanged while we verify that you&apos;re connected to ${entity === 'artist' ? 'the artist' : 'the venue'}.</p>}{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}${activeButton}`);
-            }
-
-            fs.writeFileSync(path, s);
-          }
-
-          function claimText(entity) {
-            return entity === 'artist'
+            const textNew = entity === 'artist'
               ? 'The existing page stays untouched while the claim is verified. We&apos;ll record your request now and keep ownership changes behind verification.'
               : 'The existing venue stays untouched while the claim is verified. We&apos;ll record your request now and keep ownership changes behind verification.';
+            s = s.replace(textOld, textNew);
+
+            if (!s.includes('Your claim is in.')) {
+              s = s.replace(active, `{claimSubmitted && <p className="mt-4 rounded-xl border border-[var(--acc)] px-3 py-2 text-[11.5px] font-bold text-[var(--acc-text)]">Your claim is in. The page stays unchanged while we verify that you&apos;re connected to ${entity === 'artist' ? 'the artist' : 'the venue'}.</p>}{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}${active}`);
+            }
+
+            if (!s.includes('requestJoinClaim')) throw new Error(`Claim API import missing in ${path}`);
+            fs.writeFileSync(path, s);
           }
 
           patchFile('src/features/join/JoinArtistFlow.tsx', 'artist');
