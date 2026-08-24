@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, Loader2, MapPin, Music2, Search } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
+import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { joinArtist, requestJoinClaim } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
@@ -13,6 +14,7 @@ type Phase = "search" | "new" | "claim" | "success";
 type JoinedArtist = { id: string; name: string; location?: string };
 
 export function JoinArtistFlow() {
+  const taxonomy = useArtistTaxonomy().data;
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [pickedLocation, setPickedLocation] = useState<string | null>(null);
@@ -25,6 +27,10 @@ export function JoinArtistFlow() {
   const [claimCandidate, setClaimCandidate] = useState<ArtistCandidate | null>(null);
   const [joined, setJoined] = useState<JoinedArtist | null>(null);
   const [claimSubmitted, setClaimSubmitted] = useState(false);
+  const [artistType, setArtistType] = useState("");
+  const [actType, setActType] = useState<string[]>([]);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [acoustic, setAcoustic] = useState(false);
   const deb = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -96,7 +102,7 @@ export function JoinArtistFlow() {
     const loc = pickedLocation ?? location.trim();
     setLoading(true); setError(null);
     try {
-      const result = await joinArtist({ name: name.trim(), location: loc });
+      const result = await joinArtist({ name: name.trim(), location: loc, artistType: artistType || undefined, actType: actType.length ? actType : undefined, genres: genres.length ? genres : undefined, acoustic: acoustic || undefined });
       if (result.ok) {
         clearJoinState();
         setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });
@@ -142,7 +148,32 @@ export function JoinArtistFlow() {
         <button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim hover:text-[var(--acc-text)]"><ArrowLeft size={14} /> Back to matches</button>
         <header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">New artist · step two</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Nice. Let&apos;s make it yours.</h1><p className="mt-3 text-[13px] font-semibold text-dim">We&apos;ve saved <b>{name}</b>{location ? <> · {location}</> : null}. Sign in and you&apos;ll come straight back here — no retyping.</p></header>
         <AuthGate title="Sign in to join bndy">
-          <section className="mt-7 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="flex items-start gap-3"><BadgeCheck size={21} className="mt-0.5 shrink-0 text-[var(--acc-text)]" /><div><div className="text-[15px] font-black">Ready to create {name}.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll rerun the identity gate now. If somebody added the artist while you were signing in, we&apos;ll stop and show that page instead. Otherwise the artist and your owner relationship are created as one Join operation.</p></div></div>{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading} onClick={createOwnedArtist} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my artist</button></section>
+          <section className="mt-7 space-y-5 rounded-[24px] border border-[var(--acc)] glass p-5">
+            <div className="flex items-start gap-3">
+              <BadgeCheck size={21} className="mt-0.5 shrink-0 text-[var(--acc-text)]" />
+              <div><div className="text-[15px] font-black">You&apos;re signed in. One tiny profile step.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">Enough to make the page useful. Everything else can wait.</p></div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">What kind of act?</label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {taxonomy.artistTypes.map((type) => <button key={type.value} type="button" onClick={() => setArtistType(type.value)} className={`rounded-xl border px-3 py-2.5 text-[12px] font-black transition-colors ${artistType === type.value ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt"}`}>{type.label}</button>)}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">What do you play? <span className="normal-case tracking-normal text-dim2">optional</span></label>
+              <div className="flex flex-wrap gap-1.5">
+                {taxonomy.actTypes.map((type) => <button key={type.value} type="button" onClick={() => setActType((current) => current.includes(type.value) ? current.filter((value) => value !== type.value) : [...current, type.value])} className={`rounded-full border px-2.5 py-1 text-[11.5px] font-bold ${actType.includes(type.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim"}`}>{type.label}</button>)}
+                <button type="button" onClick={() => setAcoustic((value) => !value)} className={`rounded-full border px-2.5 py-1 text-[11.5px] font-bold ${acoustic ? "border-transparent bg-acc text-on-acc" : "border-line text-dim"}`}>Acoustic</button>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Genres <span className="normal-case tracking-normal text-dim2">optional</span></label>
+              <div className="max-h-36 overflow-y-auto pr-1"><div className="flex flex-wrap gap-1.5">{taxonomy.genres.map((genre) => <button key={genre} type="button" onClick={() => setGenres((current) => current.includes(genre) ? current.filter((value) => value !== genre) : [...current, genre])} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${genres.includes(genre) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim"}`}>{genre}</button>)}</div></div>
+            </div>
+            <p className="text-[11.5px] font-semibold leading-relaxed text-dim">We&apos;ll recheck identity immediately before creation. If the artist appeared while you were signing in, we&apos;ll switch you to Claim instead.</p>
+            {error && <p className="rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}
+            <button type="button" disabled={loading || !artistType} onClick={createOwnedArtist} className="bndy-btn2 flex min-h-12 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my artist</button>
+          </section>
         </AuthGate>
       </main>
     );
