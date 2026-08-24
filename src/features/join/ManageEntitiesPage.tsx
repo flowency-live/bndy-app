@@ -5,8 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Building2, Check, Clipboard, ExternalLink, Loader2, MailPlus, Music2, RefreshCw, Shield, Trash2, UserCog } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import {
-  addVenueDelegate,
   createArtistInviteLink,
+  createVenueDelegateInvite,
   getManagedArtists,
   getManagedVenues,
   getMyClaims,
@@ -95,7 +95,7 @@ function ArtistManageCard({ artist }: { artist: ManagedArtist }) {
     setCopied(true); window.setTimeout(() => setCopied(false), 1600);
   };
 
-  return <article className="rounded-[24px] border border-line glass p-5"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card2">{artist.profileImageUrl ? <img src={artist.profileImageUrl} alt="" className="h-full w-full object-cover" /> : <Music2 size={19} />}</div><div className="min-w-0 flex-1"><div className="truncate text-[16px] font-black">{artist.name}</div><div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">{artist.role}</div>{artist.location && <div className="mt-1 truncate text-[11px] font-semibold text-dim">{artist.location}</div>}</div><Link href={`/artists/${artist.id}`} className="text-dim hover:text-txt" aria-label={`Open ${artist.name}`}><ExternalLink size={15} /></Link></div>{artist.role === "owner" || artist.role === "admin" ? <div className="mt-4 border-t border-line pt-4"><div className="flex items-center gap-2 text-[11.5px] font-black"><UserCog size={14} /> Invite a bandmate or manager</div><p className="mt-1 text-[10.5px] font-semibold text-dim">Create a normal bndy invite link. They use their own account — no shared login.</p>{inviteLink ? <div className="mt-3 flex gap-2"><div className="min-w-0 flex-1 truncate rounded-xl border border-line px-3 py-2 text-[10.5px] font-semibold text-dim">{inviteLink}</div><button type="button" onClick={copyInvite} className="bndy-btn flex min-h-9 items-center gap-1.5 px-3 text-[10px]">{copied ? <Check size={13} /> : <Clipboard size={13} />}{copied ? "Copied" : "Copy"}</button></div> : <button type="button" onClick={makeInvite} disabled={creating} className="bndy-btn mt-3 flex min-h-9 items-center gap-2 px-3 text-[10.5px]">{creating ? <Loader2 size={13} className="animate-spin" /> : <MailPlus size={13} />} Create invite link</button>}{error && <p className="mt-2 text-[10.5px] font-bold text-red-500">{error}</p>}</div> : null}</article>;
+  return <article className="rounded-[24px] border border-line glass p-5"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card2">{artist.profileImageUrl ? <img src={artist.profileImageUrl} alt="" className="h-full w-full object-cover" /> : <Music2 size={19} />}</div><div className="min-w-0 flex-1"><div className="truncate text-[16px] font-black">{artist.name}</div><div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">{artist.role}</div>{artist.location && <div className="mt-1 truncate text-[11px] font-semibold text-dim">{artist.location}</div>}</div><Link href={`/artists/${artist.id}`} className="text-dim hover:text-txt" aria-label={`Open ${artist.name}`}><ExternalLink size={15} /></Link></div>{artist.role === "owner" || artist.role === "admin" ? <div className="mt-4 border-t border-line pt-4"><div className="flex items-center gap-2 text-[11.5px] font-black"><UserCog size={14} /> Invite a bandmate or manager</div><p className="mt-1 text-[10.5px] font-semibold text-dim">Create a normal bndy invite link. They use their own account, no shared login.</p>{inviteLink ? <div className="mt-3 flex gap-2"><div className="min-w-0 flex-1 truncate rounded-xl border border-line px-3 py-2 text-[10.5px] font-semibold text-dim">{inviteLink}</div><button type="button" onClick={copyInvite} className="bndy-btn flex min-h-9 items-center gap-1.5 px-3 text-[10px]">{copied ? <Check size={13} /> : <Clipboard size={13} />}{copied ? "Copied" : "Copy"}</button></div> : <button type="button" onClick={makeInvite} disabled={creating} className="bndy-btn mt-3 flex min-h-9 items-center gap-2 px-3 text-[10.5px]">{creating ? <Loader2 size={13} className="animate-spin" /> : <MailPlus size={13} />} Create invite link</button>}{error && <p className="mt-2 text-[10.5px] font-bold text-red-500">{error}</p>}</div> : null}</article>;
 }
 
 function VenueManageCard({ venue }: { venue: ManagedVenue }) {
@@ -104,6 +104,8 @@ function VenueManageCard({ venue }: { venue: ManagedVenue }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const loadMembers = async () => {
     setLoading(true); setError(null);
@@ -111,14 +113,22 @@ function VenueManageCard({ venue }: { venue: ManagedVenue }) {
     catch (err) { setError(err instanceof Error ? err.message : "Could not load delegates."); }
     finally { setLoading(false); }
   };
-  const add = async () => {
+  const invite = async () => {
     if (!email.trim()) return;
-    setLoading(true); setError(null);
-    try { await addVenueDelegate(venue.id, email.trim(), "admin"); setEmail(""); setMembers(await getVenueMembers(venue.id)); setOpen(true); }
-    catch (err) {
-      const e = err as Error & { inviteRequired?: boolean };
-      setError(e.inviteRequired ? "That email does not have a bndy account yet. Venue email invitations are the next delegate slice; no shared password will be created." : e.message);
+    setLoading(true); setError(null); setInviteLink(null);
+    try {
+      const result = await createVenueDelegateInvite(venue.id, email.trim(), "admin");
+      setInviteLink(result.inviteLink);
+      setEmail("");
+      setOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create the invitation.");
     } finally { setLoading(false); }
+  };
+  const copyInvite = async () => {
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true); window.setTimeout(() => setCopied(false), 1600);
   };
   const revoke = async (member: EntityMember) => {
     setLoading(true); setError(null);
@@ -127,5 +137,5 @@ function VenueManageCard({ venue }: { venue: ManagedVenue }) {
     finally { setLoading(false); }
   };
 
-  return <article className="rounded-[24px] border border-line glass p-5"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card2">{venue.profileImageUrl ? <img src={venue.profileImageUrl} alt="" className="h-full w-full object-cover" /> : <Building2 size={19} />}</div><div className="min-w-0 flex-1"><div className="truncate text-[16px] font-black">{venue.name}</div><div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">{venue.role}</div><div className="mt-1 text-[11px] font-semibold text-dim">{venue.address || venue.city}</div></div><Link href={`/venues/${venue.id}`} className="text-dim hover:text-txt" aria-label={`Open ${venue.name}`}><ExternalLink size={15} /></Link></div>{venue.role === "owner" && <div className="mt-4 border-t border-line pt-4"><button type="button" disabled={loading} onClick={() => open ? setOpen(false) : void loadMembers()} className="flex items-center gap-2 text-[11.5px] font-black"><UserCog size={14} /> {open ? "Hide delegates" : "Manage delegates"}</button>{open && <div className="mt-4 space-y-3"><div className="flex gap-2"><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="delegate@email.com" className="min-w-0 flex-1 rounded-xl border border-line bg-transparent px-3 py-2 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><button type="button" disabled={loading || !email.trim()} onClick={add} className="bndy-btn2 min-h-9 px-3 text-[10.5px]">Add delegate</button></div><div className="divide-y divide-line rounded-xl border border-line">{members.filter((member) => member.status === "active").map((member) => <div key={member.membership_id} className="flex items-center gap-3 px-3 py-2.5"><BadgeCheck size={14} className={member.role === "owner" ? "text-[var(--acc-text)]" : "text-dim"} /><div className="min-w-0 flex-1"><div className="truncate text-[11.5px] font-black">{member.user?.displayName || member.user?.email || member.user_id}</div><div className="text-[9.5px] font-black uppercase tracking-wide text-dim">{member.role}</div></div>{member.role !== "owner" && <button type="button" disabled={loading} onClick={() => void revoke(member)} className="text-dim hover:text-red-500" aria-label="Remove delegate"><Trash2 size={14} /></button>}</div>)}</div></div>}{error && <p className="mt-3 text-[10.5px] font-bold text-red-500">{error}</p>}</div>}</article>;
+  return <article className="rounded-[24px] border border-line glass p-5"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card2">{venue.profileImageUrl ? <img src={venue.profileImageUrl} alt="" className="h-full w-full object-cover" /> : <Building2 size={19} />}</div><div className="min-w-0 flex-1"><div className="truncate text-[16px] font-black">{venue.name}</div><div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">{venue.role}</div><div className="mt-1 text-[11px] font-semibold text-dim">{venue.address || venue.city}</div></div><Link href={`/venues/${venue.id}`} className="text-dim hover:text-txt" aria-label={`Open ${venue.name}`}><ExternalLink size={15} /></Link></div>{venue.role === "owner" && <div className="mt-4 border-t border-line pt-4"><button type="button" disabled={loading} onClick={() => open ? setOpen(false) : void loadMembers()} className="flex items-center gap-2 text-[11.5px] font-black"><UserCog size={14} /> {open ? "Hide delegates" : "Manage delegates"}</button>{open && <div className="mt-4 space-y-3"><div><div className="flex gap-2"><input value={email} onChange={(event) => { setEmail(event.target.value); setInviteLink(null); }} type="email" placeholder="delegate@email.com" className="min-w-0 flex-1 rounded-xl border border-line bg-transparent px-3 py-2 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><button type="button" disabled={loading || !email.trim()} onClick={invite} className="bndy-btn2 min-h-9 px-3 text-[10.5px]">Invite</button></div><p className="mt-1.5 text-[10px] font-semibold text-dim">The link is locked to that email address and expires after seven days.</p></div>{inviteLink && <div className="flex gap-2 rounded-xl border border-[var(--acc)] p-2"><div className="min-w-0 flex-1 truncate px-1 py-1.5 text-[10.5px] font-semibold text-dim">{inviteLink}</div><button type="button" onClick={copyInvite} className="bndy-btn flex min-h-8 shrink-0 items-center gap-1.5 px-2.5 text-[10px]">{copied ? <Check size={12} /> : <Clipboard size={12} />}{copied ? "Copied" : "Copy link"}</button></div>}<div className="divide-y divide-line rounded-xl border border-line">{members.filter((member) => member.status === "active").map((member) => <div key={member.membership_id} className="flex items-center gap-3 px-3 py-2.5"><BadgeCheck size={14} className={member.role === "owner" ? "text-[var(--acc-text)]" : "text-dim"} /><div className="min-w-0 flex-1"><div className="truncate text-[11.5px] font-black">{member.user?.displayName || member.user?.email || member.user_id}</div><div className="text-[9.5px] font-black uppercase tracking-wide text-dim">{member.role}</div></div>{member.role !== "owner" && <button type="button" disabled={loading} onClick={() => void revoke(member)} className="text-dim hover:text-red-500" aria-label="Remove delegate"><Trash2 size={14} /></button>}</div>)}</div></div>}{error && <p className="mt-3 text-[10.5px] font-bold text-red-500">{error}</p>}</div>}</article>;
 }
