@@ -1,0 +1,45 @@
+name: Instrument Join management once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run Join management analytics')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Patch management telemetry
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'src/features/join/ManageEntitiesPage.tsx';
+          let s = fs.readFileSync(p, 'utf8');
+          const auth = 'import { AuthGate } from "@/features/auth/AuthGate";';
+          if (!s.includes('from "./joinAnalytics"')) s = s.replace(auth, auth + '\nimport { trackJoin } from "./joinAnalytics";');
+          s = s.replace('      setInviteLink(result.inviteLink);\n      setEmail("");', '      setInviteLink(result.inviteLink);\n      trackJoin("delegate_invitation_created", { entityType: "venue", step: "manage" });\n      setEmail("");');
+          s = s.replace('    try { await revokeVenueDelegate(member.membership_id); setMembers(await getVenueMembers(venue.id)); }', '    try { await revokeVenueDelegate(member.membership_id); trackJoin("delegate_revoked", { entityType: "venue", step: "manage" }); setMembers(await getVenueMembers(venue.id)); }');
+          if (!s.includes('trackJoin("delegate_invitation_created"')) throw new Error('Invite telemetry anchor failed');
+          if (!s.includes('trackJoin("delegate_revoked"')) throw new Error('Revoke telemetry anchor failed');
+          fs.writeFileSync(p, s);
+          NODE
+          npm run typecheck
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/ManageEntitiesPage.tsx
+          git commit -m 'Instrument Join delegate management'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
