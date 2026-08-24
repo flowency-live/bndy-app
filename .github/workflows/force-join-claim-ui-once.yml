@@ -1,0 +1,71 @@
+name: Deterministic Join Claim UI once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Apply Join Claim UI deterministic')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Patch claim actions
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          function patchArtist() {
+            const p = 'src/features/join/JoinArtistFlow.tsx';
+            let s = fs.readFileSync(p, 'utf8');
+            s = s.replace('import { joinArtist } from "./joinApi";', 'import { joinArtist, requestJoinClaim } from "./joinApi";');
+            if (!s.includes('const [claimSubmitted, setClaimSubmitted]')) {
+              s = s.replace('  const [joined, setJoined] = useState<JoinedArtist | null>(null);\n', '  const [joined, setJoined] = useState<JoinedArtist | null>(null);\n  const [claimSubmitted, setClaimSubmitted] = useState(false);\n');
+            }
+            if (!s.includes('const submitClaim = async () =>')) {
+              const fn = `  const submitClaim = async () => {\n    if (!claimCandidate) return;\n    setLoading(true); setError(null);\n    try {\n      const result = await requestJoinClaim({ entityType: "artist", entityId: claimCandidate.id, requestedRole: "owner", evidenceHints: { searchedName: name, searchedLocation: location } });\n      if (!result.ok) { setError(result.message); return; }\n      clearJoinState();\n      setClaimSubmitted(true);\n    } catch { setError("Network hiccup. Try again."); }\n    finally { setLoading(false); }\n  };\n\n`;
+              s = s.replace('  const createOwnedArtist = async () => {', fn + '  const createOwnedArtist = async () => {');
+            }
+            s = s.replace('The existing page stays untouched while the claim is verified. The Claim Request persistence/review endpoint is being built as the next backend slice.', 'The existing page stays untouched while the claim is verified. We&apos;ll record your request now and keep ownership changes behind verification.');
+            s = s.replace('<button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button>', '{claimSubmitted && <p className="mt-4 rounded-xl border border-[var(--acc)] px-3 py-2 text-[11.5px] font-bold text-[var(--acc-text)]">Your claim is in. The page stays unchanged while we verify that you&apos;re connected to the artist.</p>}{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading || claimSubmitted} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading ? <Loader2 size={14} className="animate-spin" /> : claimSubmitted ? <CheckCircle2 size={14} /> : null}{claimSubmitted ? "Claim requested" : "Request claim"}</button>');
+            if (!s.includes('onClick={submitClaim}') || !s.includes('requestJoinClaim')) throw new Error('Artist Claim UI patch incomplete');
+            fs.writeFileSync(p, s);
+          }
+
+          function patchVenue() {
+            const p = 'src/features/join/JoinVenueFlow.tsx';
+            let s = fs.readFileSync(p, 'utf8');
+            s = s.replace('import { checkJoinVenue, joinVenue, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";', 'import { checkJoinVenue, joinVenue, requestJoinClaim, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";');
+            if (!s.includes('const [claimSubmitted, setClaimSubmitted]')) {
+              s = s.replace('  const [joined, setJoined] = useState<{ id: string; name: string; address?: string } | null>(null);\n', '  const [joined, setJoined] = useState<{ id: string; name: string; address?: string } | null>(null);\n  const [claimSubmitted, setClaimSubmitted] = useState(false);\n');
+            }
+            if (!s.includes('const submitClaim = async () =>')) {
+              const fn = `  const submitClaim = async () => {\n    if (!candidate) return;\n    setLoading(true); setError(null);\n    try {\n      const result = await requestJoinClaim({ entityType: "venue", entityId: candidate.id, requestedRole: "owner", evidenceHints: { address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" } });\n      if (!result.ok) { setError(result.message); return; }\n      clearJoinState();\n      setClaimSubmitted(true);\n    } catch { setError("Network hiccup. Try again."); }\n    finally { setLoading(false); }\n  };\n\n`;
+              s = s.replace('  const createOwnedVenue = async () => {', fn + '  const createOwnedVenue = async () => {');
+            }
+            s = s.replace('The existing venue remains untouched until ownership is verified. Claim persistence and review are the next controlled slice.', 'The existing venue stays untouched while the claim is verified. We&apos;ll record your request now and keep ownership changes behind verification.');
+            s = s.replace('<button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button>', '{claimSubmitted && <p className="mt-4 rounded-xl border border-[var(--acc)] px-3 py-2 text-[11.5px] font-bold text-[var(--acc-text)]">Your claim is in. The venue stays unchanged while we verify that you&apos;re connected to it.</p>}{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading || claimSubmitted} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading ? <Loader2 size={14} className="animate-spin" /> : claimSubmitted ? <CheckCircle2 size={14} /> : null}{claimSubmitted ? "Claim requested" : "Request claim"}</button>');
+            if (!s.includes('onClick={submitClaim}') || !s.includes('requestJoinClaim')) throw new Error('Venue Claim UI patch incomplete');
+            fs.writeFileSync(p, s);
+          }
+
+          patchArtist();
+          patchVenue();
+          NODE
+      - name: Commit source
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/JoinArtistFlow.tsx src/features/join/JoinVenueFlow.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m 'Enable persisted Join Claim requests'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
