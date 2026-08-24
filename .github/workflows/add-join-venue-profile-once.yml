@@ -1,0 +1,61 @@
+name: Add Join Venue profile polish once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run Join Venue profile polish')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Add optional Venue profile fields
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'src/features/join/JoinVenueFlow.tsx';
+          let s = fs.readFileSync(p, 'utf8');
+          const stateAnchor = '  const [claimSubmitted, setClaimSubmitted] = useState(false);\n';
+          if (!s.includes('const [website, setWebsite]')) {
+            if (!s.includes(stateAnchor)) throw new Error('Venue state anchor missing');
+            s = s.replace(stateAnchor, stateAnchor + '  const [website, setWebsite] = useState("");\n  const [phone, setPhone] = useState("");\n  const [facebook, setFacebook] = useState("");\n  const [instagram, setInstagram] = useState("");\n');
+          }
+          const identityAnchor = '    longitude: selected.lng,\n  } : null;';
+          if (!s.includes('socialMediaUrls: [facebook')) {
+            if (!s.includes(identityAnchor)) throw new Error('Venue identity anchor missing');
+            s = s.replace(identityAnchor, '    longitude: selected.lng,\n    website: website.trim() || undefined,\n    phone: phone.trim() || undefined,\n    socialMediaUrls: [facebook.trim(), instagram.trim()].filter(Boolean),\n  } : null;');
+          }
+          const createAnchor = '    setLoading(true); setError(null);\n    try {\n      const result = await joinVenue(value);';
+          if (!s.includes('profile_step_skipped", { entityType: "venue"')) {
+            if (!s.includes(createAnchor)) throw new Error('Venue creation anchor missing');
+            s = s.replace(createAnchor, '    setLoading(true); setError(null);\n    const hasProfile = Boolean(website.trim() || phone.trim() || facebook.trim() || instagram.trim());\n    trackJoin(hasProfile ? "profile_step_completed" : "profile_step_skipped", { entityType: "venue", step: "profile" });\n    try {\n      const result = await joinVenue(value);');
+          }
+          const uiAnchor = '<p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll verify the Google Place identity again before creating anything. A late duplicate becomes a Claim, never another venue.</p></div></div>{error &&';
+          if (!s.includes('A little more about the venue')) {
+            if (!s.includes(uiAnchor)) throw new Error('Venue new-phase UI anchor missing');
+            const profile = '<p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll verify the Google Place identity again before creating anything. A late duplicate becomes a Claim, never another venue.</p></div></div><div className="mt-5 border-t border-line pt-4"><div className="text-[11.5px] font-black">A little more about the venue <span className="font-semibold text-dim">· optional</span></div><p className="mt-1 text-[10.5px] font-semibold text-dim">Skip all of this if you want. Google has already done the boring identity bit.</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={website} onChange={(e) => setWebsite(e.target.value)} inputMode="url" placeholder="Website" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="Phone" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={facebook} onChange={(e) => setFacebook(e.target.value)} inputMode="url" placeholder="Facebook" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={instagram} onChange={(e) => setInstagram(e.target.value)} inputMode="url" placeholder="Instagram" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /></div></div>{error &&';
+            s = s.replace(uiAnchor, profile);
+          }
+          fs.writeFileSync(p, s);
+          NODE
+          npm run typecheck
+          npm test
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/JoinVenueFlow.tsx
+          git commit -m 'Polish optional Venue Join profile'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
