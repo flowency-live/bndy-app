@@ -1,0 +1,67 @@
+name: Instrument Join core once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run Join core analytics')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Patch core flows
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          function patch(path, edits) {
+            let s = fs.readFileSync(path, 'utf8');
+            for (const [from, to] of edits) {
+              if (s.includes(from)) s = s.replace(from, to);
+            }
+            fs.writeFileSync(path, s);
+          }
+          patch('src/features/join/JoinArtistFlow.tsx', [
+            ['import { clearJoinState, readJoinState, saveJoinState } from "./joinState";', 'import { clearJoinState, readJoinState, saveJoinState } from "./joinState";\nimport { trackJoin } from "./joinAnalytics";'],
+            ['    setLoading(true); setError(null); setCandidates([]);\n    try {', '    setLoading(true); setError(null); setCandidates([]);\n    trackJoin("identity_search_submitted", { entityType: "artist", step: "identity" });\n    try {'],
+            ['      if (result.action === "review" || result.candidates.length) setCandidates(result.candidates);', '      if (result.action === "review" || result.candidates.length) { setCandidates(result.candidates); trackJoin("existing_candidate_shown", { entityType: "artist", step: "identity" }); }'],
+            ['    setError(null);\n    setPhase("new");', '    setError(null);\n    trackJoin("create_new_confirmed", { entityType: "artist", step: "identity" });\n    setPhase("new");'],
+            ['    setClaimCandidate(candidate);\n    setError(null);', '    setClaimCandidate(candidate);\n    trackJoin("claim_branch_entered", { entityType: "artist", step: "claim" });\n    setError(null);'],
+            ['      clearJoinState();\n      setClaimSubmitted(true);', '      clearJoinState();\n      trackJoin("claim_requested", { entityType: "artist", step: "claim" });\n      setClaimSubmitted(true);'],
+            ['        clearJoinState();\n        setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });', '        clearJoinState();\n        trackJoin("entity_creation_completed", { entityType: "artist", result: "created" });\n        trackJoin("join_completed", { entityType: "artist", result: "created" });\n        setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });'],
+            ['        setCandidates(nextCandidates);\n        setSearched(true);', '        setCandidates(nextCandidates);\n        trackJoin("entity_creation_duplicate_gated", { entityType: "artist", result: "existing" });\n        setSearched(true);']
+          ]);
+          patch('src/features/join/JoinVenueFlow.tsx', [
+            ['import { clearJoinState, readJoinState, saveJoinState } from "./joinState";', 'import { clearJoinState, readJoinState, saveJoinState } from "./joinState";\nimport { trackJoin } from "./joinAnalytics";'],
+            ['    setLoading(true); setError(null); setCandidate(null);\n    try {', '    setLoading(true); setError(null); setCandidate(null);\n    trackJoin("identity_search_submitted", { entityType: "venue", step: "identity" });\n    try {'],
+            ['      if (result.existing) {\n        setCandidate(result.existing);', '      if (result.existing) {\n        trackJoin("existing_candidate_shown", { entityType: "venue", step: "identity" });\n        trackJoin("claim_branch_entered", { entityType: "venue", step: "claim" });\n        setCandidate(result.existing);'],
+            ['      } else if (result.clear) {\n        saveJoinState', '      } else if (result.clear) {\n        trackJoin("create_new_confirmed", { entityType: "venue", step: "identity" });\n        saveJoinState'],
+            ['      clearJoinState();\n      setClaimSubmitted(true);', '      clearJoinState();\n      trackJoin("claim_requested", { entityType: "venue", step: "claim" });\n      setClaimSubmitted(true);'],
+            ['        clearJoinState();\n        setJoined({ id: result.venue.id, name: result.venue.name, address: result.venue.address });', '        clearJoinState();\n        trackJoin("entity_creation_completed", { entityType: "venue", result: "created" });\n        trackJoin("join_completed", { entityType: "venue", result: "created" });\n        setJoined({ id: result.venue.id, name: result.venue.name, address: result.venue.address });'],
+            ['      } else if (result.kind === "existing") {\n        if (result.venue) {', '      } else if (result.kind === "existing") {\n        trackJoin("entity_creation_duplicate_gated", { entityType: "venue", result: "existing" });\n        if (result.venue) {']
+          ]);
+          const a = fs.readFileSync('src/features/join/JoinArtistFlow.tsx','utf8');
+          const v = fs.readFileSync('src/features/join/JoinVenueFlow.tsx','utf8');
+          if (!a.includes('trackJoin("identity_search_submitted"') || !a.includes('trackJoin("join_completed"')) throw new Error('Artist analytics not applied');
+          if (!v.includes('trackJoin("identity_search_submitted"') || !v.includes('trackJoin("join_completed"')) throw new Error('Venue analytics not applied');
+          NODE
+          npm run typecheck
+          npm test
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/JoinArtistFlow.tsx src/features/join/JoinVenueFlow.tsx
+          git commit -m 'Instrument Join Artist and Venue funnel'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
