@@ -1,0 +1,51 @@
+name: Wire venue ownership transfer once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run venue ownership transfer UI')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Wire transfer component
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'src/features/join/ManageEntitiesPage.tsx';
+          let s = fs.readFileSync(path, 'utf8');
+          const importAnchor = 'import { AuthGate } from "@/features/auth/AuthGate";';
+          if (!s.includes('VenueOwnershipTransfer')) {
+            if (!s.includes(importAnchor)) throw new Error('AuthGate import anchor missing');
+            s = s.replace(importAnchor, importAnchor + '\nimport { VenueOwnershipTransfer } from "./VenueOwnershipTransfer";');
+          }
+          const endAnchor = '{error && <p className="mt-3 text-[10.5px] font-bold text-red-500">{error}</p>}</div>}</article>;';
+          const replacement = '{error && <p className="mt-3 text-[10.5px] font-bold text-red-500">{error}</p>}<VenueOwnershipTransfer venueId={venue.id} venueName={venue.name} /></div>}</article>;';
+          if (!s.includes('<VenueOwnershipTransfer venueId={venue.id}')) {
+            const index = s.lastIndexOf(endAnchor);
+            if (index < 0) throw new Error('Venue card end anchor missing');
+            s = s.slice(0, index) + replacement + s.slice(index + endAnchor.length);
+          }
+          fs.writeFileSync(path, s);
+          NODE
+          npm run typecheck
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/ManageEntitiesPage.tsx
+          git commit -m 'Wire venue ownership transfer UI'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
