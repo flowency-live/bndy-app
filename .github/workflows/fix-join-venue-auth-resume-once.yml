@@ -1,0 +1,43 @@
+name: Fix Join venue auth resume once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run Join venue auth resume fix')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Restore new Venue journey after auth
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'src/features/join/JoinVenueFlow.tsx';
+          let s = fs.readFileSync(path, 'utf8');
+          const oldBlock = `  useEffect(() => {\n    const saved = readJoinState("venue");\n    if (!saved) return;\n    setQuery(saved.name);\n    if (saved.intent === "claim" && saved.entityId) {\n      setCandidate({ id: saved.entityId, name: saved.name, address: saved.address, googlePlaceId: saved.googlePlaceId });\n      setPhase("claim");\n    }\n  }, []);`;
+          const newBlock = `  useEffect(() => {\n    const saved = readJoinState("venue");\n    if (!saved) return;\n    setQuery(saved.name);\n    if (saved.intent === "claim" && saved.entityId) {\n      setCandidate({ id: saved.entityId, name: saved.name, address: saved.address, googlePlaceId: saved.googlePlaceId });\n      setPhase("claim");\n      return;\n    }\n    if (saved.intent === "new" && saved.googlePlaceId) {\n      let cancelled = false;\n      setLoading(true);\n      placesDetails(saved.googlePlaceId)\n        .then((details) => {\n          if (cancelled) return;\n          if (!details) {\n            setPhase("search");\n            setError("We need you to pick the venue once more so we can verify its exact location.");\n            return;\n          }\n          setSelected(details);\n          setQuery(details.name);\n          setPhase("new");\n        })\n        .catch(() => {\n          if (!cancelled) {\n            setPhase("search");\n            setError("We need you to pick the venue once more so we can verify its exact location.");\n          }\n        })\n        .finally(() => { if (!cancelled) setLoading(false); });\n      return () => { cancelled = true; };\n    }\n  }, []);`;
+          if (!s.includes(oldBlock)) throw new Error('Expected Join Venue resume block not found');
+          s = s.replace(oldBlock, newBlock);
+          fs.writeFileSync(path, s);
+          NODE
+          npm run typecheck
+      - name: Commit fix
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/JoinVenueFlow.tsx
+          git commit -m 'Fix Join venue auth resume'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
