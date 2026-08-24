@@ -59,6 +59,10 @@ export interface FacebookObserved {
   location?: string | null;
   address?: string | null;
   websiteUrl?: string | null;
+  artistType?: string | null;
+  actTypes?: string[];
+  genres?: string[];
+  acoustic?: boolean;
 }
 export interface FacebookSourceInspection {
   ok: boolean;

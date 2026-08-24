@@ -332,6 +332,10 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
     }
     if (prefill.bio) setBio(prefill.bio);
     if (prefill.websiteUrl) setWebsiteUrl(prefill.websiteUrl);
+    if (prefill.artistType) setArtistType(prefill.artistType);
+    if (prefill.actTypes?.length) setActType(prefill.actTypes);
+    if (prefill.genres?.length) setGenres(prefill.genres);
+    if (prefill.acoustic !== undefined) setAcoustic(prefill.acoustic);
   };
 
   const draft = (confirmNew: boolean): NewArtistDraft => ({
