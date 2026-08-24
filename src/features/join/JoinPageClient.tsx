@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { ArrowRight, Building2, Music2, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { trackJoin } from "./joinAnalytics";
 
 const paths = [
   {
     href: "/join/artist",
+    entityType: "artist" as const,
     eyebrow: "Artists & bands",
     title: "This is my artist",
     body: "Find the artist already in bndy — including known names and locations — or create a genuinely new one.",
@@ -14,6 +17,7 @@ const paths = [
   },
   {
     href: "/join/venue",
+    entityType: "venue" as const,
     eyebrow: "Venues",
     title: "I run a venue",
     body: "Find your venue by name and place. If it isn't here yet, we'll get it on bndy without the admin slog.",
@@ -23,6 +27,8 @@ const paths = [
 ] as const;
 
 export function JoinPageClient() {
+  useEffect(() => { trackJoin("join_opened", { step: "entry" }); }, []);
+
   return (
     <main className="mx-auto max-w-4xl px-4 pb-36 pt-7 sm:px-6 lg:pt-12">
       <section className="mx-auto max-w-2xl text-center">
@@ -38,10 +44,11 @@ export function JoinPageClient() {
       </section>
 
       <section className="mx-auto mt-9 grid max-w-3xl gap-3 md:grid-cols-2">
-        {paths.map(({ href, eyebrow, title, body, icon: Icon, accent }) => (
+        {paths.map(({ href, entityType, eyebrow, title, body, icon: Icon, accent }) => (
           <Link
             key={href}
             href={href}
+            onClick={() => trackJoin("entity_type_selected", { entityType, step: "entry" })}
             className="group relative min-h-[238px] overflow-hidden rounded-[28px] border border-line glass p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[var(--acc)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--acc)]"
           >
             <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent}`} />
