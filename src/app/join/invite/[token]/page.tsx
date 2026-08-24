@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { BadgeCheck, Building2, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import { acceptEntityInvite, getEntityInvite, type EntityInvite } from "@/features/join/manageApi";
+import { trackJoin } from "@/features/join/joinAnalytics";
 
 export default function JoinEntityInvitePage() {
   const params = useParams<{ token: string }>();
@@ -32,6 +33,7 @@ export default function JoinEntityInvitePage() {
     setAccepting(true); setError(null);
     try {
       await acceptEntityInvite(token);
+      trackJoin("delegate_invitation_accepted", { entityType: "venue", step: "delegate_invite" });
       setAccepted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "This invite could not be accepted.");
