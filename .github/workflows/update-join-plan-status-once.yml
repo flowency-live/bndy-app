@@ -1,0 +1,43 @@
+name: Update Join plan status once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: contains(github.event.head_commit.message, 'Run Join plan status update')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Update plan checkpoint
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'JOIN-BNDY-IMPLEMENTATION-PLAN.md';
+          let s = fs.readFileSync(p, 'utf8');
+          const start = '<!-- DELIVERY-CHECKPOINT:START -->';
+          const end = '<!-- DELIVERY-CHECKPOINT:END -->';
+          const checkpoint = `${start}\n## Delivery checkpoint — 24 August 2026\n\n**Substantially delivered:** JOIN-01 through JOIN-09. The product now has identity-first Artist and Venue onboarding, auth resume, atomic owner creation, Claim persistence/review, managed entities, Venue delegates/invites/ownership transfer, Artist profile taxonomy and Backline owner-authority protection.\n\n**Validated:** bndy-app typecheck, 228 tests and production build have passed during this delivery stream. Core Join analytics instrumentation also passes typecheck/tests. Public/API production smoke and Backline cross-repo validation are tracked as release gates.\n\n**Remaining release/hardening:** authenticated production acceptance; optional Venue profile polish; explicit relinquish/disown UX; progressive automatic Claim verification. None of these should weaken the rule that existing identities branch to Claim rather than duplicate creation.\n${end}`;
+          const re = new RegExp(`${start}[\\s\\S]*?${end}`);
+          if (re.test(s)) s = s.replace(re, checkpoint);
+          else {
+            const anchor = '**Status:** active delivery plan  ';
+            if (!s.includes(anchor)) throw new Error('Plan status anchor missing');
+            s = s.replace(anchor, `${anchor}\n\n${checkpoint}`);
+          }
+          fs.writeFileSync(p, s);
+          NODE
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add JOIN-BNDY-IMPLEMENTATION-PLAN.md
+          git commit -m 'Update Join bndy delivery checkpoint'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
