@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, BadgeCheck, Loader2, MapPin, Music2, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, Loader2, MapPin, Music2, Search } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "@/features/wizard/wizardApi";
-import { readJoinState, saveJoinState } from "./joinState";
+import { joinArtist } from "./joinApi";
+import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
 
-type Phase = "search" | "new" | "claim";
+type Phase = "search" | "new" | "claim" | "success";
+
+type JoinedArtist = { id: string; name: string; location?: string };
 
 export function JoinArtistFlow() {
   const [name, setName] = useState("");
@@ -20,6 +23,7 @@ export function JoinArtistFlow() {
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("search");
   const [claimCandidate, setClaimCandidate] = useState<ArtistCandidate | null>(null);
+  const [joined, setJoined] = useState<JoinedArtist | null>(null);
   const deb = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -64,14 +68,60 @@ export function JoinArtistFlow() {
   const startNew = () => {
     const loc = pickedLocation ?? location.trim();
     saveJoinState({ entityType: "artist", intent: "new", name: name.trim(), location: loc });
+    setError(null);
     setPhase("new");
   };
 
   const startClaim = (candidate: ArtistCandidate) => {
     saveJoinState({ entityType: "artist", intent: "claim", name: candidate.name, location: candidate.location, entityId: candidate.id });
     setClaimCandidate(candidate);
+    setError(null);
     setPhase("claim");
   };
+
+  const createOwnedArtist = async () => {
+    const loc = pickedLocation ?? location.trim();
+    setLoading(true); setError(null);
+    try {
+      const result = await joinArtist({ name: name.trim(), location: loc });
+      if (result.ok) {
+        clearJoinState();
+        setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });
+        setPhase("success");
+        return;
+      }
+      if (result.kind === "existing") {
+        const nextCandidates: ArtistCandidate[] = result.candidates.length
+          ? result.candidates
+          : result.artist
+            ? [{ ...result.artist, matchedBy: result.matchedBy ?? undefined, matchedVariant: result.matchedVariant ?? undefined }]
+            : [];
+        setCandidates(nextCandidates);
+        setSearched(true);
+        setPhase("search");
+        setError("Another matching artist appeared before we created yours. Nothing new was added — choose the existing page below.");
+        return;
+      }
+      setError(result.message);
+    } catch {
+      setError("Network hiccup. Nothing was added — try again.");
+    } finally { setLoading(false); }
+  };
+
+  if (phase === "success" && joined) {
+    return (
+      <main className="mx-auto max-w-xl px-4 pb-36 pt-10 lg:pt-14">
+        <section className="text-center">
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-acc text-on-acc"><CheckCircle2 size={30} /></span>
+          <div className="mt-5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">You&apos;re on bndy</div>
+          <h1 className="font-disp mt-1 text-[38px] font-black leading-none tracking-tight">{joined.name}</h1>
+          {joined.location && <p className="mt-2 flex items-center justify-center gap-1.5 text-[12px] font-bold text-dim"><MapPin size={13} /> {joined.location}</p>}
+          <p className="mx-auto mt-4 max-w-md text-[13px] font-semibold leading-relaxed text-dim">The artist exists, your account is its owner, and the details you supplied have provenance in Backline. You can start managing the page now.</p>
+          <div className="mx-auto mt-7 grid max-w-md gap-2 sm:grid-cols-2"><Link href={`/artists/${joined.id}`} className="bndy-btn2 flex min-h-11 items-center justify-center px-4 text-[12px]">View artist</Link><Link href="/join" className="bndy-btn flex min-h-11 items-center justify-center px-4 text-[12px]">Done</Link></div>
+        </section>
+      </main>
+    );
+  }
 
   if (phase === "new") {
     return (
@@ -79,7 +129,7 @@ export function JoinArtistFlow() {
         <button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim hover:text-[var(--acc-text)]"><ArrowLeft size={14} /> Back to matches</button>
         <header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">New artist · step two</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Nice. Let&apos;s make it yours.</h1><p className="mt-3 text-[13px] font-semibold text-dim">We&apos;ve saved <b>{name}</b>{location ? <> · {location}</> : null}. Sign in and you&apos;ll come straight back here — no retyping.</p></header>
         <AuthGate title="Sign in to join bndy">
-          <section className="mt-7 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="flex items-start gap-3"><BadgeCheck size={21} className="mt-0.5 shrink-0 text-[var(--acc-text)]" /><div><div className="text-[15px] font-black">You&apos;re signed in.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">Next we&apos;ll confirm the public profile details, rerun the duplicate gate, then create the artist and your owner relationship together.</p></div></div><button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Profile setup coming next</button></section>
+          <section className="mt-7 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="flex items-start gap-3"><BadgeCheck size={21} className="mt-0.5 shrink-0 text-[var(--acc-text)]" /><div><div className="text-[15px] font-black">Ready to create {name}.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll rerun the identity gate now. If somebody added the artist while you were signing in, we&apos;ll stop and show that page instead. Otherwise the artist and your owner relationship are created as one Join operation.</p></div></div>{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading} onClick={createOwnedArtist} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my artist</button></section>
         </AuthGate>
       </main>
     );
@@ -90,8 +140,8 @@ export function JoinArtistFlow() {
       <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10">
         <button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim hover:text-[var(--acc-text)]"><ArrowLeft size={14} /> Back to matches</button>
         <header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Claim artist</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Yep — that&apos;s already on bndy.</h1><p className="mt-3 text-[13px] font-semibold text-dim">Claiming connects your account to the existing page. It does not create another artist or overwrite anything before verification.</p></header>
-        <section className="mt-6 rounded-[22px] border border-line glass p-4"><div className="text-[17px] font-black">{claimCandidate.name}</div>{claimCandidate.matchedVariant && <div className="mt-1 text-[11px] font-bold text-dim">Matched name: {claimCandidate.matchedVariant}</div>}{claimCandidate.location && <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-dim"><MapPin size={12} /> {claimCandidate.location}</div>}</section>
-        <AuthGate title="Sign in to claim this artist"><section className="mt-6 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="text-[15px] font-black">Ready to request the claim.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">The persisted Claim Request endpoint is the next backend slice. Until that lands, this screen deliberately cannot mutate the existing artist.</p><button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button></section></AuthGate>
+        <section className="mt-6 rounded-[22px] border border-line glass p-4"><div className="text-[17px] font-black">{claimCandidate.name}</div>{claimCandidate.nameVariants && claimCandidate.nameVariants.length > 0 && <div className="mt-1 text-[11px] font-bold text-dim">Also known as: {claimCandidate.nameVariants.join(", ")}</div>}{claimCandidate.matchedVariant && <div className="mt-1 text-[11px] font-black text-[var(--acc-text)]">Matched your search as “{claimCandidate.matchedVariant}”</div>}{claimCandidate.location && <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-dim"><MapPin size={12} /> {claimCandidate.location}</div>}</section>
+        <AuthGate title="Sign in to claim this artist"><section className="mt-6 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="text-[15px] font-black">Ready to request the claim.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">The existing page stays untouched while the claim is verified. The Claim Request persistence/review endpoint is being built as the next backend slice.</p><button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button></section></AuthGate>
       </main>
     );
   }
