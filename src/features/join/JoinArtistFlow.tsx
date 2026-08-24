@@ -8,6 +8,7 @@ import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { joinArtist, requestJoinClaim } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
+import { trackJoin } from "./joinAnalytics";
 
 type Phase = "search" | "new" | "claim" | "success";
 
@@ -60,11 +61,12 @@ export function JoinArtistFlow() {
   const search = async () => {
     if (!name.trim() || !location.trim()) return;
     setLoading(true); setError(null); setCandidates([]);
+    trackJoin("identity_search_submitted", { entityType: "artist", step: "identity" });
     try {
       const loc = pickedLocation ?? location.trim();
       const result = await resolveArtist({ name: name.trim(), location: loc }, { dryRun: true });
       setSearched(true);
-      if (result.action === "review" || result.candidates.length) setCandidates(result.candidates);
+      if (result.action === "review" || result.candidates.length) { setCandidates(result.candidates); trackJoin("existing_candidate_shown", { entityType: "artist", step: "identity" }); }
       else if (result.action === "matched" && result.artistId) {
         setCandidates([{ id: result.artistId, name: result.artistName ?? name.trim(), location: result.artistLocation ?? loc, matchedBy: result.matchedBy, matchedVariant: result.matchedVariant }]);
       }
@@ -76,12 +78,14 @@ export function JoinArtistFlow() {
     const loc = pickedLocation ?? location.trim();
     saveJoinState({ entityType: "artist", intent: "new", name: name.trim(), location: loc });
     setError(null);
+    trackJoin("create_new_confirmed", { entityType: "artist", step: "identity" });
     setPhase("new");
   };
 
   const startClaim = (candidate: ArtistCandidate) => {
     saveJoinState({ entityType: "artist", intent: "claim", name: candidate.name, location: candidate.location, entityId: candidate.id });
     setClaimCandidate(candidate);
+    trackJoin("claim_branch_entered", { entityType: "artist", step: "claim" });
     setError(null);
     setPhase("claim");
   };
@@ -93,6 +97,7 @@ export function JoinArtistFlow() {
       const result = await requestJoinClaim({ entityType: "artist", entityId: claimCandidate.id, requestedRole: "owner", evidenceHints: { searchedName: name, searchedLocation: location } });
       if (!result.ok) { setError(result.message); return; }
       clearJoinState();
+      trackJoin("claim_requested", { entityType: "artist", step: "claim" });
       setClaimSubmitted(true);
     } catch { setError("Network hiccup. Try again."); }
     finally { setLoading(false); }
@@ -105,6 +110,8 @@ export function JoinArtistFlow() {
       const result = await joinArtist({ name: name.trim(), location: loc, artistType: artistType || undefined, actType: actType.length ? actType : undefined, genres: genres.length ? genres : undefined, acoustic: acoustic || undefined });
       if (result.ok) {
         clearJoinState();
+        trackJoin("entity_creation_completed", { entityType: "artist", result: "created" });
+        trackJoin("join_completed", { entityType: "artist", result: "created" });
         setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });
         setPhase("success");
         return;
@@ -116,6 +123,7 @@ export function JoinArtistFlow() {
             ? [{ ...result.artist, matchedBy: result.matchedBy ?? undefined, matchedVariant: result.matchedVariant ?? undefined }]
             : [];
         setCandidates(nextCandidates);
+        trackJoin("entity_creation_duplicate_gated", { entityType: "artist", result: "existing" });
         setSearched(true);
         setPhase("search");
         setError("Another matching artist appeared before we created yours. Nothing new was added — choose the existing page below.");

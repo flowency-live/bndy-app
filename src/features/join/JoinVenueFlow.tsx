@@ -7,6 +7,7 @@ import { AuthGate } from "@/features/auth/AuthGate";
 import { placesDetails, placesSuggest, type PlaceDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { checkJoinVenue, joinVenue, requestJoinClaim, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
+import { trackJoin } from "./joinAnalytics";
 
 type Phase = "search" | "new" | "claim" | "success";
 
@@ -90,13 +91,17 @@ export function JoinVenueFlow() {
     const value = identity();
     if (!value) return;
     setLoading(true); setError(null); setCandidate(null);
+    trackJoin("identity_search_submitted", { entityType: "venue", step: "identity" });
     try {
       const result = await checkJoinVenue(value);
       if (result.existing) {
+        trackJoin("existing_candidate_shown", { entityType: "venue", step: "identity" });
+        trackJoin("claim_branch_entered", { entityType: "venue", step: "claim" });
         setCandidate(result.existing);
         saveJoinState({ entityType: "venue", intent: "claim", name: result.existing.name, address: result.existing.address, googlePlaceId: result.existing.googlePlaceId, entityId: result.existing.id });
         setPhase("claim");
       } else if (result.clear) {
+        trackJoin("create_new_confirmed", { entityType: "venue", step: "identity" });
         saveJoinState({ entityType: "venue", intent: "new", name: value.name, address: value.address, googlePlaceId: value.googlePlaceId });
         setPhase("new");
       } else setError(result.message ?? "We couldn't safely check that venue.");
@@ -111,6 +116,7 @@ export function JoinVenueFlow() {
       const result = await requestJoinClaim({ entityType: "venue", entityId: candidate.id, requestedRole: "owner", evidenceHints: { address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" } });
       if (!result.ok) { setError(result.message); return; }
       clearJoinState();
+      trackJoin("claim_requested", { entityType: "venue", step: "claim" });
       setClaimSubmitted(true);
     } catch { setError("Network hiccup. Try again."); }
     finally { setLoading(false); }
@@ -124,9 +130,12 @@ export function JoinVenueFlow() {
       const result = await joinVenue(value);
       if (result.ok) {
         clearJoinState();
+        trackJoin("entity_creation_completed", { entityType: "venue", result: "created" });
+        trackJoin("join_completed", { entityType: "venue", result: "created" });
         setJoined({ id: result.venue.id, name: result.venue.name, address: result.venue.address });
         setPhase("success");
       } else if (result.kind === "existing") {
+        trackJoin("entity_creation_duplicate_gated", { entityType: "venue", result: "existing" });
         if (result.venue) {
           setCandidate(result.venue);
           saveJoinState({ entityType: "venue", intent: "claim", name: result.venue.name, address: result.venue.address, googlePlaceId: result.venue.googlePlaceId, entityId: result.venue.id });
