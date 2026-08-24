@@ -21,6 +21,10 @@ export function JoinVenueFlow() {
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState<{ id: string; name: string; address?: string } | null>(null);
   const [claimSubmitted, setClaimSubmitted] = useState(false);
+  const [website, setWebsite] = useState("");
+  const [phone, setPhone] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [instagram, setInstagram] = useState("");
   const deb = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -85,6 +89,9 @@ export function JoinVenueFlow() {
     googlePlaceId: selected.placeId,
     latitude: selected.lat,
     longitude: selected.lng,
+    website: website.trim() || undefined,
+    phone: phone.trim() || undefined,
+    socialMediaUrls: [facebook.trim(), instagram.trim()].filter(Boolean),
   } : null;
 
   const check = async () => {
@@ -126,6 +133,8 @@ export function JoinVenueFlow() {
     const value = identity();
     if (!value) { setError("Please pick the venue from the place results again so we can verify its exact location."); setPhase("search"); return; }
     setLoading(true); setError(null);
+    const hasProfile = Boolean(website.trim() || phone.trim() || facebook.trim() || instagram.trim());
+    trackJoin(hasProfile ? "profile_step_completed" : "profile_step_skipped", { entityType: "venue", step: "profile" });
     try {
       const result = await joinVenue(value);
       if (result.ok) {
@@ -158,7 +167,7 @@ export function JoinVenueFlow() {
   );
 
   if (phase === "new") return (
-    <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10"><button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to venue</button><header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">New venue · step two</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Great. Let&apos;s make it yours.</h1><p className="mt-3 text-[13px] font-semibold text-dim">We couldn&apos;t find this physical venue in bndy. Sign in and we&apos;ll create it with your ownership relationship.</p></header><AuthGate title="Sign in to join bndy"><section className="mt-7 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="flex items-start gap-3"><BadgeCheck size={21} className="mt-0.5 text-[var(--acc-text)]" /><div><div className="text-[15px] font-black">Ready to create {selected?.name ?? query}.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll verify the Google Place identity again before creating anything. A late duplicate becomes a Claim, never another venue.</p></div></div>{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading || !selected} onClick={createOwnedVenue} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my venue</button></section></AuthGate></main>
+    <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10"><button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to venue</button><header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">New venue · step two</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Great. Let&apos;s make it yours.</h1><p className="mt-3 text-[13px] font-semibold text-dim">We couldn&apos;t find this physical venue in bndy. Sign in and we&apos;ll create it with your ownership relationship.</p></header><AuthGate title="Sign in to join bndy"><section className="mt-7 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="flex items-start gap-3"><BadgeCheck size={21} className="mt-0.5 text-[var(--acc-text)]" /><div><div className="text-[15px] font-black">Ready to create {selected?.name ?? query}.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll verify the Google Place identity again before creating anything. A late duplicate becomes a Claim, never another venue.</p></div></div><div className="mt-5 border-t border-line pt-4"><div className="text-[11.5px] font-black">A little more about the venue <span className="font-semibold text-dim">· optional</span></div><p className="mt-1 text-[10.5px] font-semibold text-dim">Skip all of this if you want. Google has already done the boring identity bit.</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={website} onChange={(e) => setWebsite(e.target.value)} inputMode="url" placeholder="Website" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="Phone" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={facebook} onChange={(e) => setFacebook(e.target.value)} inputMode="url" placeholder="Facebook" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={instagram} onChange={(e) => setInstagram(e.target.value)} inputMode="url" placeholder="Instagram" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /></div></div>{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading || !selected} onClick={createOwnedVenue} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my venue</button></section></AuthGate></main>
   );
 
   return (
