@@ -1,0 +1,59 @@
+name: Wire Join relinquish UI once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run Join relinquish UI')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Wire relinquish controls
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'src/features/join/ManageEntitiesPage.tsx';
+          let s = fs.readFileSync(p, 'utf8');
+          const transferImport = 'import { VenueOwnershipTransfer } from "./VenueOwnershipTransfer";';
+          if (!s.includes('from "./RelinquishOwnership"')) {
+            if (!s.includes(transferImport)) throw new Error('Venue transfer import missing');
+            s = s.replace(transferImport, transferImport + '\nimport { RelinquishOwnership } from "./RelinquishOwnership";');
+          }
+
+          const artistEnd = '{error && <p className="mt-2 text-[10.5px] font-bold text-red-500">{error}</p>}</div> : null}</article>;';
+          const artistNew = '{error && <p className="mt-2 text-[10.5px] font-bold text-red-500">{error}</p>}</div> : null}{artist.role === "owner" && <RelinquishOwnership entityType="artist" entityId={artist.id} entityName={artist.name} onRelinquished={() => window.location.reload()} />}</article>;';
+          if (!s.includes('entityType="artist"')) {
+            const idx = s.indexOf(artistEnd);
+            if (idx < 0) throw new Error('Artist card anchor missing');
+            s = s.slice(0, idx) + artistNew + s.slice(idx + artistEnd.length);
+          }
+
+          const venueAnchor = '<VenueOwnershipTransfer venueId={venue.id} venueName={venue.name} />';
+          if (!s.includes('entityType="venue"')) {
+            if (!s.includes(venueAnchor)) throw new Error('Venue transfer anchor missing');
+            s = s.replace(venueAnchor, venueAnchor + '<RelinquishOwnership entityType="venue" entityId={venue.id} entityName={venue.name} onRelinquished={() => window.location.reload()} />');
+          }
+          fs.writeFileSync(p, s);
+          NODE
+          npm run typecheck
+          npm test
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/ManageEntitiesPage.tsx
+          git commit -m 'Add Artist and Venue relinquish ownership UI'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
