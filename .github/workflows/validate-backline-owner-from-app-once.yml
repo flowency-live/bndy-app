@@ -1,0 +1,52 @@
+name: Validate Backline owner protection from app once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    if: contains(github.event.head_commit.message, 'Run Backline owner validation from app')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/checkout@v4
+        with:
+          repository: flowency-live/bndy-enrichment
+          ref: main
+          path: backline
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backline/package-lock.json
+      - name: Validate Backline and capture result
+        run: |
+          cd backline
+          npm ci
+          set +e
+          npm run check > /tmp/backline.log 2>&1
+          CODE=$?
+          set -e
+          SHA=$(git rev-parse HEAD)
+          cd ..
+          {
+            echo "exit_code=$CODE"
+            echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "enrichment_sha=$SHA"
+            echo '--- tail ---'
+            tail -n 200 /tmp/backline.log
+          } > JOIN-BNDY-BACKLINE-VALIDATION.txt
+      - name: Commit result
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add JOIN-BNDY-BACKLINE-VALIDATION.txt
+          git commit -m 'Record Join Backline validation from app'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
