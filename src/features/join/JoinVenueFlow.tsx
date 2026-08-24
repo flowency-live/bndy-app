@@ -29,6 +29,31 @@ export function JoinVenueFlow() {
     if (saved.intent === "claim" && saved.entityId) {
       setCandidate({ id: saved.entityId, name: saved.name, address: saved.address, googlePlaceId: saved.googlePlaceId });
       setPhase("claim");
+      return;
+    }
+    if (saved.intent === "new" && saved.googlePlaceId) {
+      let cancelled = false;
+      setLoading(true);
+      placesDetails(saved.googlePlaceId)
+        .then((details) => {
+          if (cancelled) return;
+          if (!details) {
+            setPhase("search");
+            setError("We need you to pick the venue once more so we can verify its exact location.");
+            return;
+          }
+          setSelected(details);
+          setQuery(details.name);
+          setPhase("new");
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setPhase("search");
+            setError("We need you to pick the venue once more so we can verify its exact location.");
+          }
+        })
+        .finally(() => { if (!cancelled) setLoading(false); });
+      return () => { cancelled = true; };
     }
   }, []);
 
