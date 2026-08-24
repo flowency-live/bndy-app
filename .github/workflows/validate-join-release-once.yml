@@ -1,0 +1,55 @@
+name: Validate Join release once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    if: contains(github.event.head_commit.message, 'Run Join release validation')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Validate and capture
+        run: |
+          set +e
+          {
+            echo '=== TYPECHECK ==='
+            npm run typecheck
+            TYPE=$?
+            echo '=== TEST ==='
+            npm test
+            TEST=$?
+            echo '=== BUILD ==='
+            npm run build
+            BUILD=$?
+            echo "RESULT typecheck=$TYPE test=$TEST build=$BUILD"
+          } > /tmp/join-release.log 2>&1
+          CODE=0
+          grep -q 'RESULT typecheck=0 test=0 build=0' /tmp/join-release.log || CODE=1
+          set -e
+          {
+            echo "exit_code=$CODE"
+            echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo '--- tail ---'
+            tail -n 180 /tmp/join-release.log
+          } > JOIN-BNDY-VALIDATION.txt
+      - name: Record validation
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add JOIN-BNDY-VALIDATION.txt
+          git commit -m 'Record Join bndy release validation'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
