@@ -1,0 +1,76 @@
+name: Instrument Join funnel once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Run Join funnel instrumentation')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Instrument Artist Venue and delegate journeys
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          function replace(path, from, to, required = true) {
+            let s = fs.readFileSync(path, 'utf8');
+            if (!s.includes(from)) {
+              if (required) throw new Error(`Missing anchor in ${path}: ${from.slice(0,80)}`);
+              return;
+            }
+            s = s.replace(from, to);
+            fs.writeFileSync(path, s);
+          }
+
+          const artist = 'src/features/join/JoinArtistFlow.tsx';
+          replace(artist, 'import { clearJoinState, readJoinState, saveJoinState } from "./joinState";', 'import { clearJoinState, readJoinState, saveJoinState } from "./joinState";\nimport { trackJoin } from "./joinAnalytics";');
+          replace(artist, '    setLoading(true); setError(null); setCandidates([]);\n    try {', '    setLoading(true); setError(null); setCandidates([]);\n    trackJoin("identity_search_submitted", { entityType: "artist", step: "identity" });\n    try {');
+          replace(artist, '      if (result.action === "review" || result.candidates.length) setCandidates(result.candidates);', '      if (result.action === "review" || result.candidates.length) { setCandidates(result.candidates); trackJoin("existing_candidate_shown", { entityType: "artist", step: "identity" }); }');
+          replace(artist, '    setError(null);\n    setPhase("new");', '    setError(null);\n    trackJoin("create_new_confirmed", { entityType: "artist", step: "identity" });\n    setPhase("new");');
+          replace(artist, '    setClaimCandidate(candidate);\n    setError(null);', '    setClaimCandidate(candidate);\n    trackJoin("candidate_accepted", { entityType: "artist", step: "identity" });\n    trackJoin("claim_branch_entered", { entityType: "artist", step: "claim" });\n    setError(null);');
+          replace(artist, '      clearJoinState();\n      setClaimSubmitted(true);', '      clearJoinState();\n      trackJoin("claim_requested", { entityType: "artist", step: "claim" });\n      setClaimSubmitted(true);');
+          replace(artist, '        clearJoinState();\n        setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });', '        clearJoinState();\n        trackJoin("profile_step_completed", { entityType: "artist", step: "profile" });\n        trackJoin("entity_creation_completed", { entityType: "artist", result: "created" });\n        trackJoin("join_completed", { entityType: "artist", result: "created" });\n        setJoined({ id: result.artist.id, name: result.artist.name, location: result.artist.location ?? loc });');
+          replace(artist, '        setCandidates(nextCandidates);\n        setSearched(true);', '        setCandidates(nextCandidates);\n        trackJoin("entity_creation_duplicate_gated", { entityType: "artist", result: "existing" });\n        setSearched(true);');
+          replace(artist, '    } catch {\n      setError("Network hiccup. Nothing was added — try again.");', '    } catch {\n      trackJoin("entity_creation_failed", { entityType: "artist", result: "network" });\n      setError("Network hiccup. Nothing was added — try again.");');
+
+          const venue = 'src/features/join/JoinVenueFlow.tsx';
+          replace(venue, 'import { clearJoinState, readJoinState, saveJoinState } from "./joinState";', 'import { clearJoinState, readJoinState, saveJoinState } from "./joinState";\nimport { trackJoin } from "./joinAnalytics";');
+          replace(venue, '    setLoading(true); setError(null); setCandidate(null);\n    try {', '    setLoading(true); setError(null); setCandidate(null);\n    trackJoin("identity_search_submitted", { entityType: "venue", step: "identity" });\n    try {');
+          replace(venue, '      if (result.existing) {\n        setCandidate(result.existing);', '      if (result.existing) {\n        trackJoin("existing_candidate_shown", { entityType: "venue", step: "identity" });\n        trackJoin("claim_branch_entered", { entityType: "venue", step: "claim" });\n        setCandidate(result.existing);');
+          replace(venue, '      } else if (result.clear) {\n        saveJoinState', '      } else if (result.clear) {\n        trackJoin("create_new_confirmed", { entityType: "venue", step: "identity" });\n        saveJoinState');
+          replace(venue, '      clearJoinState();\n      setClaimSubmitted(true);', '      clearJoinState();\n      trackJoin("claim_requested", { entityType: "venue", step: "claim" });\n      setClaimSubmitted(true);');
+          replace(venue, '        clearJoinState();\n        setJoined({ id: result.venue.id, name: result.venue.name, address: result.venue.address });', '        clearJoinState();\n        trackJoin("entity_creation_completed", { entityType: "venue", result: "created" });\n        trackJoin("join_completed", { entityType: "venue", result: "created" });\n        setJoined({ id: result.venue.id, name: result.venue.name, address: result.venue.address });');
+          replace(venue, '      } else if (result.kind === "existing") {\n        if (result.venue) {', '      } else if (result.kind === "existing") {\n        trackJoin("entity_creation_duplicate_gated", { entityType: "venue", result: "existing" });\n        if (result.venue) {');
+          replace(venue, '    } catch { setError("Network hiccup. Nothing was created — try again."); }', '    } catch { trackJoin("entity_creation_failed", { entityType: "venue", result: "network" }); setError("Network hiccup. Nothing was created — try again."); }');
+
+          const manage = 'src/features/join/ManageEntitiesPage.tsx';
+          replace(manage, 'import { AuthGate } from "@/features/auth/AuthGate";', 'import { AuthGate } from "@/features/auth/AuthGate";\nimport { trackJoin } from "./joinAnalytics";');
+          replace(manage, '      setInviteLink(result.inviteLink);\n      setEmail("");', '      setInviteLink(result.inviteLink);\n      trackJoin("delegate_invitation_created", { entityType: "venue", step: "manage" });\n      setEmail("");');
+          replace(manage, '    try { await revokeVenueDelegate(member.membership_id); setMembers(await getVenueMembers(venue.id)); }', '    try { await revokeVenueDelegate(member.membership_id); trackJoin("delegate_revoked", { entityType: "venue", step: "manage" }); setMembers(await getVenueMembers(venue.id)); }');
+
+          const invite = 'src/app/join/invite/[token]/page.tsx';
+          replace(invite, 'import { acceptEntityInvite, getEntityInvite, type EntityInvite } from "@/features/join/manageApi";', 'import { acceptEntityInvite, getEntityInvite, type EntityInvite } from "@/features/join/manageApi";\nimport { trackJoin } from "@/features/join/joinAnalytics";');
+          replace(invite, '      await acceptEntityInvite(token);\n      setAccepted(true);', '      await acceptEntityInvite(token);\n      trackJoin("delegate_invitation_accepted", { entityType: "venue", step: "delegate_invite" });\n      setAccepted(true);');
+          NODE
+          npm run typecheck
+          npm test
+      - name: Commit instrumentation
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/JoinArtistFlow.tsx src/features/join/JoinVenueFlow.tsx src/features/join/ManageEntitiesPage.tsx src/app/join/invite/'[token]'/page.tsx
+          git commit -m 'Instrument Join onboarding funnel'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
