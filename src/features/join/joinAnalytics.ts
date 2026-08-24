@@ -24,7 +24,8 @@ export type JoinAnalyticsEvent =
   | "delegate_invitation_created"
   | "delegate_invitation_accepted"
   | "delegate_revoked"
-  | "ownership_transferred";
+  | "ownership_transferred"
+  | "ownership_relinquished";
 
 function sessionId(): string {
   if (typeof window === "undefined") return "server";
