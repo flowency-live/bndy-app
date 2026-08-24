@@ -1,0 +1,133 @@
+exit_code=0
+checked_at=2026-08-24T20:15:50Z
+--- tail ---
+=== TYPECHECK ===
+
+> bndy-app@0.1.0 typecheck
+> tsc --noEmit
+
+=== TEST ===
+
+> bndy-app@0.1.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/home/runner/work/bndy-app/bndy-app[39m
+
+ [32m✓[39m src/features/festivals/curate/GigsSection.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/lineup.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/FacebookSourceAssist.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 321[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/StepArtist.bill.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 304[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/festivalPrefill.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/lib/curator.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 167[2mms[22m[39m
+ [32m✓[39m src/features/festivals/festivalUtils.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/festivalBlocks.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/features/festivals/FestivalPosterFallback.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/recurrence.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/transforms.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/calendar.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/dates.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/features/wizard/__tests__/facebookArtistPrefill.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/mapdate.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/lib/festivalDiscovery.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/lib/api.festivals.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/features/venues/__tests__/VenueTicketingBanner.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 112[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/gigName.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/lib/nearbyGigs.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/geo.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/lib/nextImage.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domain/__tests__/grouping.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/lib/gigDiscoveryWindow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m24 passed[39m[22m[90m (24)[39m
+[2m      Tests [22m [1m[32m228 passed[39m[22m[90m (228)[39m
+[2m   Start at [22m 20:15:02
+[2m   Duration [22m 8.52s[2m (transform 667ms, setup 0ms, collect 4.12s, tests 1.09s, environment 13.07s, prepare 1.98s)[22m
+
+=== BUILD ===
+
+> bndy-app@0.1.0 build
+> next build
+
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.1.7
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./src/app/bands/page.tsx
+21:447  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/festivals/FestivalIndex.tsx
+63:9  Warning: The 'venues' logical expression could make the dependencies of useMemo Hook (at line 96) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'venues' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+
+./src/features/festivals/GigsFestivalStrip.tsx
+46:9  Warning: The 'venues' logical expression could make the dependencies of useMemo Hook (at line 49) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'venues' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+
+./src/features/join/ManageEntitiesPage.tsx
+99:238  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+141:237  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/26) ...
+   Generating static pages (6/26) 
+   Generating static pages (12/26) 
+   Generating static pages (19/26) 
+ ✓ Generating static pages (26/26)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    161 B           106 kB
+├ ○ /_not-found                          161 B           106 kB
+├ ○ /activity                            6.31 kB         181 kB
+├ ○ /add                                 227 B           218 kB
+├ ○ /add/artist                          6.96 kB         140 kB
+├ ○ /add/venue                           5.54 kB         146 kB
+├ ○ /artists                             6.16 kB         141 kB
+├ ƒ /artists/[artistId]                  11.4 kB         380 kB
+├ ○ /bands                               1.74 kB         120 kB
+├ ƒ /bands/[id]                          2.15 kB         121 kB
+├ ○ /concerts                            2.06 kB         117 kB
+├ ○ /festivals                           6.81 kB         154 kB
+├ ƒ /festivals/[slug]                    19.9 kB         389 kB
+├ ƒ /festivals/[slug]/manage             12.5 kB         198 kB
+├ ○ /festivals/new                       6.92 kB         182 kB
+├ ƒ /g/[id]                              161 B           106 kB
+├ ○ /gigs                                15.1 kB         182 kB
+├ ƒ /gigs/[gigId]                        6.59 kB         149 kB
+├ ○ /help                                180 B           110 kB
+├ ○ /icon.svg                            0 B                0 B
+├ ○ /join                                3.27 kB         113 kB
+├ ○ /join/artist                         6.67 kB         189 kB
+├ ƒ /join/invite/[token]                 2.79 kB         185 kB
+├ ○ /join/venue                          4.96 kB         187 kB
+├ ○ /list-a-gig                          218 B           218 kB
+├ ○ /login                               4.71 kB         175 kB
+├ ○ /manage                              5.8 kB          188 kB
+├ ○ /manifest.webmanifest                0 B                0 B
+├ ○ /map                                 1.42 kB         107 kB
+├ ƒ /pwa-icon-192                        161 B           106 kB
+├ ƒ /pwa-icon-512                        161 B           106 kB
+├ ƒ /pwa-icon-maskable                   161 B           106 kB
+├ ○ /robots.txt                          0 B                0 B
+├ ○ /sitemap.xml                         0 B                0 B
+└ ƒ /venues/[venueId]                    8.87 kB         170 kB
++ First Load JS shared by all            106 kB
+  ├ chunks/1517-d73a70db1044852e.js      50.7 kB
+  ├ chunks/4bd1b696-5da374752431f454.js  53 kB
+  └ other shared chunks (total)          2.29 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+RESULT typecheck=0 test=0 build=0
