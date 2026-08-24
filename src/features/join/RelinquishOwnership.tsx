@@ -29,7 +29,7 @@ export function RelinquishOwnership({
     setError(null);
     try {
       await relinquishOwnership(entityType, entityId);
-      trackJoin("ownership_relinquished" as never, { entityType, step: "manage" });
+      trackJoin("ownership_relinquished", { entityType, step: "manage" });
       setDone(true);
       onRelinquished?.();
     } catch (err) {
