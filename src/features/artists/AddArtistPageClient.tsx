@@ -24,10 +24,12 @@ function cleanTown(label: string): string {
   return label.replace(/,\s*UK$/i, "").replace(/,\s*United Kingdom$/i, "").trim();
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, optional, children }: { label: string; hint?: string; optional?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">{label}</label>
+      <label className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">
+        {label}{optional && <span className="ml-1.5 font-bold normal-case tracking-normal text-dim2">optional</span>}
+      </label>
       {children}
       {hint && <p className="mt-1.5 text-[11.5px] font-semibold text-dim">{hint}</p>}
     </div>
@@ -51,6 +53,10 @@ export function AddArtistPageClient() {
   const [preds, setPreds] = useState<PlaceSuggestion[]>([]);
   const [region, setRegion] = useState("");
   const [artistType, setArtistType] = useState("");
+  const [actType, setActType] = useState<string[]>([]);
+  const [acoustic, setAcoustic] = useState(false);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [genresOpen, setGenresOpen] = useState(false);
   const [bio, setBio] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [phase, setPhase] = useState<"idle" | "saving">("idle");
@@ -82,6 +88,14 @@ export function AddArtistPageClient() {
 
   const location = locMode === "town" ? (townPicked ?? townQ.trim()) : region;
   const canSave = !!name.trim() && !!location && !!artistType && phase !== "saving";
+  const acousticCapability = taxonomy.performanceCapabilities.find((capability) => capability.field === "acoustic");
+
+  const toggleActType = (value: string) => {
+    setActType((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  };
+  const toggleGenre = (value: string) => {
+    setGenres((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  };
 
   const applyInspection = (result: FacebookSourceInspection) => {
     setError(null);
@@ -124,7 +138,9 @@ export function AddArtistPageClient() {
         bio: bio.trim() || undefined,
         websiteUrl: websiteUrl.trim() || undefined,
         artistType,
-        genres: [],
+        actType: actType.length ? actType : undefined,
+        acoustic: acoustic || undefined,
+        genres,
       }, opts);
 
       if ((result.action === "matched" || result.action === "created") && result.artistId) {
@@ -155,6 +171,10 @@ export function AddArtistPageClient() {
     setPreds([]);
     setRegion("");
     setArtistType("");
+    setActType([]);
+    setAcoustic(false);
+    setGenres([]);
+    setGenresOpen(false);
     setBio("");
     setWebsiteUrl("");
     setError(null);
@@ -263,6 +283,81 @@ export function AddArtistPageClient() {
             <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
           </div>
         </Field>
+
+        <Field label="They play" optional>
+          <div className="flex flex-wrap gap-1.5">
+            {taxonomy.actTypes.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => toggleActType(type.value)}
+                aria-pressed={actType.includes(type.value)}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors",
+                  actType.includes(type.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt",
+                )}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        {acousticCapability && (
+          <Field label="They can perform" optional>
+            <button
+              type="button"
+              onClick={() => setAcoustic((current) => !current)}
+              aria-pressed={acoustic}
+              className={cn(
+                "flex items-center gap-2.5 rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors",
+                acoustic ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt",
+              )}
+            >
+              <span className={cn("flex h-4 w-4 items-center justify-center rounded border", acoustic ? "border-transparent bg-on-acc/15" : "border-line-hi")}>
+                {acoustic && <Check size={10} strokeWidth={3.5} />}
+              </span>
+              {acousticCapability.label.replace(/\s+performances?$/i, "")}
+            </button>
+          </Field>
+        )}
+
+        <div className="overflow-hidden rounded-2xl border border-line">
+          <button
+            type="button"
+            onClick={() => setGenresOpen((current) => !current)}
+            aria-expanded={genresOpen}
+            className="flex w-full items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="min-w-0 truncate text-[11px] font-extrabold uppercase tracking-[1.2px] text-dim">
+              Genres
+              <span className="ml-2 normal-case tracking-normal text-txt">
+                {genres.length ? `${genres.slice(0, 3).join(", ")}${genres.length > 3 ? ` +${genres.length - 3}` : ""}` : "optional"}
+              </span>
+            </span>
+            <ChevronDown size={15} className={cn("shrink-0 text-dim transition-transform", genresOpen && "rotate-180")} />
+          </button>
+          {genresOpen && (
+            <div className="border-t border-line px-4 pb-4 pt-3">
+              <div className="flex flex-wrap gap-1.5">
+                {taxonomy.genres.map((genre) => (
+                  <button
+                    key={genre}
+                    type="button"
+                    onClick={() => toggleGenre(genre)}
+                    aria-pressed={genres.includes(genre)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-[12px] font-bold transition-colors",
+                      genres.includes(genre) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt",
+                    )}
+                  >
+                    {genre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {(bio || websiteUrl) && (
           <section className="space-y-4 border-t border-line pt-4" aria-label="Facebook details">
