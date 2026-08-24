@@ -65,3 +65,5 @@ jobs:
           git commit -m 'Instrument Join Artist and Venue funnel'
           git pull --rebase --autostash origin main
           git push origin HEAD:main
+
+# trigger revision 1
