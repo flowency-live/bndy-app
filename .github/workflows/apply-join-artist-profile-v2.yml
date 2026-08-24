@@ -1,0 +1,71 @@
+name: Apply Artist Join profile v2
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Apply Artist Join profile v2')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Replace new Artist step with canonical lightweight profile
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'src/features/join/JoinArtistFlow.tsx';
+          let s = fs.readFileSync(p, 'utf8');
+
+          if (!s.includes('useArtistTaxonomy')) {
+            s = s.replace('import { AuthGate } from "@/features/auth/AuthGate";\n', 'import { AuthGate } from "@/features/auth/AuthGate";\nimport { useArtistTaxonomy } from "@/lib/artistTaxonomy";\n');
+          }
+          if (!s.includes('const taxonomy = useArtistTaxonomy().data;')) {
+            s = s.replace('export function JoinArtistFlow() {\n', 'export function JoinArtistFlow() {\n  const taxonomy = useArtistTaxonomy().data;\n');
+          }
+          if (!s.includes('const [artistType, setArtistType]')) {
+            const a = '  const [claimSubmitted, setClaimSubmitted] = useState(false);\n';
+            if (!s.includes(a)) throw new Error('state anchor missing');
+            s = s.replace(a, a + '  const [artistType, setArtistType] = useState("");\n  const [actType, setActType] = useState<string[]>([]);\n  const [genres, setGenres] = useState<string[]>([]);\n  const [acoustic, setAcoustic] = useState(false);\n');
+          }
+          s = s.replace('const result = await joinArtist({ name: name.trim(), location: loc });', 'const result = await joinArtist({ name: name.trim(), location: loc, artistType: artistType || undefined, actType: actType.length ? actType : undefined, genres: genres.length ? genres : undefined, acoustic: acoustic || undefined });');
+
+          const phaseStart = s.indexOf('  if (phase === "new") {');
+          const claimStart = s.indexOf('  if (phase === "claim"', phaseStart);
+          if (phaseStart < 0 || claimStart < 0) throw new Error('new/claim phase boundaries missing');
+          let block = s.slice(phaseStart, claimStart);
+          const authStart = block.indexOf('        <AuthGate title="Sign in to join bndy">');
+          const authEndMarker = '        </AuthGate>';
+          const authEnd = block.indexOf(authEndMarker, authStart);
+          if (authStart < 0 || authEnd < 0) throw new Error('new phase AuthGate missing');
+
+          const replacement = `        <AuthGate title="Sign in to join bndy">\n          <section className="mt-7 space-y-5 rounded-[24px] border border-[var(--acc)] glass p-5">\n            <div className="flex items-start gap-3">\n              <BadgeCheck size={21} className="mt-0.5 shrink-0 text-[var(--acc-text)]" />\n              <div><div className="text-[15px] font-black">You&apos;re signed in. One tiny profile step.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">Enough to make the page useful. Everything else can wait.</p></div>\n            </div>\n            <div>\n              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">What kind of act?</label>\n              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">\n                {taxonomy.artistTypes.map((type) => <button key={type.value} type="button" onClick={() => setArtistType(type.value)} className={\`rounded-xl border px-3 py-2.5 text-[12px] font-black transition-colors \${artistType === type.value ? "border-transparent bg-acc text-on-acc" : "border-line text-dim hover:text-txt"}\`}>{type.label}</button>)}\n              </div>\n            </div>\n            <div>\n              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">What do you play? <span className="normal-case tracking-normal text-dim2">optional</span></label>\n              <div className="flex flex-wrap gap-1.5">\n                {taxonomy.actTypes.map((type) => <button key={type.value} type="button" onClick={() => setActType((current) => current.includes(type.value) ? current.filter((value) => value !== type.value) : [...current, type.value])} className={\`rounded-full border px-2.5 py-1 text-[11.5px] font-bold \${actType.includes(type.value) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim"}\`}>{type.label}</button>)}\n                <button type="button" onClick={() => setAcoustic((value) => !value)} className={\`rounded-full border px-2.5 py-1 text-[11.5px] font-bold \${acoustic ? "border-transparent bg-acc text-on-acc" : "border-line text-dim"}\`}>Acoustic</button>\n              </div>\n            </div>\n            <div>\n              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Genres <span className="normal-case tracking-normal text-dim2">optional</span></label>\n              <div className="max-h-36 overflow-y-auto pr-1"><div className="flex flex-wrap gap-1.5">{taxonomy.genres.map((genre) => <button key={genre} type="button" onClick={() => setGenres((current) => current.includes(genre) ? current.filter((value) => value !== genre) : [...current, genre])} className={\`rounded-full border px-2.5 py-1 text-[11px] font-bold \${genres.includes(genre) ? "border-transparent bg-acc text-on-acc" : "border-line text-dim"}\`}>{genre}</button>)}</div></div>\n            </div>\n            <p className="text-[11.5px] font-semibold leading-relaxed text-dim">We&apos;ll recheck identity immediately before creation. If the artist appeared while you were signing in, we&apos;ll switch you to Claim instead.</p>\n            {error && <p className="rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}\n            <button type="button" disabled={loading || !artistType} onClick={createOwnedArtist} className="bndy-btn2 flex min-h-12 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my artist</button>\n          </section>\n        </AuthGate>`;
+
+          block = block.slice(0, authStart) + replacement + block.slice(authEnd + authEndMarker.length);
+          s = s.slice(0, phaseStart) + block + s.slice(claimStart);
+          if (!s.includes('One tiny profile step.') || !s.includes('useArtistTaxonomy')) throw new Error('profile patch incomplete');
+          fs.writeFileSync(p, s);
+          NODE
+      - name: Verify
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
+      - name: Commit
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/features/join/JoinArtistFlow.tsx
+          git commit -m 'Add lightweight Artist profile step to Join'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
