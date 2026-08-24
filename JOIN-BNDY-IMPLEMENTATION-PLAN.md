@@ -1,6 +1,16 @@
 # Join bndy — implementation plan
 
 **Status:** active delivery plan  
+
+<!-- DELIVERY-CHECKPOINT:START -->
+## Delivery checkpoint — 24 August 2026
+
+**Substantially delivered:** JOIN-01 through JOIN-09. The product now has identity-first Artist and Venue onboarding, auth resume, atomic owner creation, Claim persistence/review, managed entities, Venue delegates/invites/ownership transfer, Artist profile taxonomy and Backline owner-authority protection.
+
+**Validated:** bndy-app typecheck, 228 tests and production build have passed during this delivery stream. Core Join analytics instrumentation also passes typecheck/tests. Public/API production smoke and Backline cross-repo validation are tracked as release gates.
+
+**Remaining release/hardening:** authenticated production acceptance; optional Venue profile polish; explicit relinquish/disown UX; progressive automatic Claim verification. None of these should weaken the rule that existing identities branch to Claim rather than duplicate creation.
+<!-- DELIVERY-CHECKPOINT:END -->
 **Owner:** bndy product + engineering  
 **Primary product repo:** `flowency-live/bndy-app`  
 **Backend:** `flowency-live/bndy-serverless-api`  
