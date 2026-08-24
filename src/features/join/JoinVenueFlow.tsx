@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, Building2, CheckCircle2, Loader2, MapPin, Search } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import { placesDetails, placesSuggest, type PlaceDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
-import { checkJoinVenue, joinVenue, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";
+import { checkJoinVenue, joinVenue, requestJoinClaim, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
 
 type Phase = "search" | "new" | "claim" | "success";
@@ -19,6 +19,7 @@ export function JoinVenueFlow() {
   const [phase, setPhase] = useState<Phase>("search");
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState<{ id: string; name: string; address?: string } | null>(null);
+  const [claimSubmitted, setClaimSubmitted] = useState(false);
   const deb = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -78,6 +79,18 @@ export function JoinVenueFlow() {
     finally { setLoading(false); }
   };
 
+  const submitClaim = async () => {
+    if (!candidate) return;
+    setLoading(true); setError(null);
+    try {
+      const result = await requestJoinClaim({ entityType: "venue", entityId: candidate.id, requestedRole: "owner", evidenceHints: { address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" } });
+      if (!result.ok) { setError(result.message); return; }
+      clearJoinState();
+      setClaimSubmitted(true);
+    } catch { setError("Network hiccup. Try again."); }
+    finally { setLoading(false); }
+  };
+
   const createOwnedVenue = async () => {
     const value = identity();
     if (!value) { setError("Please pick the venue from the place results again so we can verify its exact location."); setPhase("search"); return; }
@@ -107,7 +120,7 @@ export function JoinVenueFlow() {
   );
 
   if (phase === "claim" && candidate) return (
-    <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10"><button type="button" onClick={() => { setPhase("search"); setCandidate(null); }} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to search</button><header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Claim venue</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Looks like you&apos;re already on bndy 👋</h1><p className="mt-3 text-[13px] font-semibold text-dim">We found the same physical venue. We&apos;ll connect you to this page rather than create another copy.</p></header><section className="mt-6 rounded-[22px] border border-line glass p-4"><div className="text-[17px] font-black">{candidate.name}</div>{candidate.address && <div className="mt-1 flex items-start gap-1.5 text-[11px] font-bold text-dim"><MapPin size={12} className="mt-0.5" /> {candidate.address}</div>}{candidate.matchMethod && <div className="mt-2 text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">Matched by {candidate.matchMethod.replaceAll("_", " ")}</div>}</section><AuthGate title="Sign in to claim this venue"><section className="mt-6 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="text-[15px] font-black">Ready to request the claim.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">The existing venue remains untouched until ownership is verified. Claim persistence and review are the next controlled slice.</p><button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button></section></AuthGate></main>
+    <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10"><button type="button" onClick={() => { setPhase("search"); setCandidate(null); }} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to search</button><header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Claim venue</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Looks like you&apos;re already on bndy 👋</h1><p className="mt-3 text-[13px] font-semibold text-dim">We found the same physical venue. We&apos;ll connect you to this page rather than create another copy.</p></header><section className="mt-6 rounded-[22px] border border-line glass p-4"><div className="text-[17px] font-black">{candidate.name}</div>{candidate.address && <div className="mt-1 flex items-start gap-1.5 text-[11px] font-bold text-dim"><MapPin size={12} className="mt-0.5" /> {candidate.address}</div>}{candidate.matchMethod && <div className="mt-2 text-[10px] font-black uppercase tracking-wide text-[var(--acc-text)]">Matched by {candidate.matchMethod.replaceAll("_", " ")}</div>}</section><AuthGate title="Sign in to claim this venue"><section className="mt-6 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="text-[15px] font-black">Ready to request the claim.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">The existing venue stays untouched while the claim is verified. We&apos;ll record your request now and keep ownership changes behind verification.</p>{claimSubmitted && <p className="mt-4 rounded-xl border border-[var(--acc)] px-3 py-2 text-[11.5px] font-bold text-[var(--acc-text)]">Your claim is in. The page stays unchanged while we verify that you&apos;re connected to the venue.</p>}{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading || claimSubmitted} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading ? <Loader2 size={14} className="animate-spin" /> : claimSubmitted ? <CheckCircle2 size={14} /> : null}{claimSubmitted ? "Claim requested" : "Request claim"}</button></section></AuthGate></main>
   );
 
   if (phase === "new") return (

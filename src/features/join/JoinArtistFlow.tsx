@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, Loader2, MapPin, Music2, Search } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "@/features/wizard/wizardApi";
-import { joinArtist } from "./joinApi";
+import { joinArtist, requestJoinClaim } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
 
 type Phase = "search" | "new" | "claim" | "success";
@@ -24,6 +24,7 @@ export function JoinArtistFlow() {
   const [phase, setPhase] = useState<Phase>("search");
   const [claimCandidate, setClaimCandidate] = useState<ArtistCandidate | null>(null);
   const [joined, setJoined] = useState<JoinedArtist | null>(null);
+  const [claimSubmitted, setClaimSubmitted] = useState(false);
   const deb = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -77,6 +78,18 @@ export function JoinArtistFlow() {
     setClaimCandidate(candidate);
     setError(null);
     setPhase("claim");
+  };
+
+  const submitClaim = async () => {
+    if (!claimCandidate) return;
+    setLoading(true); setError(null);
+    try {
+      const result = await requestJoinClaim({ entityType: "artist", entityId: claimCandidate.id, requestedRole: "owner", evidenceHints: { searchedName: name, searchedLocation: location } });
+      if (!result.ok) { setError(result.message); return; }
+      clearJoinState();
+      setClaimSubmitted(true);
+    } catch { setError("Network hiccup. Try again."); }
+    finally { setLoading(false); }
   };
 
   const createOwnedArtist = async () => {
@@ -141,7 +154,7 @@ export function JoinArtistFlow() {
         <button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim hover:text-[var(--acc-text)]"><ArrowLeft size={14} /> Back to matches</button>
         <header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Claim artist</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Yep — that&apos;s already on bndy.</h1><p className="mt-3 text-[13px] font-semibold text-dim">Claiming connects your account to the existing page. It does not create another artist or overwrite anything before verification.</p></header>
         <section className="mt-6 rounded-[22px] border border-line glass p-4"><div className="text-[17px] font-black">{claimCandidate.name}</div>{claimCandidate.nameVariants && claimCandidate.nameVariants.length > 0 && <div className="mt-1 text-[11px] font-bold text-dim">Also known as: {claimCandidate.nameVariants.join(", ")}</div>}{claimCandidate.matchedVariant && <div className="mt-1 text-[11px] font-black text-[var(--acc-text)]">Matched your search as “{claimCandidate.matchedVariant}”</div>}{claimCandidate.location && <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-dim"><MapPin size={12} /> {claimCandidate.location}</div>}</section>
-        <AuthGate title="Sign in to claim this artist"><section className="mt-6 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="text-[15px] font-black">Ready to request the claim.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">The existing page stays untouched while the claim is verified. The Claim Request persistence/review endpoint is being built as the next backend slice.</p><button type="button" disabled className="bndy-btn2 mt-5 min-h-11 w-full px-4 text-[12px] opacity-55">Request claim</button></section></AuthGate>
+        <AuthGate title="Sign in to claim this artist"><section className="mt-6 rounded-[24px] border border-[var(--acc)] glass p-5"><div className="text-[15px] font-black">Ready to request the claim.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">The existing page stays untouched while the claim is verified. We&apos;ll record your request now and keep ownership changes behind verification.</p>{claimSubmitted && <p className="mt-4 rounded-xl border border-[var(--acc)] px-3 py-2 text-[11.5px] font-bold text-[var(--acc-text)]">Your claim is in. The page stays unchanged while we verify that you&apos;re connected to the artist.</p>}{error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}<button type="button" disabled={loading || claimSubmitted} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading ? <Loader2 size={14} className="animate-spin" /> : claimSubmitted ? <CheckCircle2 size={14} /> : null}{claimSubmitted ? "Claim requested" : "Request claim"}</button></section></AuthGate>
       </main>
     );
   }
