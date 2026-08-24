@@ -5,7 +5,6 @@ const OBSERVED_NAME_EVIDENCE = new Set([
   "facebook_basic_html",
   "facebook_structured_html",
   "facebook_about_html",
-  "backline_grounded_search",
 ]);
 
 const OBSERVED_DETAIL_EVIDENCE = new Set([
@@ -14,7 +13,6 @@ const OBSERVED_DETAIL_EVIDENCE = new Set([
   "facebook_structured_html",
   "facebook_about_html",
   "bndy_existing_artist",
-  "backline_grounded_search",
 ]);
 
 export interface ArtistFacebookPrefill {
@@ -25,10 +23,6 @@ export interface ArtistFacebookPrefill {
   location?: string;
   bio?: string;
   websiteUrl?: string;
-  artistType?: string;
-  actTypes?: string[];
-  genres?: string[];
-  acoustic?: boolean;
 }
 
 function sourcedValue(
@@ -59,9 +53,5 @@ export function artistFacebookPrefill(result: FacebookSourceInspection): ArtistF
     location: sourcedValue(result.observed?.location, result.evidence?.location),
     bio: sourcedValue(result.observed?.description, result.evidence?.description),
     websiteUrl: sourcedValue(result.observed?.websiteUrl, result.evidence?.websiteUrl),
-    artistType: sourcedValue(result.observed?.artistType, result.evidence?.artistType),
-    actTypes: result.evidence?.actTypes === "backline_grounded_search" ? result.observed?.actTypes : undefined,
-    genres: result.evidence?.genres === "backline_grounded_search" ? result.observed?.genres?.slice(0, 3) : undefined,
-    acoustic: result.evidence?.acoustic === "backline_grounded_search" ? result.observed?.acoustic : undefined,
   };
 }
