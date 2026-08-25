@@ -1,0 +1,97 @@
+name: Remove rendered em dashes once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    if: contains(github.event.head_commit.message, 'Remove em dashes from rendered bndy UI')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Remove em dashes from rendered source
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const roots = ['src', 'public'];
+          const textExt = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.html', '.css', '.md', '.txt']);
+          const replacements = [
+            [/\u2014/g, ' - '],
+            [/&mdash;/gi, ' - '],
+            [/&#8212;/gi, ' - '],
+            [/&#x2014;/gi, ' - '],
+          ];
+          const changed = [];
+
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const name of fs.readdirSync(dir)) {
+              const full = path.join(dir, name);
+              const stat = fs.statSync(full);
+              if (stat.isDirectory()) {
+                walk(full);
+                continue;
+              }
+              if (!textExt.has(path.extname(name).toLowerCase())) continue;
+              const before = fs.readFileSync(full, 'utf8');
+              let after = before;
+              for (const [from, to] of replacements) after = after.replace(from, to);
+              if (after !== before) {
+                fs.writeFileSync(full, after);
+                changed.push(full);
+              }
+            }
+          }
+
+          roots.forEach(walk);
+          console.log(`Changed ${changed.length} files`);
+          changed.forEach((file) => console.log(file));
+
+          // Guard: fail if any rendered source still contains an em dash form.
+          const leftovers = [];
+          function verify(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const name of fs.readdirSync(dir)) {
+              const full = path.join(dir, name);
+              const stat = fs.statSync(full);
+              if (stat.isDirectory()) { verify(full); continue; }
+              if (!textExt.has(path.extname(name).toLowerCase())) continue;
+              const text = fs.readFileSync(full, 'utf8');
+              if (/\u2014|&mdash;|&#8212;|&#x2014;/i.test(text)) leftovers.push(full);
+            }
+          }
+          roots.forEach(verify);
+          if (leftovers.length) {
+            console.error('Em dash forms remain in rendered source:', leftovers);
+            process.exit(1);
+          }
+          NODE
+      - name: Verify app
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+      - name: Commit cleanup
+        run: |
+          git config user.name 'bndy-product-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src public
+          if git diff --cached --quiet; then
+            echo 'No rendered em dashes found'
+            exit 0
+          fi
+          git commit -m 'Remove em dashes from rendered UI copy'
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
