@@ -1,0 +1,46 @@
+name: No rendered em dashes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Reject em dashes in rendered source
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const roots = ['src', 'public'];
+          const textExt = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.html', '.css', '.md', '.txt']);
+          const bad = [];
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const name of fs.readdirSync(dir)) {
+              const full = path.join(dir, name);
+              const stat = fs.statSync(full);
+              if (stat.isDirectory()) { walk(full); continue; }
+              if (!textExt.has(path.extname(name).toLowerCase())) continue;
+              const text = fs.readFileSync(full, 'utf8');
+              if (/\u2014|&mdash;|&#8212;|&#x2014;/i.test(text)) bad.push(full);
+            }
+          }
+          roots.forEach(walk);
+          if (bad.length) {
+            console.error('Em dashes are not allowed in rendered bndy UI source:');
+            bad.forEach((file) => console.error(` - ${file}`));
+            process.exit(1);
+          }
+          console.log('Rendered UI source contains no em dashes.');
+          NODE
