@@ -11,7 +11,7 @@ jobs:
   verify:
     if: contains(github.event.head_commit.message, 'Run Join entrypoint production verification')
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,10 +21,17 @@ jobs:
           PASS=false
           LOGIN=000
           JOIN=000
-          for i in $(seq 1 30); do
+          ADD=000
+          for i in $(seq 1 40); do
             LOGIN=$(curl -L -sS -o /tmp/login.html -w '%{http_code}' https://bndy.live/login || true)
             JOIN=$(curl -L -sS -o /tmp/join.html -w '%{http_code}' https://bndy.live/join || true)
-            if [[ "$LOGIN" == '200' && "$JOIN" == '200' ]] && grep -q 'Are you an artist or venue?' /tmp/login.html && grep -q 'Join bndy' /tmp/join.html; then
+            ADD=$(curl -L -sS -o /tmp/add.html -w '%{http_code}' https://bndy.live/add || true)
+            if [[ "$LOGIN" == '200' && "$JOIN" == '200' && "$ADD" == '200' ]] \
+              && grep -q 'Are you an artist or venue?' /tmp/login.html \
+              && grep -q 'Join bndy' /tmp/join.html \
+              && grep -q 'Is it your artist or venue?' /tmp/add.html \
+              && grep -q 'List artist' /tmp/add.html \
+              && grep -q 'List venue' /tmp/add.html; then
               PASS=true
               break
             fi
@@ -35,8 +42,11 @@ jobs:
             echo "pass=$PASS"
             echo "login=$LOGIN"
             echo "join=$JOIN"
+            echo "add=$ADD"
             echo "login_has_bav_split=$(grep -q 'Are you an artist or venue?' /tmp/login.html && echo true || echo false)"
             echo "join_has_entry=$(grep -q 'Join bndy' /tmp/join.html && echo true || echo false)"
+            echo "add_has_owner_split=$(grep -q 'Is it your artist or venue?' /tmp/add.html && echo true || echo false)"
+            echo "add_community_labels=$(grep -q 'List artist' /tmp/add.html && grep -q 'List venue' /tmp/add.html && echo true || echo false)"
           } > JOIN-BNDY-ENTRYPOINT-PRODUCTION.txt
           [[ "$PASS" == 'true' ]]
       - name: Record production verification
@@ -48,4 +58,4 @@ jobs:
           git pull --rebase --autostash origin main
           git push origin HEAD:main
 
-# trigger 1
+# trigger 2
