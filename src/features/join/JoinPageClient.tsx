@@ -11,7 +11,7 @@ const paths = [
     entityType: "artist" as const,
     eyebrow: "Artists & bands",
     title: "This is my artist",
-    body: "Find the artist already in bndy — including known names and locations — or create a genuinely new one.",
+    body: "Find the artist already in bndy  -  including known names and locations  -  or create a genuinely new one.",
     icon: Music2,
     accent: "from-[color-mix(in_srgb,var(--acc)_18%,transparent)] to-transparent",
   },
@@ -39,7 +39,7 @@ export function JoinPageClient() {
           Your music.<br />Your place on bndy.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-[14px] font-semibold leading-relaxed text-dim sm:text-[15px]">
-          Already listed? Brilliant — we&apos;ll find you. Brand new? We&apos;ll get you set up. Either way, we start by making sure we&apos;ve got the right artist or venue.
+          Already listed? Brilliant  -  we&apos;ll find you. Brand new? We&apos;ll get you set up. Either way, we start by making sure we&apos;ve got the right artist or venue.
         </p>
       </section>
 

@@ -69,7 +69,7 @@ describe("googleCalendarUrl", () => {
     expect(url).toContain("calendar.google.com/calendar/render?action=TEMPLATE");
     expect(url).toContain("dates=20260905T200000%2F20260905T230000");
     expect(url).toContain("ctz=Europe%2FLondon");
-    // URLSearchParams encodes spaces as + — Google accepts both forms
+    // URLSearchParams encodes spaces as +  -  Google accepts both forms
     expect(url).toContain("text=The+Torrists+at+The+Glebe");
   });
 });

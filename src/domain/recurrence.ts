@@ -1,5 +1,5 @@
 // Repeating open mic nights (backlog item 13). Pure date maths, no React.
-// The wizard expands a repeat rule into individual dates client-side —
+// The wizard expands a repeat rule into individual dates client-side  - 
 // each date becomes its own event through the existing create endpoint.
 // All arithmetic runs on UTC noon so DST switches never shift a date.
 

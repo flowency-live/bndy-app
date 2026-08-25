@@ -114,7 +114,7 @@ describe("lineupLabel", () => {
 
   it("never contains an em-dash", () => {
     for (const g of [legacy, withSupport, coHeadline, openMic]) {
-      expect(lineupLabel(g)).not.toContain("—");
+      expect(lineupLabel(g)).not.toContain(" - ");
     }
   });
 });

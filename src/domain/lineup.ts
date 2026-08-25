@@ -1,10 +1,10 @@
-// Feature 12 — the bill on a gig. Pure. No I/O.
+// Feature 12  -  the bill on a gig. Pure. No I/O.
 //
 // The backend stores act 1 in `artistId` and the rest in `collaboratingArtistIds`,
 // then denormalises both into `artistIds` + `artistNames` on read. Billing is a
 // SEPARATE fact: `headlineArtistIds` lists the acts billed as headline, and every
 // other act on the bill is support. All acts may be headline at once (a co-headline
-// bill). When `headlineArtistIds` is absent, act 1 is the headliner — so every gig
+// bill). When `headlineArtistIds` is absent, act 1 is the headliner  -  so every gig
 // created before this feature reads correctly with no backfill.
 //
 // `artistId` means "the first act in display order". It does NOT mean "headliner".
@@ -63,7 +63,7 @@ export function hasBill(gig: BillParts): boolean {
   return lineupOf(gig).length > 1;
 }
 
-/** Card label. Headline acts only — support never enters the label, so the card
+/** Card label. Headline acts only  -  support never enters the label, so the card
  *  stays quiet on a four-act bill. Contains no em-dash. */
 export function lineupLabel(gig: BillParts): string {
   const acts = lineupOf(gig);

@@ -1,4 +1,4 @@
-// App-level skin registry — user-selectable visual identities.
+// App-level skin registry  -  user-selectable visual identities.
 // A skin = token block + registry entry. Behaviour stays shared.
 
 export type SkinFamily = "hyper" | "soft" | "mono" | "roadcase" | "flyer";
@@ -16,7 +16,7 @@ export interface AppSkin {
   mode: SkinMode;
   /** picker swatch dots */
   dots: [string, string, string];
-  /** artist palette pairs — deterministic avatar/tile colours per skin */
+  /** artist palette pairs  -  deterministic avatar/tile colours per skin */
   pal: [string, string][];
 }
 

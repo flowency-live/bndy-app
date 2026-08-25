@@ -1,5 +1,5 @@
 /* ============================================================
-   bndy — SKINS TOKEN CONTRACT (12 user-selectable skins)
+   bndy  -  SKINS TOKEN CONTRACT (12 user-selectable skins)
    Spec: Projects/bndy/SKINS-SYSTEM-SPEC.md
    Visual source of truth: Projects/bndy/bndy-skins-v4.html
    ------------------------------------------------------------
@@ -8,10 +8,10 @@
    Each block ALSO bridges the legacy contract in globals.css
    (--surface/--card/--txt/--dim/--line/--glass/--shadow/--ink-rgb)
    so every existing component re-skins with zero edits.
-   NOTE: prototype's `--ink` (text) is `--txt` here — the app
+   NOTE: prototype's `--ink` (text) is `--txt` here  -  the app
    already uses `--ink` for the page background. Text = --txt.
    ============================================================ */
-/* Fonts are self-hosted via next/font (src/app/layout.tsx) — no render-blocking @import. */
+/* Fonts are self-hosted via next/font (src/app/layout.tsx)  -  no render-blocking @import. */
 
 /* ---------------- PRINT RUN (default · light · family:print) ---------------- */
 html[data-theme="print"] {
@@ -123,7 +123,7 @@ html[data-theme="solar"] {
   --ui: var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-inter), sans-serif;
   --tick-bg: #073642; --tick-fg: #93A1A1; --tick-hl: #B58900;
   --dayhead-bg: #073642; --dayhead-fg: #93A1A1; --dayhead-hot-bg: #CB4B16; --dayhead-hot-fg: #FFFFFF;
-  --stub-bg: #1F7A73; --stub-fg: #FDF6E3; /* acc2 #2AA198 fails AA w/ any fg (max 4.1) — darkened teal variant */
+  --stub-bg: #1F7A73; --stub-fg: #FDF6E3; /* acc2 #2AA198 fails AA w/ any fg (max 4.1)  -  darkened teal variant */
   --m-bg: #F3ECD9; --m-block: #FAF3E0; --m-road1: #D8CFB6; --m-road2: #E5DCC6;
   --m-river: #BFD8D8; --m-park: #CCDCB8; --m-lab: #A8A083;
   --pin-bd: #FDF6E3; --pin-sh: 0 3px 10px rgba(7, 54, 66, .28); --pin2-sh: 0 3px 10px rgba(7, 54, 66, .28); --pin-stem: #073642;
@@ -235,7 +235,7 @@ html[data-theme] body { font-family: var(--ui); }
 html[data-theme] .glass { background: var(--glass); }
 html[data-theme] .glass-hi { background: var(--glass-hi); }
 
-/* display type helper — use with Tailwind `font-disp` */
+/* display type helper  -  use with Tailwind `font-disp` */
 .disp { font-family: var(--disp); font-weight: var(--disp-wt); text-transform: var(--disp-case); }
 
 /* ============ theme-change wipe ============ */
@@ -276,9 +276,9 @@ a.bndy-stub:hover{filter:brightness(1.12)}
 @media (prefers-reduced-motion: reduce){.bndy-ticker-in{animation:none}}
 
 /* ============ family flourishes: cards / buttons / chips ============ */
-/* (gig-list day headers intentionally NOT included yet — pending side-by-side) */
+/* (gig-list day headers intentionally NOT included yet  -  pending side-by-side) */
 
-/* .bndy-card — tappable list cards & tiles */
+/* .bndy-card  -  tappable list cards & tiles */
 .bndy-card{transition:transform .16s cubic-bezier(.2,.9,.3,1.25),box-shadow .16s}
 html[data-family="print"] .bndy-card{border-width:2.5px;border-color:var(--line);border-radius:var(--rad);box-shadow:var(--sh)}
 html[data-family="print"] .bndy-card:nth-child(even){transform:rotate(.35deg)}
@@ -290,7 +290,7 @@ html[data-family="soft"] .bndy-card:hover,html[data-family="hyper"] .bndy-card:h
 html[data-family="mono"] .bndy-card{border-width:1.5px;border-radius:var(--rad)}
 html[data-family="mono"] .bndy-card:hover{box-shadow:var(--sh-hover)}
 
-/* .bndy-btn — primary CTA */
+/* .bndy-btn  -  primary CTA */
 .bndy-btn{background:var(--acc);color:var(--on-acc);border-radius:var(--rad);font-weight:800}
 html[data-family="print"] .bndy-btn{border:2.5px solid var(--line);box-shadow:var(--sh-lg);font-family:var(--disp);font-weight:var(--disp-wt);text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,box-shadow .15s}
 html[data-family="print"] .bndy-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
@@ -298,13 +298,13 @@ html[data-family="soft"] .bndy-btn{border-radius:999px;box-shadow:var(--sh-lg)}
 html[data-family="hyper"] .bndy-btn{background:var(--grad);color:#fff;border-radius:999px;box-shadow:var(--sh-lg)}
 html[data-family="mono"] .bndy-btn{border:1.5px solid var(--acc);text-transform:uppercase;font-weight:900}
 
-/* .bndy-btn2 — secondary / ghost */
+/* .bndy-btn2  -  secondary / ghost */
 .bndy-btn2{background:var(--card);color:var(--txt);border:var(--bw) solid var(--line);border-radius:var(--rad);font-weight:700}
 html[data-family="print"] .bndy-btn2{box-shadow:var(--sh);transition:transform .15s,box-shadow .15s}
 html[data-family="print"] .bndy-btn2:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--line)}
 html[data-family="soft"] .bndy-btn2,html[data-family="hyper"] .bndy-btn2{border-radius:999px}
 
-/* .bndy-chip — date/filter chips (quick picks etc.) */
+/* .bndy-chip  -  date/filter chips (quick picks etc.) */
 .bndy-chip{border:var(--bw) solid var(--line);border-radius:calc(var(--rad) - 1px);background:var(--card);color:var(--txt)}
 html[data-family="soft"] .bndy-chip,html[data-family="hyper"] .bndy-chip{border-radius:14px}
 .bndy-chip.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
@@ -314,7 +314,7 @@ html[data-family="hyper"] .bndy-chip.on{background:var(--grad);color:#fff;border
 html[data-theme] .brand-glow{text-shadow:0 0 16px color-mix(in srgb,var(--acc) 70%,transparent)}
 
 /* ============ perf: cheaper compositing ============ */
-/* backdrop blur cost grows ~quadratically with radius — halve it (visually near-identical) */
+/* backdrop blur cost grows ~quadratically with radius  -  halve it (visually near-identical) */
 html[data-theme] .glass{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 html[data-theme] .glass-hi{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .bndy-ticker-in{will-change:transform}

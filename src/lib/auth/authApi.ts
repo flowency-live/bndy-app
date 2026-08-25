@@ -66,7 +66,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-/** GET /api/me — null when signed out. */
+/** GET /api/me  -  null when signed out. */
 export async function checkAuth(): Promise<AuthSession | null> {
   try {
     const res = await fetch(`${BASE}/api/me`, { credentials: "include", cache: "no-store" });

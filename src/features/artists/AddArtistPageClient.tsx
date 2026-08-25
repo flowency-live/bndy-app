@@ -153,7 +153,7 @@ export function AddArtistPageClient() {
         setError(result.message ?? "We couldn't add that artist. Check the details and try again.");
       }
     } catch {
-      setError("Network hiccup. Nothing was added — try again.");
+      setError("Network hiccup. Nothing was added  -  try again.");
     } finally {
       setPhase("idle");
     }
@@ -362,12 +362,12 @@ export function AddArtistPageClient() {
         {(bio || websiteUrl) && (
           <section className="space-y-4 border-t border-line pt-4" aria-label="Facebook details">
             {bio && (
-              <Field label="Bio" hint="Found on Facebook — edit it if needed.">
+              <Field label="Bio" hint="Found on Facebook  -  edit it if needed.">
                 <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} className={cn(inputCls, "resize-y leading-relaxed")} />
               </Field>
             )}
             {websiteUrl && (
-              <Field label="Website" hint="Found on Facebook — check the destination before adding.">
+              <Field label="Website" hint="Found on Facebook  -  check the destination before adding.">
                 <input value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} className={inputCls} inputMode="url" autoCapitalize="none" />
               </Field>
             )}
@@ -395,7 +395,7 @@ export function AddArtistPageClient() {
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => void save({ confirmNew: true })} className="mt-3 min-h-11 w-full rounded-xl border border-line-hi px-3 py-2.5 text-[12px] font-black text-txt hover:bg-card2">No — this is a different artist</button>
+            <button type="button" onClick={() => void save({ confirmNew: true })} className="mt-3 min-h-11 w-full rounded-xl border border-line-hi px-3 py-2.5 text-[12px] font-black text-txt hover:bg-card2">No  -  this is a different artist</button>
           </section>
         )}
 

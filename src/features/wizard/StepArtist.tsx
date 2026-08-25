@@ -12,7 +12,7 @@ import { FacebookSourceAssist } from "./FacebookSourceAssist";
 import { artistFacebookPrefill } from "./facebookArtistPrefill";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type FacebookSourceInspection, type PlaceSuggestion } from "./wizardApi";
 
-/** WHO step. Candidates ALWAYS show location — the Ant Hill Mob defence: same-named
+/** WHO step. Candidates ALWAYS show location  -  the Ant Hill Mob defence: same-named
  *  acts are distinguishable by place, and same-region duplicates are impossible
  *  (not offered here, rejected server-side regardless). When the venue is already
  *  chosen, same-named acts nearest the venue rank first (gig-footprint proximity). */
@@ -28,7 +28,7 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, bill, headlineI
 
   onPickExisting: (a: { id: string; name: string }) => void;
   onPickNew: (draft: NewArtistDraft) => void;
-  /** item 13: open mic night — no headline act; optional host already on bndy */
+  /** item 13: open mic night  -  no headline act; optional host already on bndy */
   onPickOpenMic: (host?: { id: string; name: string }) => void;
   /** feature 12: replace the whole bill and the headline set */
   onBillChange?: (acts: { id: string; name: string }[], headlineIds: string[], multiAct: boolean) => void;
@@ -102,7 +102,7 @@ export function StepArtist({ venueId, venueCity, initialOpenMic, bill, headlineI
     <div>
       <h2 className="text-[19px] font-black tracking-tight">{openMic ? "Open mic night" : "Who's playing?"}</h2>
 
-      {/* item 13: explicit toggle — the state is always visible */}
+      {/* item 13: explicit toggle  -  the state is always visible */}
       <button
         onClick={() => setOpenMic((v) => { if (!v) setMultiAct(false); return !v; })}
         aria-pressed={openMic}
@@ -285,7 +285,7 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
   const [candidates, setCandidates] = useState<ArtistCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Town autocomplete via OUR Places proxy (kind=town) — no client-side Google key needed,
+  // Town autocomplete via OUR Places proxy (kind=town)  -  no client-side Google key needed,
   // works regardless of build-env configuration, key stays server-side.
   const deb = useRef<number | undefined>(undefined);
   useEffect(() => {
@@ -485,12 +485,12 @@ function NewArtistForm({ initialName, onBack, onPickExisting, onDone }: {
         {(bio || websiteUrl) && (
           <div className="space-y-4 border-t border-line pt-4">
             {bio && (
-              <Field label="Bio" optional hint="Found on Facebook — edit it if needed.">
+              <Field label="Bio" optional hint="Found on Facebook  -  edit it if needed.">
                 <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className={cn(inputCls, "resize-y leading-relaxed")} />
               </Field>
             )}
             {websiteUrl && (
-              <Field label="Website" optional hint="Found on Facebook — check it if needed.">
+              <Field label="Website" optional hint="Found on Facebook  -  check it if needed.">
                 <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} inputMode="url" autoCapitalize="none" className={inputCls} />
               </Field>
             )}

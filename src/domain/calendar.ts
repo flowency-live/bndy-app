@@ -25,7 +25,7 @@ function nextDay(date: string): string {
 
 /** endTime, or start + 3 hours (rolling the date when it crosses midnight).
  *  An explicit endTime at or before the start means it finishes AFTER midnight
- *  (a 22:00 gig ending 01:00) — that rolls to the next day too. */
+ *  (a 22:00 gig ending 01:00)  -  that rolls to the next day too. */
 function resolveEnd(gig: Gig): { date: string; time: string } | null {
   if (!gig.startTime) return null;
   if (gig.endTime) {

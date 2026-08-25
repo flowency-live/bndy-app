@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { APP_SKINS, DEFAULT_SKIN, isAppSkinId, type AppSkinId } from "@/lib/appSkins";
 
 export type ThemeMode = "light" | "dark";
-/** Map-marker skin (map module registry) — unchanged legacy concept. */
+/** Map-marker skin (map module registry)  -  unchanged legacy concept. */
 export type SkinId = "pulse" | "aurora" | "neon-dot";
 
 interface ThemeCtx {
@@ -17,7 +17,7 @@ interface ThemeCtx {
   /** Map-marker skin (legacy). */
   skin: SkinId;
   setSkin: (s: SkinId) => void;
-  /** The 9-skin app system — spec: SKINS-SYSTEM-SPEC.md */
+  /** The 9-skin app system  -  spec: SKINS-SYSTEM-SPEC.md */
   appSkin: AppSkinId;
   setAppSkin: (s: AppSkinId) => void;
 }

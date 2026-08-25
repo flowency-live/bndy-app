@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Put your gig on the bndy map in under a minute. Free to list, free to discover. Keeping LIVE music ALIVE.",
 };
 
-/** Standalone branded webform — same wizard, zero app chrome. Share this URL anywhere. */
+/** Standalone branded webform  -  same wizard, zero app chrome. Share this URL anywhere. */
 export default function ListAGigPage() {
   return (
     <Suspense>

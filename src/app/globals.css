@@ -4,7 +4,7 @@
 
 /* ============ DESIGN TOKENS ============ */
 :root {
-  /* brand — rgb triplets so Tailwind opacity modifiers work; --x for direct CSS */
+  /* brand  -  rgb triplets so Tailwind opacity modifiers work; --x for direct CSS */
   --orange-rgb: 255 122 26;
   --pink-rgb: 255 46 136;
   --cyan-rgb: 25 211 245;
@@ -243,7 +243,7 @@ body {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
-/* react-phone-number-input — skin-aware */
+/* react-phone-number-input  -  skin-aware */
 .phone-input-bndy {
   display: flex;
   align-items: center;

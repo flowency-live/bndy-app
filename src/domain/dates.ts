@@ -36,7 +36,7 @@ export const EVENING_FROM = "17:00";
 
 /**
  * "Tonight" means today AND an evening start. A 2pm gig today is "Today".
- * A gig today with no start time is "Today" — we cannot claim an evening we do not know.
+ * A gig today with no start time is "Today"  -  we cannot claim an evening we do not know.
  * This is the single source for the label, the badge and the card accent. Do not
  * re-test `date === today` at a call site; that is the bug this replaces.
  */

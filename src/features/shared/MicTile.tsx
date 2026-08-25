@@ -1,5 +1,5 @@
 // Open mic avatar stand-in (item 13). An open mic without a host image used
-// to fall back to initials of "Open mic…" — an ugly "OM" circle. This tile
+// to fall back to initials of "Open mic…"  -  an ugly "OM" circle. This tile
 // draws a proper mic glyph in the second accent instead.
 
 import { Mic } from "lucide-react";

@@ -111,7 +111,7 @@ export function AddVenuePageClient() {
           : result.error ?? "Something went wrong adding that venue.");
       }
     } catch {
-      setError("Network hiccup. Nothing was added — try again.");
+      setError("Network hiccup. Nothing was added  -  try again.");
     } finally {
       setCreating(false);
     }

@@ -1,7 +1,7 @@
 // One display name for a gig everywhere (backlog item 13, open mic).
 // A normal gig reads the artist name with the stored title as fallback.
 // An open mic keeps its OWN name when the lister gave it one ("Jam Halen
-// JAM Night"); auto-generated titles ("Open Mic @ The Glebe" — always
+// JAM Night"); auto-generated titles ("Open Mic @ The Glebe"  -  always
 // contain " @ ") read as "Open mic" / "Open mic with {host}" instead.
 
 import { headlineActs } from "./lineup";
@@ -10,7 +10,7 @@ export interface GigNameParts {
   isOpenMic?: boolean;
   artistName?: string;
   title: string;
-  /** Feature 12 — the bill. Absent on a single-act gig. */
+  /** Feature 12  -  the bill. Absent on a single-act gig. */
   artistId?: string;
   artistIds?: string[];
   artistNames?: string[];

@@ -32,7 +32,7 @@ export function basemapFor(skin: AppSkinId): string {
 
 /* ---------------- tokens → layer colours ---------------- */
 function readVars(names: string[]): Record<string, string> {
-  // single getComputedStyle call — repeated calls force style recalc (reflow)
+  // single getComputedStyle call  -  repeated calls force style recalc (reflow)
   const cs = getComputedStyle(document.documentElement);
   const out: Record<string, string> = {};
   for (const n of names) out[n] = cs.getPropertyValue(n).trim();
@@ -42,7 +42,7 @@ function hexToRgba(hex: string, a: number): string {
   const h = hex.replace("#", "");
   const f = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
   const n = parseInt(f, 16);
-  if (Number.isNaN(n) || f.length !== 6) return hex; // non-hex token (rgba etc.) — pass through
+  if (Number.isNaN(n) || f.length !== 6) return hex; // non-hex token (rgba etc.)  -  pass through
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
@@ -62,7 +62,7 @@ function contrast(a: string, b: string): number {
   if (la === null || lb === null) return 0;
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
-/** Highest-contrast candidate against bg — correctness by construction, works for future skins too. */
+/** Highest-contrast candidate against bg  -  correctness by construction, works for future skins too. */
 function bestOn(bg: string, candidates: string[]): string {
   let best = candidates[0], bestCr = 0;
   for (const c of candidates) {

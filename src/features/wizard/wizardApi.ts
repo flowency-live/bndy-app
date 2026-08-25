@@ -1,5 +1,5 @@
-// Gig wizard API client — spec: Projects/bndy/GIG-WIZARD-SPEC.md §5/§6.
-// Kept separate from lib/api.ts (read paths) — these are the public community paths.
+// Gig wizard API client  -  spec: Projects/bndy/GIG-WIZARD-SPEC.md §5/§6.
+// Kept separate from lib/api.ts (read paths)  -  these are the public community paths.
 // Response parsing is deliberately tolerant: field names are pinned down in the spec,
 // and the backend remains authoritative for identity/deduplication.
 

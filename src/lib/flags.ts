@@ -1,4 +1,4 @@
-// Flag a problem (backlog feature 6). Public — no account needed.
+// Flag a problem (backlog feature 6). Public  -  no account needed.
 // A signed-in session cookie rides along automatically, so bndy can
 // come back to the reporter. That is the only difference.
 

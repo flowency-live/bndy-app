@@ -26,7 +26,7 @@ export function LoginClient() {
   const errorKey = params.get("error");
   const error = errorKey ? (ERRORS[errorKey] ?? "Sign-in failed. Try again.") : null;
 
-  // Already signed in — go where the user was headed.
+  // Already signed in  -  go where the user was headed.
   useEffect(() => {
     if (isAuthenticated) router.replace(next);
   }, [isAuthenticated, next, router]);

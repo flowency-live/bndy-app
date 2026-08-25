@@ -112,7 +112,7 @@ export function JoinVenueFlow() {
         saveJoinState({ entityType: "venue", intent: "new", name: value.name, address: value.address, googlePlaceId: value.googlePlaceId });
         setPhase("new");
       } else setError(result.message ?? "We couldn't safely check that venue.");
-    } catch { setError("Network hiccup. Nothing was created — try again."); }
+    } catch { setError("Network hiccup. Nothing was created  -  try again."); }
     finally { setLoading(false); }
   };
 
@@ -154,7 +154,7 @@ export function JoinVenueFlow() {
           setError("That venue now appears to exist in bndy. Search again so we can show you the right page.");
         }
       } else setError(result.message);
-    } catch { setError("Network hiccup. Nothing was created — try again."); }
+    } catch { setError("Network hiccup. Nothing was created  -  try again."); }
     finally { setLoading(false); }
   };
 

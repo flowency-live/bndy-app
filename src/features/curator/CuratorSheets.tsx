@@ -46,7 +46,7 @@ function useSubmit(type: CuratorEntity, id: string, onDone: () => void) {
   return { busy, error, run };
 }
 
-/** Header for curator sheets. Close button removed — Sheet now provides it globally. */
+/** Header for curator sheets. Close button removed  -  Sheet now provides it globally. */
 export function SheetHeader({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="min-w-0 pr-10">
@@ -210,7 +210,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
     }
   }, [open, artist]);
 
-  // Town look-up via bndy's own Places proxy — same source as the wizard.
+  // Town look-up via bndy's own Places proxy  -  same source as the wizard.
   useEffect(() => {
     window.clearTimeout(deb.current);
     if (locMode !== "town" || townQ.trim().length < 2 || townPicked === townQ) { setPreds([]); return; }
@@ -482,7 +482,7 @@ export function HideSheet({
       <SheetHeader
         title={isGig ? "Delete this gig?" : `Hide ${name}?`}
         sub={isGig
-          ? "This removes the gig completely — it won't appear anywhere. Use Cancel instead if punters need to know it was called off."
+          ? "This removes the gig completely  -  it won't appear anywhere. Use Cancel instead if punters need to know it was called off."
           : "This removes it from every public page. Nothing is destroyed. bndy staff can restore it from godmode."
         }
       />

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /** Renders children only when scrolled near the viewport. Off-screen sections
- *  cost zero React/DOM work — the placeholder holds estimated height
+ *  cost zero React/DOM work  -  the placeholder holds estimated height
  *  so scrollbar stays stable. */
 export function Deferred({ count, heightPerItem = 124, itemsPerRow = 3, children }: { count: number; heightPerItem?: number; itemsPerRow?: number; children: ReactNode }) {
   const ref = useRef<HTMLDivElement | null>(null);

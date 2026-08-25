@@ -100,7 +100,7 @@ export function FacebookSourceAssist({
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-black">Do you know their Facebook page?</div>
           <p className="mt-0.5 text-[11.5px] font-semibold leading-relaxed text-dim">
-            Paste the page — or anything Facebook copied. We&apos;ll use whatever we can actually verify.
+            Paste the page  -  or anything Facebook copied. We&apos;ll use whatever we can actually verify.
           </p>
         </div>
       </div>
@@ -218,7 +218,7 @@ export function FacebookSourceAssist({
         {warningOnly && (
           <p className={cn("mt-2.5 flex items-start gap-2 text-[11.5px] font-semibold text-dim", flat ? "border-l-2 border-[var(--acc)] py-1 pl-3" : "rounded-xl border border-line bg-card px-3 py-2.5")}>
             <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--acc)]" />
-            We found the Facebook page, but Facebook didn&apos;t expose useful details. No problem — keep going below.
+            We found the Facebook page, but Facebook didn&apos;t expose useful details. No problem  -  keep going below.
           </p>
         )}
       </div>

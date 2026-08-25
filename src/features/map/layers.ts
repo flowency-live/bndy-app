@@ -1,4 +1,4 @@
-// GPU layer specs — validated against @maplibre/maplibre-gl-style-spec (0 errors).
+// GPU layer specs  -  validated against @maplibre/maplibre-gl-style-spec (0 errors).
 import type { Skin } from "./skins";
 import { MIC_ICON, PILL_IDLE, PILL_LIVE } from "./skinMap";
 
@@ -32,11 +32,11 @@ export function buildGigLayers(skin: Skin): LayerSpec[] {
   layers.push({ id: "g-bloom", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": c.gigGlow, "circle-blur": 1, "circle-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.4, 13, 0.6], "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 9, 13, 18, 16, 24] } });
   // g-count: solid accent-filled circles with contrast ring on all skins
   layers.push({ id: "g-count", type: "circle", source: GIG, filter: notCl, paint: { "circle-color": c.gigGlow, "circle-stroke-color": c.gigStroke, "circle-stroke-width": 2.5, "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 6, 13, 9, 16, 12], "circle-pitch-alignment": "map" } });
-  // g-tik: £ glyph inside ticketed pins (free = clean default, no glyph). Only from z12 —
+  // g-tik: £ glyph inside ticketed pins (free = clean default, no glyph). Only from z12  - 
   // below that the pin is too small to read a glyph; the gig sheet reveals ticketing on tap.
   // Glyph colour = c.gigCore, runtime-picked for best WCAG contrast against the accent fill.
   layers.push({ id: "g-tik", type: "symbol", source: GIG, filter: ["all", notCl, ["==", ["get", "ticketed"], 1]], minzoom: 12, layout: { "text-field": "£", "text-font": ["Open Sans Bold"], "text-size": ["interpolate", ["linear"], ["zoom"], 12, 9.5, 16, 13], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": c.gigCore } });
-  // g-mic: mic glyph inside open-mic pins (item 13). Same z-gate as g-tik — below
+  // g-mic: mic glyph inside open-mic pins (item 13). Same z-gate as g-tik  -  below
   // z12 the pin is too small to read a glyph; the gig sheet says OPEN MIC on tap.
   // Icon registered by skinMap.registerMic in the pin's contrast colour.
   layers.push({ id: "g-mic", type: "symbol", source: GIG, filter: ["all", notCl, ["==", ["get", "openmic"], 1], ["!=", ["get", "ticketed"], 1]], minzoom: 12, layout: { "icon-image": MIC_ICON, "icon-size": ["interpolate", ["linear"], ["zoom"], 12, 0.42, 16, 0.62], "icon-allow-overlap": true, "icon-ignore-placement": true } });
@@ -53,9 +53,9 @@ export function buildVenueLayers(skin: Skin, visible: boolean): LayerSpec[] {
   layers.push({ id: "v-cl-count", type: "symbol", source: VEN, filter: isCl, layout: { visibility: vis, "text-field": ["get", "point_count_abbreviated"], "text-font": ["Open Sans Bold"], "text-size": 12, "text-allow-overlap": true }, paint: { "text-color": "#fff", "text-halo-color": liveColor, "text-halo-width": 0.5 } });
   layers.push({ id: "v-hit", type: "circle", source: VEN, filter: notCl, layout: { visibility: vis }, paint: { "circle-radius": 16, "circle-opacity": 0 } });
   layers.push({ id: "v-bloom", type: "circle", source: VEN, filter: notCl, layout: { visibility: vis }, paint: { "circle-color": liveColor, "circle-blur": 1, "circle-opacity": ["case", ["==", ["get", "live"], 1], 0.6, 0.32], "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 5, 13, 12] } });
-  // Diamond venue marker (generated icons registered by skinMap.registerDiamonds) — icon-size bumped ~15%
+  // Diamond venue marker (generated icons registered by skinMap.registerDiamonds)  -  icon-size bumped ~15%
   layers.push({ id: "v-pin", type: "symbol", source: VEN, filter: notCl, layout: { visibility: vis, "icon-image": ["case", ["==", ["get", "live"], 1], "bndy-dia-live", "bndy-dia-idle"], "icon-size": ["interpolate", ["linear"], ["zoom"], 8, 0.63, 13, 0.98, 16, 1.15], "icon-allow-overlap": true } });
-  // v-label: venue name pill (nine-patch registered by skinMap.registerPills). Singles only —
+  // v-label: venue name pill (nine-patch registered by skinMap.registerPills). Singles only  - 
   // clusters can never grow labels. Native collision drops clashing pills (never the diamonds:
   // v-pin has icon-allow-overlap). Variable anchors fan pills below→above→right→left before
   // one drops; live venues out-prioritise idle via symbol-sort-key. Pill = --txt on --card,

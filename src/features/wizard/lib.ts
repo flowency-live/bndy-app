@@ -1,4 +1,4 @@
-// Gig wizard domain helpers — spec: Projects/bndy/GIG-WIZARD-SPEC.md
+// Gig wizard domain helpers  -  spec: Projects/bndy/GIG-WIZARD-SPEC.md
 import type { Artist } from "@/domain/types";
 import type { RepeatPattern } from "@/domain/recurrence";
 import { billTitle } from "@/domain/lineup";
@@ -116,7 +116,7 @@ export const MAX_ACTS = 4;
  *  chip. WizardShell swaps it for the real id at publish. */
 export const NEW_ACT_ID = "__new__";
 
-/** Wizard draft — persisted to sessionStorage so refresh never loses work. */
+/** Wizard draft  -  persisted to sessionStorage so refresh never loses work. */
 export interface NewArtistDraft {
   name: string;
   location: string;
@@ -152,7 +152,7 @@ export interface Draft {
   artistId?: string;
   artistName?: string;
   newArtist?: NewArtistDraft;
-  /** Feature 12 — the rest of the bill. Act 1 stays in artistId/artistName, so
+  /** Feature 12  -  the rest of the bill. Act 1 stays in artistId/artistName, so
    *  every existing path (resume, ?artistId= prefill, single-act publish) is
    *  untouched. Cap of 4 acts total is enforced in StepArtist and server-side. */
   extraActs?: { id: string; name: string }[];
@@ -160,7 +160,7 @@ export interface Draft {
   headlineIds?: string[];
   /** the step 1 checkbox, kept in the draft so a refresh restores bill mode */
   multiAct?: boolean;
-  /** open mic night — artist optional (the host), repeats allowed */
+  /** open mic night  -  artist optional (the host), repeats allowed */
   isOpenMic?: boolean;
   repeat?: RepeatRule;
   date?: string;

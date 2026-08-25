@@ -25,7 +25,7 @@ export function GigDatePicker({ value, onChange, today, dayCounts, onClosed, var
   onChange: (s: DateSel | null) => void;
   today: string;
   dayCounts: Map<string, number>;
-  onClosed?: () => void; // fired whenever the sheet closes — lets the parent shield stray taps
+  onClosed?: () => void; // fired whenever the sheet closes  -  lets the parent shield stray taps
   variant?: "chip" | "menu";
 }) {
   const [open, setOpen] = useState(false);

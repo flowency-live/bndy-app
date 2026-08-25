@@ -1,4 +1,4 @@
-// Map skins — self-contained visual languages, driven by the theme's skin id.
+// Map skins  -  self-contained visual languages, driven by the theme's skin id.
 import type { SkinId } from "@/lib/theme";
 
 // CARTO vector basemaps (labeled = place names). No access token required.
@@ -11,7 +11,7 @@ export interface SkinColors {
   gigGlow: string; gigCore: string; gigStroke: string;
   venLive: string; venIdle: string; venLiveCore: string; venIdleCore: string;
   clRing: string; clFill: string;
-  /** venue name pill (token skins only — legacy map skins don't set these) */
+  /** venue name pill (token skins only  -  legacy map skins don't set these) */
   pillBg?: string; pillTxt?: string;
 }
 export interface Skin {

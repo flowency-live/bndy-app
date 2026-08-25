@@ -1,4 +1,4 @@
-// bndy domain model — pure types, ubiquitous language matching the backend.
+// bndy domain model  -  pure types, ubiquitous language matching the backend.
 // No React, no fetch here.
 
 export interface LatLng {
@@ -106,13 +106,13 @@ export interface Gig {
   stageId?: string;
   billing?: FestivalBilling;
   billingOrder?: number;
-  /** Feature 12 — the bill, in display order. `artistId` is always artistIds[0].
+  /** Feature 12  -  the bill, in display order. `artistId` is always artistIds[0].
    *  Absent on a single-act gig and on every gig created before feature 12. */
   artistIds?: string[];
   /** Names parallel to `artistIds`. The backend denormalises these. */
   artistNames?: string[];
   /** Which acts are BILLED as headline. Every other act on the bill is support.
-   *  Absent means [artistId] — so a legacy gig reads as one headline act. */
+   *  Absent means [artistId]  -  so a legacy gig reads as one headline act. */
   headlineArtistIds?: string[];
 }
 

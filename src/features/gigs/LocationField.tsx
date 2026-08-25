@@ -13,9 +13,9 @@ function tidy(label: string): string {
   return label.replace(/,\s*UK$/i, "").trim();
 }
 
-/** Inline location control — a chip that opens a dropdown (no modal).
+/** Inline location control  -  a chip that opens a dropdown (no modal).
  *  Town search runs through bndy's OWN Places proxy (same source as the
- *  wizard) — no client-side Google key, so it works in every build. */
+ *  wizard)  -  no client-side Google key, so it works in every build. */
 export function LocationField({
   value,
   onChange,
