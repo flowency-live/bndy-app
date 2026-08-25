@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginPanel } from "@/features/auth/LoginPanel";
 import { useAuth } from "@/lib/auth/AuthProvider";
@@ -38,6 +39,11 @@ export function LoginClient() {
         </p>
       )}
       <LoginPanel nextPath={next} />
+      <div className="mx-auto mt-5 w-full max-w-sm rounded-2xl border border-[var(--acc)]/35 bg-[color-mix(in_srgb,var(--acc)_7%,transparent)] p-4">
+        <div className="text-[12px] font-black text-txt">Are you an artist or venue?</div>
+        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-dim">This sign-in is your normal bndy account for favourites, filters and personal features. To add, find or claim an artist or venue, use the separate Join journey. It uses this same account.</p>
+        <Link href="/join" className="mt-3 inline-flex min-h-9 items-center rounded-xl bg-acc px-3 text-[11px] font-black text-on-acc">Join bndy as an artist or venue →</Link>
+      </div>
     </div>
   );
 }
