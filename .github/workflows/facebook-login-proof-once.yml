@@ -52,13 +52,13 @@ jobs:
           echo "$location" | grep -F 'eu-west-2lqtkkhs1p.auth.eu-west-2.amazoncognito.com/oauth2/authorize'
           echo "$location" | grep -F 'identity_provider=Facebook'
 
-      - name: Prove production join UI
+      - name: Prove production login UI
         shell: bash
         run: |
           set -euo pipefail
           html="$(mktemp)"
-          code="$(curl --silent --show-error --location --max-time 30 --output "$html" --write-out '%{http_code}' 'https://bndy.live/join')"
-          echo "join_status=$code"
+          code="$(curl --silent --show-error --location --max-time 30 --output "$html" --write-out '%{http_code}' 'https://bndy.live/login?next=%2Fjoin')"
+          echo "login_status=$code"
           test "$code" = "200"
           grep -F 'Continue with Facebook' "$html"
           grep -F 'Continue with Google' "$html"
