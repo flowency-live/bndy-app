@@ -29,3 +29,38 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: One-shot live Facebook login proof
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 30 --output "$body" --dump-header "$headers" --write-out '%{http_code}' 'https://api.bndy.co.uk/auth/facebook?returnTo=https%3A%2F%2Fbndy.live%2Fjoin')"
+          echo "backend_status=$status"
+          test "$status" = "302"
+          location="$(awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$headers")"
+          echo "backend_location=$location"
+          echo "$location" | grep -F 'eu-west-2lqtkkhs1p.auth.eu-west-2.amazoncognito.com/oauth2/authorize'
+          echo "$location" | grep -F 'identity_provider=Facebook'
+
+          html="$(mktemp)"
+          status="$(curl --silent --show-error --location --max-time 30 --output "$html" --write-out '%{http_code}' 'https://bndy.live/login?next=%2Fjoin')"
+          echo "login_status=$status"
+          test "$status" = "200"
+
+          bundle="$(mktemp)"
+          grep -oE 'src="[^"]+\.js' "$html" | sed 's/^src="//' | sort -u | while read -r src; do
+            case "$src" in
+              http*) url="$src" ;;
+              *) url="https://bndy.live$src" ;;
+            esac
+            curl --silent --show-error --location --max-time 30 "$url" >> "$bundle"
+            printf '\n' >> "$bundle"
+          done
+          grep -F 'Continue with Facebook' "$bundle"
+          grep -F '/auth/facebook' "$bundle"
+          grep -F 'Continue with Google' "$bundle"
+          grep -F 'Continue with Apple' "$bundle"
+          echo 'facebook_login_production_proof=PASS'
