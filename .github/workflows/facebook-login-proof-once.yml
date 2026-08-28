@@ -52,7 +52,7 @@ jobs:
           echo "$location" | grep -F 'eu-west-2lqtkkhs1p.auth.eu-west-2.amazoncognito.com/oauth2/authorize'
           echo "$location" | grep -F 'identity_provider=Facebook'
 
-      - name: Prove production login UI
+      - name: Prove deployed login bundle contains Facebook
         shell: bash
         run: |
           set -euo pipefail
@@ -60,7 +60,17 @@ jobs:
           code="$(curl --silent --show-error --location --max-time 30 --output "$html" --write-out '%{http_code}' 'https://bndy.live/login?next=%2Fjoin')"
           echo "login_status=$code"
           test "$code" = "200"
-          grep -F 'Continue with Facebook' "$html"
-          grep -F 'Continue with Google' "$html"
-          grep -F 'Continue with Apple' "$html"
-          echo 'facebook_login_proof=PASS'
+          bundle="$(mktemp)"
+          grep -oE 'src="[^"]+\.js' "$html" | sed 's/^src="//' | sort -u | while read -r src; do
+            case "$src" in
+              http*) url="$src" ;;
+              *) url="https://bndy.live$src" ;;
+            esac
+            curl --silent --show-error --location --max-time 30 "$url" >> "$bundle"
+            printf '\n' >> "$bundle"
+          done
+          grep -F 'Continue with Facebook' "$bundle"
+          grep -F '/auth/facebook' "$bundle"
+          grep -F 'Continue with Google' "$bundle"
+          grep -F 'Continue with Apple' "$bundle"
+          echo 'facebook_login_bundle_proof=PASS'
