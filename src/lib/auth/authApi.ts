@@ -96,6 +96,10 @@ export function googleAuthUrl(nextPath: string): string {
   return `${BASE}/auth/google?returnTo=${encodeURIComponent(returnTo(nextPath))}`;
 }
 
+export function facebookAuthUrl(nextPath: string): string {
+  return `${BASE}/auth/facebook?returnTo=${encodeURIComponent(returnTo(nextPath))}`;
+}
+
 export function appleAuthUrl(nextPath: string): string {
   return `${BASE}/auth/apple?returnTo=${encodeURIComponent(returnTo(nextPath))}`;
 }
