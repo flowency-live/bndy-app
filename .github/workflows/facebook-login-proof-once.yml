@@ -1,0 +1,66 @@
+name: Prove Facebook login production once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/facebook-login-proof-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Prove Facebook backend redirect
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://api.bndy.co.uk/auth/facebook?returnTo=https%3A%2F%2Fbndy.live%2Fjoin'
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          code="$(curl --silent --show-error --max-time 30 --output "$body" --dump-header "$headers" --write-out '%{http_code}' "$url")"
+          echo "backend_status=$code"
+          cat "$headers"
+          test "$code" = "302"
+          location="$(awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$headers")"
+          echo "backend_location=$location"
+          test -n "$location"
+          echo "$location" | grep -F 'eu-west-2lqtkkhs1p.auth.eu-west-2.amazoncognito.com/oauth2/authorize'
+          echo "$location" | grep -F 'identity_provider=Facebook'
+
+      - name: Prove production join UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          html="$(mktemp)"
+          code="$(curl --silent --show-error --location --max-time 30 --output "$html" --write-out '%{http_code}' 'https://bndy.live/join')"
+          echo "join_status=$code"
+          test "$code" = "200"
+          grep -F 'Continue with Facebook' "$html"
+          grep -F 'Continue with Google' "$html"
+          grep -F 'Continue with Apple' "$html"
+          echo 'facebook_login_proof=PASS'
