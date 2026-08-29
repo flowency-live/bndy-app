@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { CalendarCheck2, CalendarDays, Check, Loader2, LockKeyhole, MessageCircle, Phone } from "lucide-react";
+import { CalendarCheck2, CalendarDays, Check, ChevronLeft, ChevronRight, Loader2, LockKeyhole, MessageCircle, Phone } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/cn";
 import { SheetFooter, SheetHeader } from "@/features/curator/CuratorSheets";
@@ -17,35 +17,21 @@ import {
   updateOwnedArtistProfile,
 } from "./artistManagementApi";
 import { todayISO } from "@/domain/dates";
+import {
+  AVAILABILITY_WINDOW_SIZE,
+  availabilityMonths,
+  availabilityRangeEnd,
+  availabilityWindowLabel,
+  type AvailabilityCalendarMonth,
+} from "@/domain/availability";
 import type { Artist, AvailabilityDate } from "@/domain/types";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
-
-function iso(date: Date): string {
-  return date.toISOString().split("T")[0];
-}
 
 function normalisePhone(value?: string | null): string {
   if (!value) return "";
   const compact = value.replace(/[\s()-]/g, "");
   return /^0\d+$/.test(compact) ? `+44${compact.slice(1)}` : value;
-}
-
-function addMonths(date: Date, count: number): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + count, 1));
-}
-
-function monthModel(start: Date, offset: number) {
-  const first = addMonths(start, offset);
-  const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0));
-  return {
-    key: iso(first).slice(0, 7),
-    label: first.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }),
-    first,
-    last,
-    offset: (first.getUTCDay() + 6) % 7,
-    days: last.getUTCDate(),
-  };
 }
 
 export function ArtistAvailabilityEditor({
@@ -62,12 +48,12 @@ export function ArtistAvailabilityEditor({
   onAvailabilityUpdated: (availability: AvailabilityDate[]) => void;
 }) {
   const todayIso = useMemo(() => todayISO(), []);
-  const monthStart = useMemo(() => {
-    const [year, month] = todayIso.split("-").map(Number);
-    return new Date(Date.UTC(year, month - 1, 1));
-  }, [todayIso]);
-  const months = useMemo(() => [0, 1, 2].map((offset) => monthModel(monthStart, offset)), [monthStart]);
-  const rangeEnd = iso(months[months.length - 1].last);
+  const months = useMemo(() => availabilityMonths(todayIso), [todayIso]);
+  const rangeEnd = useMemo(() => availabilityRangeEnd(todayIso), [todayIso]);
+  const [windowStart, setWindowStart] = useState(0);
+  const visibleMonths = months.slice(windowStart, windowStart + AVAILABILITY_WINDOW_SIZE);
+  const canMoveBack = windowStart > 0;
+  const canMoveForward = windowStart + AVAILABILITY_WINDOW_SIZE < months.length;
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -91,6 +77,7 @@ export function ArtistAvailabilityEditor({
 
   useEffect(() => {
     if (!open) return;
+    setWindowStart(0);
     setPublishing(editableArtist.publishAvailability ?? false);
     setMode(editableArtist.availabilityMode ?? "selected_dates_only");
     setContactMethod(editableArtist.contactMethod ?? "phone");
@@ -118,7 +105,7 @@ export function ArtistAvailabilityEditor({
     let count = 0;
     for (const month of months) {
       for (let day = 1; day <= month.days; day += 1) {
-        const date = iso(new Date(Date.UTC(month.first.getUTCFullYear(), month.first.getUTCMonth(), day)));
+        const date = `${month.key}-${String(day).padStart(2, "0")}`;
         const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
         if (date >= todayIso && [0, 5, 6].includes(weekday) && !busyDates.has(date)) count += 1;
       }
@@ -233,13 +220,36 @@ export function ArtistAvailabilityEditor({
             </div>
             <span className="rounded-full border border-line px-2.5 py-1 text-[10px] font-black text-dim">{selected.size} selected</span>
           </div>
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-line bg-white/[0.02] p-1.5">
+            <button
+              type="button"
+              aria-label="Previous 3 months"
+              disabled={!canMoveBack}
+              onClick={() => setWindowStart((current) => Math.max(0, current - AVAILABILITY_WINDOW_SIZE))}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-white/5 hover:text-txt disabled:opacity-25"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="min-w-0 truncate text-center text-[10px] font-black uppercase tracking-wide text-dim">
+              {availabilityWindowLabel(visibleMonths)}
+            </span>
+            <button
+              type="button"
+              aria-label="Next 3 months"
+              disabled={!canMoveForward}
+              onClick={() => setWindowStart((current) => Math.min(months.length - AVAILABILITY_WINDOW_SIZE, current + AVAILABILITY_WINDOW_SIZE))}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-white/5 hover:text-txt disabled:opacity-25"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
           {availabilityQuery.isLoading ? (
             <div className="grid min-h-40 place-items-center"><Loader2 size={20} className="animate-spin text-dim" /></div>
           ) : availabilityQuery.isError ? (
             <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11.5px] font-bold text-red-400">Could not load saved availability.</p>
           ) : (
             <div className="mt-3 space-y-5">
-              {months.map((month) => (
+              {visibleMonths.map((month) => (
                 <MonthPicker
                   key={month.key}
                   month={month}
@@ -250,6 +260,10 @@ export function ArtistAvailabilityEditor({
                   onToggle={toggleDate}
                 />
               ))}
+              <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[9.5px] font-bold text-dim">
+                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-emerald-500 text-white"><Check size={9} strokeWidth={4} /></span> Available</span>
+                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-white/[0.07] text-dim2"><LockKeyhole size={8} /></span> Booked</span>
+              </div>
             </div>
           )}
           {dateError && <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11.5px] font-bold text-red-400">{dateError}</p>}
@@ -258,7 +272,7 @@ export function ArtistAvailabilityEditor({
         <div className="mt-6 overflow-hidden rounded-[22px] border border-line bg-gradient-to-br from-[color-mix(in_srgb,var(--acc)_14%,transparent)] to-transparent p-5">
           <CalendarDays size={24} className="text-[var(--acc)]" />
           <div className="mt-3 text-[21px] font-black tracking-tight">{availabilityQuery.isLoading ? <Loader2 size={20} className="animate-spin text-dim" /> : `${freeWeekendCount} free weekend days`}</div>
-          <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-dim">Across the next three months. BNDY removes a date automatically whenever this artist has an active event.</p>
+          <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-dim">Across the next twelve months. BNDY removes a date automatically whenever this artist has an active event.</p>
           {selected.size > 0 && <p className="mt-3 text-[10.5px] font-bold text-dim">Your {selected.size} picked date{selected.size === 1 ? "" : "s"} remain saved if you switch back.</p>}
         </div>
       )}
@@ -326,10 +340,8 @@ function ContactChoice({ active, icon, label, onClick }: { active: boolean; icon
   return <button type="button" onClick={onClick} aria-pressed={active} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl text-[11.5px] font-black transition", active ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>{icon}{label}</button>;
 }
 
-type Month = ReturnType<typeof monthModel>;
-
 function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
-  month: Month;
+  month: AvailabilityCalendarMonth;
   today: string;
   selected: Set<string>;
   busy: Set<string>;
@@ -339,7 +351,7 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
   const blanks = Array.from({ length: month.offset }, (_, index) => <span key={`blank-${index}`} />);
   const days = Array.from({ length: month.days }, (_, index) => {
     const day = index + 1;
-    const date = iso(new Date(Date.UTC(month.first.getUTCFullYear(), month.first.getUTCMonth(), day)));
+    const date = `${month.key}-${String(day).padStart(2, "0")}`;
     const isPast = date < today;
     const isSelected = selected.has(date);
     const isBusy = busy.has(date) && !isSelected;
@@ -355,15 +367,15 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
         aria-pressed={isSelected}
         aria-label={`${date}${isBusy ? ", booked" : isSelected ? ", available" : ""}`}
         className={cn(
-          "relative grid aspect-square min-h-10 place-items-center rounded-xl text-[12px] font-black transition active:scale-95 disabled:active:scale-100",
-          isSelected ? "bg-acc text-on-acc shadow-md" : "border border-transparent hover:border-line-hi hover:bg-white/5",
+          "relative grid h-10 place-items-center rounded-xl text-[12px] font-black transition active:scale-95 disabled:active:scale-100",
+          isSelected ? "bg-emerald-500 text-white shadow-md" : "border border-transparent hover:border-line-hi hover:bg-white/5",
           prominent && !isSelected && !isBusy && "bg-white/[0.025] text-txt",
           isPast && "text-dim2 opacity-35",
           isBusy && "cursor-not-allowed bg-white/[0.025] text-dim2 opacity-60"
         )}
       >
         {isPending ? <Loader2 size={13} className="animate-spin" /> : isSelected ? <><span>{day}</span><Check size={9} className="absolute right-1 top-1" strokeWidth={4} /></> : day}
-        {isBusy && <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-[var(--dim2)]" />}
+        {isBusy && <LockKeyhole size={8} className="absolute right-1 top-1" aria-hidden="true" />}
       </button>
     );
   });

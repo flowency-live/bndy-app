@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ArtistProfile } from "@/features/artists/ArtistProfile";
 import { fetchArtist, fetchArtistGigs, fetchArtistAvailability } from "@/lib/api";
-import { todayISO, addDaysISO } from "@/domain/dates";
+import { todayISO } from "@/domain/dates";
+import { availabilityRangeEnd } from "@/domain/availability";
 
 export const revalidate = 300;
 const IS_BRASS = process.env.NEXT_PUBLIC_BNDY_EDITION === "brass";
@@ -30,7 +31,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ artistI
   const { artistId } = await params;
   if (IS_BRASS) redirect(`/bands/${encodeURIComponent(artistId)}`);
   const today = todayISO();
-  const end = addDaysISO(today, 90);
+  const end = availabilityRangeEnd(today);
 
   const [artist, gigs, availability] = await Promise.all([
     fetchArtist(artistId).catch(() => null),
