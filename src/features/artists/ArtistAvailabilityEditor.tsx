@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { CalendarCheck2, CalendarDays, Check, ChevronLeft, ChevronRight, Loader2, LockKeyhole, MessageCircle, Phone } from "lucide-react";
+import { CalendarCheck2, CalendarDays, CalendarX2, Check, ChevronLeft, ChevronRight, Loader2, LockKeyhole, MessageCircle, Phone, UserRoundX } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/cn";
 import { SheetFooter, SheetHeader } from "@/features/curator/CuratorSheets";
@@ -24,7 +24,7 @@ import {
   availabilityWindowLabel,
   type AvailabilityCalendarMonth,
 } from "@/domain/availability";
-import type { Artist, AvailabilityDate } from "@/domain/types";
+import type { Artist, AvailabilityDate, AvailabilityDateStatus } from "@/domain/types";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -101,6 +101,7 @@ export function ArtistAvailabilityEditor({
   }, [availabilityQuery.data]);
 
   const busyDates = useMemo(() => new Set(availabilityQuery.data?.busyDates ?? []), [availabilityQuery.data]);
+  const dateStatuses = useMemo(() => new Map((availabilityQuery.data?.dateStatuses ?? []).map((item) => [item.date, item])), [availabilityQuery.data]);
   const freeWeekendCount = useMemo(() => {
     let count = 0;
     for (const month of months) {
@@ -256,13 +257,16 @@ export function ArtistAvailabilityEditor({
                   today={todayIso}
                   selected={selected}
                   busy={busyDates}
+                  statuses={dateStatuses}
                   pending={pendingDates}
                   onToggle={toggleDate}
                 />
               ))}
-              <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[9.5px] font-bold text-dim">
+              <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[11px] font-bold text-dim">
                 <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-emerald-500 text-white"><Check size={9} strokeWidth={4} /></span> Available</span>
-                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-white/[0.07] text-dim2"><LockKeyhole size={8} /></span> Booked</span>
+                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)]"><CalendarX2 size={8} /></span> Public gig</span>
+                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-slate-500/20 text-dim"><LockKeyhole size={8} /></span> Private booking</span>
+                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-rose-500/15 text-rose-300"><UserRoundX size={8} /></span> Member unavailable</span>
               </div>
             </div>
           )}
@@ -340,11 +344,12 @@ function ContactChoice({ active, icon, label, onClick }: { active: boolean; icon
   return <button type="button" onClick={onClick} aria-pressed={active} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl text-[11.5px] font-black transition", active ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>{icon}{label}</button>;
 }
 
-function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
+function MonthPicker({ month, today, selected, busy, statuses, pending, onToggle }: {
   month: AvailabilityCalendarMonth;
   today: string;
   selected: Set<string>;
   busy: Set<string>;
+  statuses: Map<string, AvailabilityDateStatus>;
   pending: Set<string>;
   onToggle: (date: string) => void;
 }) {
@@ -354,7 +359,8 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
     const date = `${month.key}-${String(day).padStart(2, "0")}`;
     const isPast = date < today;
     const isSelected = selected.has(date);
-    const isBusy = busy.has(date) && !isSelected;
+    const status = statuses.get(date);
+    const isBusy = busy.has(date);
     const isPending = pending.has(date);
     const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
     const prominent = [0, 5, 6].includes(weekday);
@@ -362,20 +368,23 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
       <button
         key={date}
         type="button"
-        disabled={isPast || isBusy || isPending}
+        disabled={isPast || (isBusy && !isSelected) || isPending}
         onClick={() => onToggle(date)}
         aria-pressed={isSelected}
-        aria-label={`${date}${isBusy ? ", booked" : isSelected ? ", available" : ""}`}
+        aria-label={`${date}${isBusy ? `, ${managedStatusLabel(status)}` : isSelected ? ", available" : ""}`}
         className={cn(
           "relative grid h-10 place-items-center rounded-xl text-[12px] font-black transition active:scale-95 disabled:active:scale-100",
-          isSelected ? "bg-emerald-500 text-white shadow-md" : "border border-transparent hover:border-line-hi hover:bg-white/5",
+          isSelected && !isBusy ? "bg-emerald-500 text-white shadow-md" : "border border-transparent hover:border-line-hi hover:bg-white/5",
           prominent && !isSelected && !isBusy && "bg-white/[0.025] text-txt",
           isPast && "text-dim2 opacity-35",
-          isBusy && "cursor-not-allowed bg-white/[0.025] text-dim2 opacity-60"
+          isBusy && status?.state === "public_gig" && "cursor-not-allowed bg-[color-mix(in_srgb,var(--acc)_14%,transparent)] text-[var(--acc-text)]",
+          isBusy && status?.state === "private_booking" && "cursor-not-allowed bg-slate-500/15 text-dim",
+          isBusy && status?.state === "member_unavailable" && "cursor-not-allowed bg-rose-500/12 text-rose-300",
+          isBusy && (!status || status.state === "artist_commitment") && "cursor-not-allowed bg-white/[0.035] text-dim2"
         )}
       >
-        {isPending ? <Loader2 size={13} className="animate-spin" /> : isSelected ? <><span>{day}</span><Check size={9} className="absolute right-1 top-1" strokeWidth={4} /></> : day}
-        {isBusy && <LockKeyhole size={8} className="absolute right-1 top-1" aria-hidden="true" />}
+        {isPending ? <Loader2 size={13} className="animate-spin" /> : isSelected && !isBusy ? <><span>{day}</span><Check size={9} className="absolute right-1 top-1" strokeWidth={4} /></> : day}
+        {isBusy && <ManagedStatusIcon status={status} />}
       </button>
     );
   });
@@ -390,4 +399,18 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
       </div>
     </section>
   );
+}
+
+function managedStatusLabel(status?: AvailabilityDateStatus): string {
+  if (status?.state === "public_gig") return "public gig";
+  if (status?.state === "private_booking") return "private booking";
+  if (status?.state === "member_unavailable") return "member unavailable";
+  return "artist unavailable";
+}
+
+function ManagedStatusIcon({ status }: { status?: AvailabilityDateStatus }) {
+  const className = "absolute right-1 top-1";
+  if (status?.state === "public_gig") return <CalendarX2 size={9} className={className} aria-hidden="true" />;
+  if (status?.state === "member_unavailable") return <UserRoundX size={9} className={className} aria-hidden="true" />;
+  return <LockKeyhole size={8} className={className} aria-hidden="true" />;
 }

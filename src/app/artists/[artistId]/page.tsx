@@ -33,10 +33,10 @@ export default async function ArtistPage({ params }: { params: Promise<{ artistI
   const today = todayISO();
   const end = availabilityRangeEnd(today);
 
-  const [artist, gigs, availability] = await Promise.all([
+  const [artist, gigs, availabilityCalendar] = await Promise.all([
     fetchArtist(artistId).catch(() => null),
     fetchArtistGigs(artistId, today).catch(() => [] as Awaited<ReturnType<typeof fetchArtistGigs>>),
-    fetchArtistAvailability(artistId, today, end).catch(() => [] as Awaited<ReturnType<typeof fetchArtistAvailability>>),
+    fetchArtistAvailability(artistId, today, end).catch(() => ({ availability: [], dateStatuses: [] }) as Awaited<ReturnType<typeof fetchArtistAvailability>>),
   ]);
-  return <ArtistProfile id={artistId} artist={artist} gigs={gigs} availability={availability} />;
+  return <ArtistProfile id={artistId} artist={artist} gigs={gigs} availabilityCalendar={availabilityCalendar} />;
 }

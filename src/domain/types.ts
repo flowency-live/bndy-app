@@ -147,6 +147,19 @@ export interface AvailabilityDate {
   notes?: string;
 }
 
+/** Privacy-safe reason an artist cannot be booked on a date. */
+export interface AvailabilityDateStatus {
+  date: string; // YYYY-MM-DD
+  state: 'public_gig' | 'private_booking' | 'artist_commitment' | 'member_unavailable';
+  /** Present only for a public gig that can safely be opened. */
+  eventId?: string;
+}
+
+export interface ArtistAvailabilityCalendar {
+  availability: AvailabilityDate[];
+  dateStatuses: AvailabilityDateStatus[];
+}
+
 /** A place that hosts gigs. */
 export interface Venue {
   id: string;

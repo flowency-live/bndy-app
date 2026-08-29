@@ -2,7 +2,7 @@
 
 import type {
   Artist,
-  AvailabilityDate,
+  ArtistAvailabilityCalendar,
   Festival,
   FestivalBilling,
   FestivalLineupSlot,
@@ -329,11 +329,11 @@ export async function fetchArtistGigs(id: string, startDate: string): Promise<Gi
   return (data.events || []).map(toGig).filter((g): g is Gig => g !== null);
 }
 
-export async function fetchArtistAvailability(id: string, startDate: string, endDate?: string): Promise<AvailabilityDate[]> {
+export async function fetchArtistAvailability(id: string, startDate: string, endDate?: string): Promise<ArtistAvailabilityCalendar> {
   const params = new URLSearchParams({ startDate });
   if (endDate) params.append('endDate', endDate);
-  const data = await get<{ availability?: AvailabilityDate[] }>(`/api/artists/${id}/public-availability?${params}`);
-  return data.availability || [];
+  const data = await get<Partial<ArtistAvailabilityCalendar>>(`/api/artists/${id}/public-availability?${params}`);
+  return { availability: data.availability || [], dateStatuses: data.dateStatuses || [] };
 }
 
 export async function fetchVenueGigs(id: string, startDate: string): Promise<Gig[]> {

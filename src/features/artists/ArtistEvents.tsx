@@ -12,10 +12,10 @@ import { TicketStub } from "@/components/TicketStub";
 import { MiniMap } from "./MiniMap";
 import { ArtistAvailability } from "./ArtistAvailability";
 import { cn } from "@/lib/cn";
-import type { Artist, AvailabilityDate, Gig } from "@/domain/types";
+import type { Artist, AvailabilityDate, AvailabilityDateStatus, Gig } from "@/domain/types";
 type View = "date" | "distance" | "map" | "availability";
 
-export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gigs: Gig[]; artistId?: string; artist?: Artist | null; availability?: AvailabilityDate[] }) {
+export function ArtistEvents({ gigs, artistId, artist, availability = [], availabilityStatuses = [] }: { gigs: Gig[]; artistId?: string; artist?: Artist | null; availability?: AvailabilityDate[]; availabilityStatuses?: AvailabilityDateStatus[] }) {
   const { location, located } = useGeolocation();
   const today = todayISO();
   const collapse90 = addDaysISO(today, 90);
@@ -23,7 +23,13 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gi
   const [view, setView] = useState<View>("date");
   const [selected, setSelected] = useState<Gig | null>(null);
   const withDist = useMemo(() => gigs.map((g) => ({ g, dist: distanceMiles(location, g.location) })), [gigs, location]);
-  const bookedDates = useMemo(() => new Set(gigs.filter((gig) => !gig.cancelled).map((gig) => gig.date)), [gigs]);
+  const projectedAvailabilityStatuses = useMemo(() => {
+    const statuses = new Map(availabilityStatuses.map((item) => [item.date, item]));
+    gigs.filter((gig) => !gig.cancelled).forEach((gig) => {
+      statuses.set(gig.date, { date: gig.date, state: "public_gig", eventId: gig.id });
+    });
+    return [...statuses.values()];
+  }, [availabilityStatuses, gigs]);
 
   const byMonth = useMemo(() => {
     const groups: { key: string; label: string; items: { g: Gig; dist: number }[]; firstDate: string }[] = [];
@@ -75,7 +81,7 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gi
       </div>
 
       {activeView === "availability" && artist ? (
-        <ArtistAvailability artist={artist} availability={availability} busyDates={bookedDates} />
+        <ArtistAvailability artist={artist} availability={availability} dateStatuses={projectedAvailabilityStatuses} />
       ) : activeView === "map" ? (
         <MiniMap points={gigs.map((g) => ({ id: g.id, lat: g.location.lat, lng: g.location.lng }))} user={location} className="h-[320px] w-full overflow-hidden rounded-xl border border-line" />
       ) : activeView === "distance" ? (

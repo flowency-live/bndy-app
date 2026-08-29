@@ -1,7 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarCheck2, Check, ChevronLeft, ChevronRight, MessageCircle, Phone, Sparkles, X } from "lucide-react";
+import {
+  CalendarCheck2,
+  CalendarClock,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  LockKeyhole,
+  MessageCircle,
+  MessageSquareText,
+  Phone,
+  Sparkles,
+  UserRoundX,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
 import { todayISO } from "@/domain/dates";
 import {
@@ -11,21 +24,22 @@ import {
   availabilityWindowStart,
   type AvailabilityCalendarMonth,
 } from "@/domain/availability";
-import type { Artist, AvailabilityDate } from "@/domain/types";
+import type { Artist, AvailabilityDate, AvailabilityDateStatus } from "@/domain/types";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function ArtistAvailability({
   artist,
   availability,
-  busyDates = new Set<string>(),
+  dateStatuses = [],
 }: {
   artist: Artist;
   availability: AvailabilityDate[];
-  busyDates?: Set<string>;
+  dateStatuses?: AvailabilityDateStatus[];
 }) {
   const today = useMemo(() => todayISO(), []);
   const dates = useMemo(() => new Map(availability.map((item) => [item.date, item])), [availability]);
+  const statuses = useMemo(() => new Map(dateStatuses.map((item) => [item.date, item])), [dateStatuses]);
   const months = useMemo(() => availabilityMonths(today), [today]);
   const firstAvailableMonth = useMemo(() => {
     const validKeys = new Set(months.map((month) => month.key));
@@ -35,7 +49,7 @@ export function ArtistAvailability({
   }, [availability, months]);
   const [activeMonth, setActiveMonth] = useState(firstAvailableMonth);
   const [windowStart, setWindowStart] = useState(() => availabilityWindowStart(months, firstAvailableMonth));
-  const contact = preferredContact(artist);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const automatic = artist.availabilityMode === "free_weekends";
 
   useEffect(() => {
@@ -48,12 +62,9 @@ export function ArtistAvailability({
   const month = months.find((item) => item.key === activeMonth) ?? visibleMonths[0];
   const canMoveBack = windowStart > 0;
   const canMoveForward = windowStart + AVAILABILITY_WINDOW_SIZE < months.length;
-  const busyDateList = useMemo(() => [...busyDates], [busyDates]);
-  const hasBookedDates = months.some((item) => {
-    const start = `${item.key}-01`;
-    const end = `${item.key}-${String(item.days).padStart(2, "0")}`;
-    return busyDateList.some((date) => date >= start && date <= end);
-  });
+  const selectedIsAvailable = selectedDate ? dates.has(selectedDate) : false;
+  const contactActions = selectedDate ? bookingContactActions(artist, selectedDate) : [];
+  const states = new Set(dateStatuses.map((item) => item.state));
 
   const moveWindow = (direction: -1 | 1) => {
     const next = Math.max(0, Math.min(months.length - AVAILABILITY_WINDOW_SIZE, windowStart + direction * AVAILABILITY_WINDOW_SIZE));
@@ -64,26 +75,29 @@ export function ArtistAvailability({
   if (!month || availability.length === 0) return null;
 
   return (
-    <div className="mx-auto max-w-[760px] rounded-[20px] border border-line bg-card p-4 shadow-[var(--shadow)] sm:p-5" aria-label="Booking availability">
-      <div className="grid gap-5 md:grid-cols-[minmax(0,240px)_minmax(320px,380px)] md:items-start md:justify-between">
+    <div className="mx-auto max-w-[760px] rounded-[20px] border border-line bg-card p-5 shadow-[var(--shadow)] sm:p-6" aria-label="Booking availability">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,250px)_minmax(340px,390px)] md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--acc)_13%,transparent)] text-[var(--acc)]">
-              <CalendarCheck2 size={17} />
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--acc)_13%,transparent)] text-[var(--acc)]">
+              <CalendarCheck2 size={19} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[12px] font-black">Booking availability</span>
+                <span className="text-[15px] font-black sm:text-[17px]">Booking availability</span>
                 {automatic && (
-                  <span className="flex items-center gap-1 rounded-full border border-line px-2 py-1 text-[8px] font-black uppercase tracking-wide text-dim">
-                    <Sparkles size={9} className="text-[var(--acc)]" /> Live
+                  <span className="flex items-center gap-1 rounded-full border border-line px-2 py-1 text-[10px] font-black uppercase tracking-wide text-dim">
+                    <Sparkles size={10} className="text-[var(--acc)]" /> Live
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-dim">
+              <p className="mt-1.5 text-[13px] font-semibold leading-5 text-dim sm:text-[14px] sm:leading-[1.55]">
                 {artist.availabilityMessage || (automatic
                   ? "Unbooked Fridays, Saturdays and Sundays are shown as available."
                   : "Checked dates are currently open for bookings.")}
+              </p>
+              <p className="mt-3 text-[12px] font-bold leading-relaxed text-dim2 sm:text-[13px]">
+                Select an available or unlisted date to start an enquiry.
               </p>
             </div>
           </div>
@@ -91,26 +105,14 @@ export function ArtistAvailability({
 
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              aria-label="Previous 3 months"
-              disabled={!canMoveBack}
-              onClick={() => moveWindow(-1)}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-white/5 hover:text-txt disabled:opacity-25"
-            >
-              <ChevronLeft size={16} />
+            <button type="button" aria-label="Previous 3 months" disabled={!canMoveBack} onClick={() => moveWindow(-1)} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-white/5 hover:text-txt disabled:opacity-25">
+              <ChevronLeft size={17} />
             </button>
-            <span className="min-w-0 truncate text-center text-[9.5px] font-black uppercase tracking-wide text-dim">
+            <span className="min-w-0 truncate text-center text-[11px] font-black uppercase tracking-wide text-dim sm:text-[12px]">
               {availabilityWindowLabel(visibleMonths)}
             </span>
-            <button
-              type="button"
-              aria-label="Next 3 months"
-              disabled={!canMoveForward}
-              onClick={() => moveWindow(1)}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-white/5 hover:text-txt disabled:opacity-25"
-            >
-              <ChevronRight size={16} />
+            <button type="button" aria-label="Next 3 months" disabled={!canMoveForward} onClick={() => moveWindow(1)} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-white/5 hover:text-txt disabled:opacity-25">
+              <ChevronRight size={17} />
             </button>
           </div>
 
@@ -123,7 +125,7 @@ export function ArtistAvailability({
                 aria-selected={item.key === month.key}
                 onClick={() => setActiveMonth(item.key)}
                 className={cn(
-                  "min-h-8 min-w-0 rounded-lg px-1 text-[9.5px] font-black uppercase tracking-wide transition-colors",
+                  "min-h-9 min-w-0 rounded-lg px-1 text-[11px] font-black uppercase tracking-wide transition-colors sm:text-[12px]",
                   item.key === month.key ? "bg-acc text-on-acc" : "text-dim hover:bg-white/5 hover:text-txt"
                 )}
               >
@@ -132,27 +134,51 @@ export function ArtistAvailability({
             ))}
           </div>
 
-          <AvailabilityMonth month={month} dates={dates} busyDates={busyDates} today={today} />
+          <AvailabilityMonth month={month} dates={dates} statuses={statuses} today={today} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 border-t border-line pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[9px] font-bold text-dim">
-          <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-emerald-500 text-white"><Check size={9} strokeWidth={4} /></span> Available</span>
-          {hasBookedDates && <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-white/[0.07] text-dim2"><X size={9} strokeWidth={3} /></span> Booked</span>}
+      <div className="mt-5 border-t border-line pt-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] font-bold text-dim sm:text-[13px]">
+          <Legend icon={<Check size={10} strokeWidth={4} />} className="bg-emerald-500 text-white" label="Available" />
+          {states.has("public_gig") && <Legend icon={<CalendarCheck2 size={10} />} className="bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)]" label="Public gig" />}
+          {states.has("private_booking") && <Legend icon={<LockKeyhole size={9} />} className="bg-slate-500/20 text-dim" label="Private booking" />}
+          {states.has("member_unavailable") && <Legend icon={<UserRoundX size={10} />} className="bg-rose-500/15 text-red-600 dark:text-rose-300" label="Member unavailable" />}
+          {states.has("artist_commitment") && <Legend icon={<CalendarClock size={10} />} className="bg-amber-500/15 text-amber-700 dark:text-amber-300" label="Artist unavailable" />}
           <span>Unlisted dates may still be possible</span>
         </div>
-        {contact && (
-          <a
-            href={contact.href}
-            target={contact.kind === "whatsapp" ? "_blank" : undefined}
-            rel={contact.kind === "whatsapp" ? "noopener noreferrer" : undefined}
-            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-acc px-3.5 text-[11px] font-black text-on-acc transition-transform active:scale-[.98]"
-          >
-            {contact.kind === "whatsapp" ? <MessageCircle size={14} /> : <Phone size={13} />}
-            {contact.label}
-          </a>
-        )}
+
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-white/[0.025] p-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0" aria-live="polite">
+            {selectedDate ? (
+              <>
+                <div className="text-[11px] font-black uppercase tracking-wide text-[var(--acc-text)]">{selectedIsAvailable ? "Marked available" : "Enquiry date"}</div>
+                <div className="mt-0.5 text-[14px] font-black">{formatEnquiryDate(selectedDate)}</div>
+              </>
+            ) : (
+              <div className="text-[12.5px] font-semibold text-dim sm:text-[13.5px]">Choose an open or unlisted date above.</div>
+            )}
+          </div>
+          {contactActions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {contactActions.map((action, index) => (
+                <a
+                  key={action.kind}
+                  href={action.href}
+                  target={action.kind === "whatsapp" ? "_blank" : undefined}
+                  rel={action.kind === "whatsapp" ? "noopener noreferrer" : undefined}
+                  className={cn(
+                    "inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-3.5 text-[12px] font-black transition-transform active:scale-[.98]",
+                    index === 0 ? "bg-acc text-on-acc" : "border border-line text-txt hover:bg-white/5"
+                  )}
+                >
+                  {action.kind === "whatsapp" ? <MessageCircle size={15} /> : action.kind === "sms" ? <MessageSquareText size={15} /> : <Phone size={14} />}
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -161,13 +187,17 @@ export function ArtistAvailability({
 function AvailabilityMonth({
   month,
   dates,
-  busyDates,
+  statuses,
   today,
+  selectedDate,
+  onSelectDate,
 }: {
   month: AvailabilityCalendarMonth;
   dates: Map<string, AvailabilityDate>;
-  busyDates: Set<string>;
+  statuses: Map<string, AvailabilityDateStatus>;
   today: string;
+  selectedDate: string | null;
+  onSelectDate: (date: string) => void;
 }) {
   const blanks = Array.from({ length: month.offset }, (_, index) => <span key={`blank-${index}`} aria-hidden="true" />);
   const days = Array.from({ length: month.days }, (_, index) => {
@@ -175,28 +205,26 @@ function AvailabilityMonth({
     const date = `${month.key}-${String(day).padStart(2, "0")}`;
     const weekday = new Date(Date.UTC(month.year, month.month - 1, day)).getUTCDay();
     const prominent = [0, 5, 6].includes(weekday);
-    const available = dates.has(date);
-    const booked = busyDates.has(date) && !available;
+    const status = statuses.get(date);
+    const available = dates.has(date) && !status;
     const past = date < today;
-    const state = available ? "available" : booked ? "booked" : past ? "past" : "not listed";
-    return (
-      <span
-        key={date}
-        aria-label={`${date}, ${state}`}
-        className={cn(
-          "relative grid h-10 place-items-center rounded-lg text-[11px] font-extrabold",
-          available && "bg-emerald-500 text-white shadow-sm",
-          booked && "bg-white/[0.065] text-dim2",
-          !available && !booked && prominent && "bg-white/[0.025] text-txt",
-          !available && !booked && !prominent && "text-dim",
-          past && !available && "opacity-35"
-        )}
-      >
-        {day}
-        {available && <Check size={9} className="absolute right-1 top-1" strokeWidth={4} aria-hidden="true" />}
-        {booked && <X size={9} className="absolute right-1 top-1" strokeWidth={3} aria-hidden="true" />}
-      </span>
-    );
+    const selected = selectedDate === date;
+    const state = status?.state ?? (available ? "available" : past ? "past" : "unlisted");
+    const className = dateCellClass(state, prominent, selected);
+    const content = <DateCellContent day={day} state={state} />;
+    const ariaLabel = dateAriaLabel(date, state);
+
+    if (state === "public_gig" && status?.eventId) {
+      return <Link key={date} href={`/gigs/${encodeURIComponent(status.eventId)}`} aria-label={`${ariaLabel}. Open gig.`} className={className}>{content}</Link>;
+    }
+    if (!past && (state === "available" || state === "unlisted")) {
+      return (
+        <button key={date} type="button" aria-label={`${ariaLabel}. Select to enquire.`} aria-pressed={selected} onClick={() => onSelectDate(date)} className={className}>
+          {content}
+        </button>
+      );
+    }
+    return <span key={date} aria-label={ariaLabel} className={className}>{content}</span>;
   });
 
   return (
@@ -204,7 +232,7 @@ function AvailabilityMonth({
       <h3 className="sr-only">{month.label}</h3>
       <div className="grid grid-cols-7 gap-1">
         {WEEKDAYS.map((day, index) => (
-          <span key={day} className={cn("pb-1 text-center text-[8px] font-black uppercase tracking-wide text-dim2", index >= 4 && "text-[var(--acc-text)]")}>
+          <span key={day} className={cn("pb-1 text-center text-[10px] font-black uppercase tracking-wide text-dim2 sm:text-[11px]", index >= 4 && "text-[var(--acc-text)]")}>
             {day}
           </span>
         ))}
@@ -215,18 +243,77 @@ function AvailabilityMonth({
   );
 }
 
-function preferredContact(artist: Artist): { kind: "phone" | "whatsapp"; href: string; label: string } | null {
-  if (artist.contactMethod === "whatsapp" && artist.whatsappNumber) {
-    return { kind: "whatsapp", href: `https://wa.me/${artist.whatsappNumber.replace(/\D/g, "")}`, label: "WhatsApp" };
-  }
-  if (artist.contactMethod === "phone" && artist.phoneNumber) {
-    return { kind: "phone", href: `tel:${artist.phoneNumber}`, label: "Call" };
-  }
-  if (artist.whatsappNumber) {
-    return { kind: "whatsapp", href: `https://wa.me/${artist.whatsappNumber.replace(/\D/g, "")}`, label: "WhatsApp" };
-  }
-  if (artist.phoneNumber) {
-    return { kind: "phone", href: `tel:${artist.phoneNumber}`, label: "Call" };
-  }
-  return null;
+type CalendarCellState = AvailabilityDateStatus["state"] | "available" | "unlisted" | "past";
+
+function dateCellClass(state: CalendarCellState, prominent: boolean, selected: boolean): string {
+  return cn(
+    "relative grid h-11 place-items-center rounded-lg text-[12.5px] font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--acc)] sm:text-[13.5px]",
+    state === "available" && "bg-emerald-500 text-white shadow-sm hover:bg-emerald-400",
+    state === "public_gig" && "bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--acc)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--acc)_25%,transparent)]",
+    state === "private_booking" && "bg-slate-500/15 text-dim ring-1 ring-inset ring-slate-500/15",
+    state === "member_unavailable" && "bg-rose-500/12 text-red-600 ring-1 ring-inset ring-rose-500/15 dark:text-rose-300",
+    state === "artist_commitment" && "bg-amber-500/10 text-amber-700 ring-1 ring-inset ring-amber-500/15 dark:text-amber-300",
+    state === "unlisted" && prominent && "bg-white/[0.03] text-txt hover:bg-white/[0.07]",
+    state === "unlisted" && !prominent && "text-dim hover:bg-white/[0.05] hover:text-txt",
+    state === "past" && "text-dim2 opacity-30",
+    selected && "ring-2 ring-[var(--acc)] ring-offset-2 ring-offset-[var(--card)]"
+  );
+}
+
+function DateCellContent({ day, state }: { day: number; state: CalendarCellState }) {
+  const iconClass = "absolute right-1 top-1";
+  return (
+    <>
+      <span>{day}</span>
+      {state === "available" && <Check size={10} className={iconClass} strokeWidth={4} aria-hidden="true" />}
+      {state === "public_gig" && <CalendarCheck2 size={10} className={iconClass} aria-hidden="true" />}
+      {state === "private_booking" && <LockKeyhole size={9} className={iconClass} aria-hidden="true" />}
+      {state === "member_unavailable" && <UserRoundX size={10} className={iconClass} aria-hidden="true" />}
+      {state === "artist_commitment" && <CalendarClock size={10} className={iconClass} aria-hidden="true" />}
+    </>
+  );
+}
+
+function dateAriaLabel(date: string, state: CalendarCellState): string {
+  const label = formatEnquiryDate(date);
+  if (state === "public_gig") return `${label}, public gig`;
+  if (state === "private_booking") return `${label}, private booking`;
+  if (state === "member_unavailable") return `${label}, artist member unavailable`;
+  if (state === "artist_commitment") return `${label}, artist unavailable`;
+  if (state === "available") return `${label}, available`;
+  if (state === "past") return `${label}, past date`;
+  return `${label}, availability not listed`;
+}
+
+function Legend({ icon, className, label }: { icon: React.ReactNode; className: string; label: string }) {
+  return <span className="flex items-center gap-1.5"><span className={cn("grid h-4 w-4 place-items-center rounded", className)}>{icon}</span>{label}</span>;
+}
+
+function formatEnquiryDate(date: string): string {
+  return new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+    .format(new Date(`${date}T00:00:00.000Z`));
+}
+
+function bookingMessage(artist: Artist, date: string): string {
+  return `Hi ${artist.name}, I am interested in booking you on ${formatEnquiryDate(date)}. Is that date available? I found you on bndy.`;
+}
+
+type ContactAction = { kind: "whatsapp" | "sms" | "phone"; href: string; label: string };
+
+function bookingContactActions(artist: Artist, date: string): ContactAction[] {
+  const message = bookingMessage(artist, date);
+  const phone = artist.phoneNumber?.trim() || null;
+  const whatsapp = artist.whatsappNumber?.replace(/\D/g, "") || null;
+  const whatsappAction = whatsapp
+    ? { kind: "whatsapp" as const, href: `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, label: "Ask on WhatsApp" }
+    : null;
+  const callAction = phone ? { kind: "phone" as const, href: `tel:${phone}`, label: "Call" } : null;
+  const textAction = phone && /^\+447\d{9}$/.test(phone.replace(/[\s()-]/g, ""))
+    ? { kind: "sms" as const, href: `sms:${phone}?&body=${encodeURIComponent(message)}`, label: "Text enquiry" }
+    : null;
+
+  if (artist.contactMethod === "whatsapp" && whatsappAction) return [whatsappAction, callAction].filter(Boolean) as ContactAction[];
+  if (artist.contactMethod === "phone" && callAction) return [callAction, whatsappAction || textAction].filter(Boolean) as ContactAction[];
+  if (whatsappAction) return [whatsappAction, callAction].filter(Boolean) as ContactAction[];
+  return [callAction, textAction].filter(Boolean) as ContactAction[];
 }
