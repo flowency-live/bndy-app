@@ -23,6 +23,7 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gi
   const [view, setView] = useState<View>("date");
   const [selected, setSelected] = useState<Gig | null>(null);
   const withDist = useMemo(() => gigs.map((g) => ({ g, dist: distanceMiles(location, g.location) })), [gigs, location]);
+  const bookedDates = useMemo(() => new Set(gigs.filter((gig) => !gig.cancelled).map((gig) => gig.date)), [gigs]);
 
   const byMonth = useMemo(() => {
     const groups: { key: string; label: string; items: { g: Gig; dist: number }[]; firstDate: string }[] = [];
@@ -61,10 +62,10 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gi
   return (
     <section className="mt-7">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="no-scrollbar max-w-full overflow-x-auto rounded-full border border-line glass p-1" role="tablist" aria-label="Artist profile view">
-          <div className="flex w-max gap-1">
+        <div className="w-full rounded-full border border-line glass p-1 sm:w-auto" role="tablist" aria-label="Artist profile view">
+          <div className={cn("grid w-full gap-1 sm:flex sm:w-max", views.length === 4 ? "grid-cols-4" : views.length === 3 ? "grid-cols-3" : views.length === 2 ? "grid-cols-2" : "grid-cols-1")}>
             {views.map((v) => (
-              <button key={v} type="button" role="tab" aria-selected={activeView === v} onClick={() => setView(v)} className={cn("shrink-0 rounded-full px-3.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wide transition-colors", activeView === v ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
+              <button key={v} type="button" role="tab" aria-selected={activeView === v} onClick={() => setView(v)} className={cn("min-w-0 whitespace-nowrap rounded-full px-1 py-1.5 text-[9px] font-extrabold uppercase tracking-normal transition-colors sm:shrink-0 sm:px-3.5 sm:text-[11.5px] sm:tracking-wide", activeView === v ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
                 {v === "date" ? "By date" : v === "distance" ? "By distance" : v === "map" ? "Map" : "Availability"}
               </button>
             ))}
@@ -74,7 +75,7 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gi
       </div>
 
       {activeView === "availability" && artist ? (
-        <ArtistAvailability artist={artist} availability={availability} />
+        <ArtistAvailability artist={artist} availability={availability} busyDates={bookedDates} />
       ) : activeView === "map" ? (
         <MiniMap points={gigs.map((g) => ({ id: g.id, lat: g.location.lat, lng: g.location.lng }))} user={location} className="h-[320px] w-full overflow-hidden rounded-xl border border-line" />
       ) : activeView === "distance" ? (
