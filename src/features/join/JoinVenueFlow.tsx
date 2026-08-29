@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, Building2, CheckCircle2, Loader2, MapPin, Search } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import { placesDetails, placesSuggest, type PlaceDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
-import { checkJoinVenue, joinVenue, requestJoinClaim, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";
+import { checkJoinVenue, joinVenue, type JoinVenueCandidate, type JoinVenueIdentity } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
 import { trackJoin } from "./joinAnalytics";
+import { ClaimEvidenceStep } from "./ClaimEvidenceStep";
 
 type Phase = "search" | "new" | "claim" | "success";
 
@@ -20,7 +21,6 @@ export function JoinVenueFlow() {
   const [phase, setPhase] = useState<Phase>("search");
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState<{ id: string; name: string; address?: string } | null>(null);
-  const [claimSubmitted, setClaimSubmitted] = useState(false);
   const [website, setWebsite] = useState("");
   const [phone, setPhone] = useState("");
   const [facebook, setFacebook] = useState("");
@@ -138,25 +138,6 @@ export function JoinVenueFlow() {
     }
   };
 
-  const submitClaim = async () => {
-    if (!candidate) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await requestJoinClaim({ entityType: "venue", entityId: candidate.id, requestedRole: "owner", evidenceHints: { address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" } });
-      if (!result.ok) {
-        setError(result.message);
-        return;
-      }
-      clearJoinState();
-      trackJoin("claim_requested", { entityType: "venue", step: "claim" });
-      setClaimSubmitted(true);
-    } catch {
-      setError("Network hiccup. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const createOwnedVenue = async () => {
     const value = identity();
@@ -212,7 +193,7 @@ export function JoinVenueFlow() {
 
   if (phase === "claim" && candidate) return (
     <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10">
-      <button type="button" onClick={() => { setPhase("search"); setCandidate(null); setClaimSubmitted(false); }} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to search</button>
+      <button type="button" onClick={() => { setPhase("search"); setCandidate(null); }} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to search</button>
       <header className="mt-7">
         <div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Claim venue</div>
         <h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">That&apos;s already on bndy.</h1>
@@ -222,23 +203,8 @@ export function JoinVenueFlow() {
         <div className="text-[17px] font-black">{candidate.name}</div>
         {candidate.address && <div className="mt-1 flex items-start gap-1.5 text-[11px] font-bold text-dim"><MapPin size={12} className="mt-0.5" /> {candidate.address}</div>}
       </section>
-      <AuthGate title="Sign in to claim this venue">
-        <section className="mt-5">
-          {!claimSubmitted ? (
-            <>
-              <div className="text-[15px] font-black">Claim this venue</div>
-              <p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll send this to the bndy team for review.</p>
-              {error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}
-              <button type="button" disabled={loading} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading && <Loader2 size={14} className="animate-spin" />} Claim this venue</button>
-            </>
-          ) : (
-            <div className="rounded-[22px] bg-card2 p-5">
-              <div className="flex items-center gap-2 text-[15px] font-black"><CheckCircle2 size={18} className="text-[var(--acc-text)]" /> Claim sent</div>
-              <p className="mt-2 text-[12px] font-semibold leading-relaxed text-dim">The bndy team will review it. You can track the status in Manage.</p>
-              <Link href="/manage" className="bndy-btn2 mt-4 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px]">Go to Manage <ArrowRight size={14} /></Link>
-            </div>
-          )}
-        </section>
+      <AuthGate title="Sign in to claim this venue" requireProfile={false}>
+        <ClaimEvidenceStep entityType="venue" entityId={candidate.id} entityName={candidate.name} evidenceHints={{ address: candidate.address ?? "", googlePlaceId: candidate.googlePlaceId ?? "" }} />
       </AuthGate>
     </main>
   );

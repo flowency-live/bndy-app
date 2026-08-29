@@ -65,9 +65,9 @@ export async function joinVenue(input: JoinVenueIdentity): Promise<JoinVenueResu
   return { ok: false, kind: "error", message: (body.error as string | undefined) ?? `Join failed (${response.status})`, code: body.code as string | undefined };
 }
 
-export interface JoinClaim { claim_id: string; entity_type: "artist" | "venue"; entity_id: string; entity_name: string; requested_role: "owner" | "admin"; status: "pending" | "approved" | "rejected" | "cancelled"; created_at: string }
+export interface JoinClaim { claim_id: string; entity_type: "artist" | "venue"; entity_id: string; entity_name: string; requested_role: "owner" | "admin" | "member"; relationship_kind?: string | null; verification_method?: "manual" | "facebook_page"; evidence?: Array<Record<string, unknown>>; status: "pending" | "pending_review" | "verified_pending" | "more_evidence_required" | "conflict" | "approved" | "rejected" | "cancelled"; created_at: string }
 
-export async function requestJoinClaim(input: { entityType: "artist" | "venue"; entityId: string; requestedRole?: "owner" | "admin"; evidenceHints?: Record<string, string> }): Promise<{ ok: true; claim?: JoinClaim; alreadyOwned?: boolean } | { ok: false; message: string }> {
+export async function requestJoinClaim(input: { entityType: "artist" | "venue"; entityId: string; requestedRole?: "owner" | "admin" | "member"; relationshipKind?: string; verificationMethod: "manual" | "facebook_page"; relationshipExplanation?: string; supportingUrl?: string; officialEmail?: string; facebookEvidence?: { verifiedPageId: string; pageName?: string; pageUrl?: string; verifiedAt?: string; reconciliation?: string }; evidenceHints?: Record<string, string> }): Promise<{ ok: true; claim?: JoinClaim; alreadyOwned?: boolean } | { ok: false; message: string }> {
   const response = await fetch(`${BASE}/api/claims`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (response.ok) return { ok: true, claim: body.claim as JoinClaim | undefined, alreadyOwned: body.action === "already_owned" };
