@@ -24,8 +24,6 @@ const dates: AvailabilityDate[] = Array.from({ length: 10 }, (_, index) => ({
 const statuses: AvailabilityDateStatus[] = [
   { date: "2026-09-20", state: "public_gig", eventId: "gig-1" },
   { date: "2026-09-21", state: "private_booking" },
-  { date: "2026-09-22", state: "member_unavailable" },
-  { date: "2026-09-23", state: "artist_commitment" },
 ];
 
 describe("ArtistAvailability", () => {
@@ -36,7 +34,7 @@ describe("ArtistAvailability", () => {
 
   afterAll(() => vi.useRealTimers());
 
-  it("keeps blocking reasons quiet while preserving public gig and contact behaviour", () => {
+  it("shows only public gigs and private bookings while preserving contact behaviour", () => {
     render(<ArtistAvailability artist={artist} availability={dates} dateStatuses={statuses} />);
 
     expect(screen.getByText(/if you cannot see the date you need/i)).not.toBeNull();
@@ -45,10 +43,12 @@ describe("ArtistAvailability", () => {
       expect(screen.getByText(weekday)).not.toBeNull();
     }
     expect(screen.getByRole("link", { name: /sunday, 20 september 2026, public gig/i }).getAttribute("href")).toBe("/gigs/gig-1");
-    expect(screen.getByLabelText(/monday, 21 september 2026, booked/i)).not.toBeNull();
-    expect(screen.getByLabelText(/tuesday, 22 september 2026, not available/i)).not.toBeNull();
-    expect(screen.getByLabelText(/wednesday, 23 september 2026, not available/i)).not.toBeNull();
-    expect(screen.getByText("Booked / unavailable")).not.toBeNull();
+    expect(screen.getByLabelText(/monday, 21 september 2026, private booking/i)).not.toBeNull();
+    expect(screen.getByText("Available")).not.toBeNull();
+    expect(screen.getByText("Public gig")).not.toBeNull();
+    expect(screen.getByText("Private booking")).not.toBeNull();
+    expect(screen.getByText("Unlisted dates may still be possible")).not.toBeNull();
+    expect(screen.queryByText("Booked / unavailable")).toBeNull();
     expect(screen.queryByText("Member unavailable")).toBeNull();
     expect(screen.queryByText("Artist unavailable")).toBeNull();
 
