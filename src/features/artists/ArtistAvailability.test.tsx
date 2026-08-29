@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { ArtistAvailability } from "./ArtistAvailability";
-import type { Artist, AvailabilityDate } from "@/domain/types";
+import type { Artist, AvailabilityDate, AvailabilityDateStatus } from "@/domain/types";
 
 const artist: Artist = {
   id: "artist-1",
@@ -21,6 +21,13 @@ const dates: AvailabilityDate[] = Array.from({ length: 10 }, (_, index) => ({
   type: "free_weekend",
 }));
 
+const statuses: AvailabilityDateStatus[] = [
+  { date: "2026-09-20", state: "public_gig", eventId: "gig-1" },
+  { date: "2026-09-21", state: "private_booking" },
+  { date: "2026-09-22", state: "member_unavailable" },
+  { date: "2026-09-23", state: "artist_commitment" },
+];
+
 describe("ArtistAvailability", () => {
   beforeAll(() => {
     vi.useFakeTimers();
@@ -29,17 +36,31 @@ describe("ArtistAvailability", () => {
 
   afterAll(() => vi.useRealTimers());
 
-  it("shows a full calendar, the artist message and preferred booking action", () => {
-    render(<ArtistAvailability artist={artist} availability={dates} busyDates={new Set(["2026-09-20"])} />);
+  it("shows distinct privacy-safe states and sends the selected date into WhatsApp", () => {
+    render(<ArtistAvailability artist={artist} availability={dates} dateStatuses={statuses} />);
 
     expect(screen.getByText(/if you cannot see the date you need/i)).not.toBeNull();
-    expect(screen.getByRole("link", { name: "WhatsApp" }).getAttribute("href")).toBe("https://wa.me/447700900000");
-    expect(screen.queryByRole("link", { name: "Call" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /whatsapp/i })).toBeNull();
     for (const weekday of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
       expect(screen.getByText(weekday)).not.toBeNull();
     }
-    expect(screen.getByLabelText("2026-09-04, available")).not.toBeNull();
-    expect(screen.getByLabelText("2026-09-20, booked")).not.toBeNull();
+    expect(screen.getByRole("link", { name: /sunday, 20 september 2026, public gig/i }).getAttribute("href")).toBe("/gigs/gig-1");
+    expect(screen.getByLabelText(/monday, 21 september 2026, private booking/i)).not.toBeNull();
+    expect(screen.getByLabelText(/tuesday, 22 september 2026, artist member unavailable/i)).not.toBeNull();
+    expect(screen.getByLabelText(/wednesday, 23 september 2026, artist unavailable/i)).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /friday, 4 september 2026, available/i }));
+    const whatsapp = screen.getByRole("link", { name: /ask on whatsapp/i });
+    expect(whatsapp.getAttribute("href")).toContain("https://wa.me/447700900000?text=");
+    expect(decodeURIComponent(whatsapp.getAttribute("href") || "")).toContain("Friday, 4 September 2026");
+    expect(screen.getByRole("link", { name: "Call" }).getAttribute("href")).toBe("tel:+441234567890");
+  });
+
+  it("lets an unlisted future date become the enquiry date", () => {
+    render(<ArtistAvailability artist={artist} availability={dates} />);
+    fireEvent.click(screen.getByRole("button", { name: /monday, 14 september 2026, availability not listed/i }));
+    expect(screen.getByText("Monday, 14 September 2026")).not.toBeNull();
+    expect(decodeURIComponent(screen.getByRole("link", { name: /ask on whatsapp/i }).getAttribute("href") || "")).toContain("Monday, 14 September 2026");
   });
 
   it("moves through the year in three-month windows", () => {

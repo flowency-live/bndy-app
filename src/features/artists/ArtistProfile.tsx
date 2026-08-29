@@ -14,18 +14,20 @@ import { AvatarUpload } from "@/features/curator/AvatarUpload";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import { artistTypeLabel, useArtistTaxonomy } from "@/lib/artistTaxonomy";
-import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
+import type { Artist, Gig, ArtistAvailabilityCalendar } from "@/domain/types";
 
-export function ArtistProfile({ id, artist, gigs, availability }: { id: string; artist: Artist | null; gigs: Gig[]; availability: AvailabilityDate[] }) {
+export function ArtistProfile({ id, artist, gigs, availabilityCalendar }: { id: string; artist: Artist | null; gigs: Gig[]; availabilityCalendar: ArtistAvailabilityCalendar }) {
   const [displayArtist, setDisplayArtist] = useState(artist);
-  const [displayAvailability, setDisplayAvailability] = useState(availability);
+  const [displayAvailability, setDisplayAvailability] = useState(availabilityCalendar.availability);
+  const [displayAvailabilityStatuses, setDisplayAvailabilityStatuses] = useState(availabilityCalendar.dateStatuses);
   const displayedId = useRef(id);
   useEffect(() => {
     if (displayedId.current === id) return;
     displayedId.current = id;
     setDisplayArtist(artist);
-    setDisplayAvailability(availability);
-  }, [artist, availability, id]);
+    setDisplayAvailability(availabilityCalendar.availability);
+    setDisplayAvailabilityStatuses(availabilityCalendar.dateStatuses);
+  }, [artist, availabilityCalendar, id]);
   const { data: taxonomy } = useArtistTaxonomy();
   const name = displayArtist?.name || gigs[0]?.artistName || "Artist";
   const img = displayArtist?.profileImageUrl || undefined;
@@ -117,7 +119,7 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
         <Link href={`/add?artistId=${id}`} className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-line bg-white/5 px-4 py-2.5 text-[13px] font-extrabold transition-transform active:scale-[.97]">
           <Plus size={15} className="text-[var(--acc)]" /> Add a gig
         </Link>
-        <ArtistEvents gigs={gigs} artistId={id} artist={displayArtist} availability={displayAvailability} />
+        <ArtistEvents gigs={gigs} artistId={id} artist={displayArtist} availability={displayAvailability} availabilityStatuses={displayAvailabilityStatuses} />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { Artist, AvailabilityDate } from "@/domain/types";
+import type { Artist, AvailabilityDate, AvailabilityDateStatus } from "@/domain/types";
 import { toArtist, type ArtistDTO } from "@/lib/api";
 
 const BASE = typeof window !== "undefined" && window.location.hostname.endsWith("bndy.live")
@@ -40,6 +40,7 @@ export type OwnedArtistProfileUpdate = Partial<Pick<Artist,
 export interface ManagedAvailability {
   availability: AvailabilityDate[];
   busyDates: string[];
+  dateStatuses: AvailabilityDateStatus[];
 }
 
 export interface ArtistManagementRelationship {

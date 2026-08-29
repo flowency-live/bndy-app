@@ -187,3 +187,31 @@ All work will remain on `feature/artist-media-availability`, which was created f
 - A public visitor sees a clean mobile booking surface without losing the gig list.
 - Curator moderation remains separate from artist management.
 - Claiming V2 files and behaviour are unchanged.
+
+## Follow-on: Backstage calendar projection
+
+The lightweight calendar must remain a projection of canonical Backstage data, not a second scheduling system.
+
+### Audited source data
+
+- Artist events in `bndy-events` include public gigs, private gigs, rehearsals and other private commitments.
+- Personal member unavailability is stored against `ownerUserId`, not `artistId`, and may cover one day or a date range.
+- Active Artist membership in `bndy-artist-memberships` supplies the privacy-safe bridge between an Artist and each member's unavailable dates.
+- The existing public availability response contains only marked dates, so it cannot currently distinguish those blockers.
+
+### Public projection contract
+
+- Return only a date and one blocking category: `public_gig`, `private_booking`, `artist_commitment` or `member_unavailable`.
+- Include an event ID only for a genuinely public gig so the date can link to its public gig page.
+- Never return private titles, locations, notes, member names, member identifiers or counts.
+- Expand multi-day unavailability across every affected date.
+- Prefer public gig, then private booking, then member unavailability, then another Artist commitment when more than one reason occupies the same day.
+
+### Enquiry behaviour
+
+- Marked available and future unlisted dates can be selected.
+- Public gigs open the public gig page. Private bookings, Artist commitments and member unavailability are not selectable.
+- A selected date is inserted into the Artist's configured WhatsApp enquiry message.
+- Phone remains callable. SMS is offered only for a stored UK mobile number.
+- Email is not inferred from a login or membership because there is no consented public booking-email field.
+- Private in-BNDY booking requests and notifications remain the separate deferred workboard item.
