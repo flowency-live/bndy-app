@@ -4,6 +4,7 @@ import { ArtistProfile } from "@/features/artists/ArtistProfile";
 import { fetchArtist, fetchArtistGigs, fetchArtistAvailability } from "@/lib/api";
 import { todayISO } from "@/domain/dates";
 import { availabilityRangeEnd } from "@/domain/availability";
+import { ARTIST_HISTORY_START_DATE, splitArtistGigs } from "@/features/artists/artistMapHistory";
 
 export const revalidate = 300;
 const IS_BRASS = process.env.NEXT_PUBLIC_BNDY_EDITION === "brass";
@@ -33,10 +34,11 @@ export default async function ArtistPage({ params }: { params: Promise<{ artistI
   const today = todayISO();
   const end = availabilityRangeEnd(today);
 
-  const [artist, gigs, availabilityCalendar] = await Promise.all([
+  const [artist, allGigs, availabilityCalendar] = await Promise.all([
     fetchArtist(artistId).catch(() => null),
-    fetchArtistGigs(artistId, today).catch(() => [] as Awaited<ReturnType<typeof fetchArtistGigs>>),
+    fetchArtistGigs(artistId, ARTIST_HISTORY_START_DATE).catch(() => [] as Awaited<ReturnType<typeof fetchArtistGigs>>),
     fetchArtistAvailability(artistId, today, end).catch(() => ({ availability: [], dateStatuses: [] }) as Awaited<ReturnType<typeof fetchArtistAvailability>>),
   ]);
-  return <ArtistProfile id={artistId} artist={artist} gigs={gigs} availabilityCalendar={availabilityCalendar} />;
+  const { upcoming: gigs, past: pastGigs } = splitArtistGigs(allGigs, today);
+  return <ArtistProfile id={artistId} artist={artist} gigs={gigs} pastGigs={pastGigs} availabilityCalendar={availabilityCalendar} />;
 }

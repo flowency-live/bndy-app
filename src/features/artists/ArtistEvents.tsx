@@ -11,11 +11,12 @@ import { GigSheet } from "@/features/gigs/GigSheet";
 import { TicketStub } from "@/components/TicketStub";
 import { MiniMap } from "./MiniMap";
 import { ArtistAvailability } from "./ArtistAvailability";
+import { aggregatePastGigPoints } from "./artistMapHistory";
 import { cn } from "@/lib/cn";
 import type { Artist, AvailabilityDate, AvailabilityDateStatus, Gig } from "@/domain/types";
 type View = "date" | "distance" | "map" | "availability";
 
-export function ArtistEvents({ gigs, artistId, artist, availability = [], availabilityStatuses = [] }: { gigs: Gig[]; artistId?: string; artist?: Artist | null; availability?: AvailabilityDate[]; availabilityStatuses?: AvailabilityDateStatus[] }) {
+export function ArtistEvents({ gigs, pastGigs = [], artistId, artist, availability = [], availabilityStatuses = [] }: { gigs: Gig[]; pastGigs?: Gig[]; artistId?: string; artist?: Artist | null; availability?: AvailabilityDate[]; availabilityStatuses?: AvailabilityDateStatus[] }) {
   const { location, located } = useGeolocation();
   const today = todayISO();
   const collapse90 = addDaysISO(today, 90);
@@ -23,6 +24,8 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [], availa
   const [view, setView] = useState<View>("date");
   const [selected, setSelected] = useState<Gig | null>(null);
   const withDist = useMemo(() => gigs.map((g) => ({ g, dist: distanceMiles(location, g.location) })), [gigs, location]);
+  const upcomingMapPoints = useMemo(() => gigs.map((gig) => ({ id: gig.id, lat: gig.location.lat, lng: gig.location.lng, label: `${gig.venueName}, ${gig.date}` })), [gigs]);
+  const pastMapPoints = useMemo(() => aggregatePastGigPoints(pastGigs), [pastGigs]);
   const projectedAvailabilityStatuses = useMemo(() => {
     const statuses = new Map(availabilityStatuses.map((item) => [item.date, item]));
     gigs.filter((gig) => !gig.cancelled).forEach((gig) => {
@@ -59,9 +62,9 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [], availa
     return defs.map((d) => ({ label: d.l, items: sorted.filter((x) => x.dist > d.lo && x.dist <= d.hi) })).filter((b) => b.items.length);
   }, [withDist]);
 
-  if (!gigs.length && !hasAvailability) return <p className="mt-8 py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>;
+  if (!gigs.length && !pastGigs.length && !hasAvailability) return <p className="mt-8 py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>;
 
-  const views: View[] = gigs.length ? ["date", "distance", "map"] : [];
+  const views: View[] = gigs.length ? ["date", "distance", "map"] : pastGigs.length ? ["map"] : [];
   if (hasAvailability) views.push("availability");
   const activeView = views.includes(view) ? view : views[0];
 
@@ -83,7 +86,13 @@ export function ArtistEvents({ gigs, artistId, artist, availability = [], availa
       {activeView === "availability" && artist ? (
         <ArtistAvailability artist={artist} availability={availability} dateStatuses={projectedAvailabilityStatuses} />
       ) : activeView === "map" ? (
-        <MiniMap points={gigs.map((g) => ({ id: g.id, lat: g.location.lat, lng: g.location.lng }))} user={location} className="h-[320px] w-full overflow-hidden rounded-xl border border-line" />
+        <div className="relative">
+          <MiniMap points={upcomingMapPoints} pastPoints={pastMapPoints} user={location} className="h-[320px] w-full overflow-hidden rounded-xl border border-line" />
+          <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-3 rounded-full border border-line bg-card px-3 py-2 text-[10px] font-extrabold text-dim shadow-lg sm:text-[11px]">
+            {upcomingMapPoints.length > 0 && <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-white bg-[#ff7a1a] shadow-[0_0_7px_rgba(255,122,26,.8)]" /> Upcoming</span>}
+            {pastMapPoints.length > 0 && <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-dim2 bg-card" /> Past gigs</span>}
+          </div>
+        </div>
       ) : activeView === "distance" ? (
         bands.map((b) => <div key={b.label} className="mb-6"><SectionHeader label={b.label} count={b.items.length} />{b.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}</div>)
       ) : (
