@@ -10,14 +10,16 @@ import { relativeLabel } from "@/domain/relative";
 import { GigSheet } from "@/features/gigs/GigSheet";
 import { TicketStub } from "@/components/TicketStub";
 import { MiniMap } from "./MiniMap";
+import { ArtistAvailability } from "./ArtistAvailability";
 import { cn } from "@/lib/cn";
-import type { Gig } from "@/domain/types";
-type View = "date" | "distance" | "map";
+import type { Artist, AvailabilityDate, Gig } from "@/domain/types";
+type View = "date" | "distance" | "map" | "availability";
 
-export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: string }) {
+export function ArtistEvents({ gigs, artistId, artist, availability = [] }: { gigs: Gig[]; artistId?: string; artist?: Artist | null; availability?: AvailabilityDate[] }) {
   const { location, located } = useGeolocation();
   const today = todayISO();
   const collapse90 = addDaysISO(today, 90);
+  const hasAvailability = Boolean(artist?.publishAvailability && availability.length > 0);
   const [view, setView] = useState<View>("date");
   const [selected, setSelected] = useState<Gig | null>(null);
   const withDist = useMemo(() => gigs.map((g) => ({ g, dist: distanceMiles(location, g.location) })), [gigs, location]);
@@ -50,24 +52,32 @@ export function ArtistEvents({ gigs, artistId }: { gigs: Gig[]; artistId?: strin
     return defs.map((d) => ({ label: d.l, items: sorted.filter((x) => x.dist > d.lo && x.dist <= d.hi) })).filter((b) => b.items.length);
   }, [withDist]);
 
-  if (!gigs.length) return <p className="mt-8 py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>;
+  if (!gigs.length && !hasAvailability) return <p className="mt-8 py-8 text-center font-semibold text-dim">No upcoming gigs listed.</p>;
+
+  const views: View[] = gigs.length ? ["date", "distance", "map"] : [];
+  if (hasAvailability) views.push("availability");
+  const activeView = views.includes(view) ? view : views[0];
 
   return (
     <section className="mt-7">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-full border border-line glass p-1" role="tablist" aria-label="Artist events view">
-          {(["date", "distance", "map"] as View[]).map((v) => (
-            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn("rounded-full px-3.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wide transition-colors", view === v ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
-              {v === "date" ? "By date" : v === "distance" ? "By distance" : "Map"}
-            </button>
-          ))}
+        <div className="no-scrollbar max-w-full overflow-x-auto rounded-full border border-line glass p-1" role="tablist" aria-label="Artist profile view">
+          <div className="flex w-max gap-1">
+            {views.map((v) => (
+              <button key={v} type="button" role="tab" aria-selected={activeView === v} onClick={() => setView(v)} className={cn("shrink-0 rounded-full px-3.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wide transition-colors", activeView === v ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>
+                {v === "date" ? "By date" : v === "distance" ? "By distance" : v === "map" ? "Map" : "Availability"}
+              </button>
+            ))}
+          </div>
         </div>
-        <span className="text-[11px] font-bold uppercase tracking-wide text-dim2">from {located ? "your location" : "Stoke"}</span>
+        {activeView !== "availability" && gigs.length > 0 && <span className="text-[11px] font-bold uppercase tracking-wide text-dim2">from {located ? "your location" : "Stoke"}</span>}
       </div>
 
-      {view === "map" ? (
+      {activeView === "availability" && artist ? (
+        <ArtistAvailability artist={artist} availability={availability} />
+      ) : activeView === "map" ? (
         <MiniMap points={gigs.map((g) => ({ id: g.id, lat: g.location.lat, lng: g.location.lng }))} user={location} className="h-[320px] w-full overflow-hidden rounded-xl border border-line" />
-      ) : view === "distance" ? (
+      ) : activeView === "distance" ? (
         bands.map((b) => <div key={b.label} className="mb-6"><SectionHeader label={b.label} count={b.items.length} />{b.items.map((x) => <EventRow artistId={artistId} key={x.g.id} g={x.g} dist={x.dist} today={today} onClick={() => setSelected(x.g)} />)}</div>)
       ) : (
         <div className="space-y-1">

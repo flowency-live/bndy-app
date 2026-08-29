@@ -163,6 +163,7 @@ export function EditVenueSheet({ venue, open, onClose }: { venue: Venue; open: b
 /* ---------- artist ---------- */
 
 type LocMode = "town" | "region";
+type ArtistEditTab = "profile" | "links";
 
 export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode = false }: {
   artist: Artist;
@@ -188,6 +189,7 @@ export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode =
     bandcampUrl: socialOf(artist, "bandcamp"),
   });
   const [locMode, setLocMode] = useState<LocMode>(isRegion ? "region" : "town");
+  const [activeTab, setActiveTab] = useState<ArtistEditTab>("profile");
   const [region, setRegion] = useState(isRegion ? artist.location ?? "" : "");
   const [townQ, setTownQ] = useState(isRegion ? "" : artist.location ?? "");
   const [townPicked, setTownPicked] = useState<string | null>(isRegion ? null : artist.location ?? null);
@@ -222,6 +224,7 @@ export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode =
       setCoords(null);
       setPreds([]);
       setGenresOpen(false);
+      setActiveTab("profile");
     }
   }, [open, artist]);
 
@@ -288,7 +291,16 @@ export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode =
         sub={ownerMode ? "Keep your public profile useful, current and unmistakably yours." : "Name changes stay with bndy staff."}
       />
 
-      <label className={label}>Based in</label>
+      <div className="sticky top-0 z-10 -mx-1 mt-4 rounded-2xl border border-line bg-card p-1 shadow-sm" role="tablist" aria-label="Artist edit sections">
+        <div className="grid grid-cols-2 gap-1">
+          <button type="button" role="tab" aria-selected={activeTab === "profile"} onClick={() => setActiveTab("profile")} className={cn("min-h-10 rounded-xl px-3 text-[11.5px] font-black transition-colors", activeTab === "profile" ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>Profile</button>
+          <button type="button" role="tab" aria-selected={activeTab === "links"} onClick={() => setActiveTab("links")} className={cn("min-h-10 rounded-xl px-3 text-[11.5px] font-black transition-colors", activeTab === "links" ? "bg-acc text-on-acc" : "text-dim hover:text-txt")}>Links &amp; media</button>
+        </div>
+      </div>
+
+      {activeTab === "profile" ? (
+        <div role="tabpanel" aria-label="Profile">
+          <label className={label}>Based in</label>
       <div className="flex gap-2">
         {locMode === "town" ? (
           <div className="relative flex-1">
@@ -387,9 +399,12 @@ export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode =
         )}
       </div>
 
-      <label className={label}>Bio</label>
-      <textarea className={field} rows={4} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} />
-
+          <label className={label}>Bio</label>
+          <textarea className={field} rows={4} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} />
+        </div>
+      ) : (
+        <div role="tabpanel" aria-label="Links and media">
+          <p className="mt-4 text-[11.5px] font-semibold leading-relaxed text-dim">Add only the links this artist actively uses. Empty services stay hidden on the public profile.</p>
       <label className={label}>Facebook</label>
       <input className={field} value={f.facebookUrl} onChange={(e) => setF({ ...f, facebookUrl: e.target.value })} placeholder="https://facebook.com/…" inputMode="url" />
       <label className={label}>Instagram</label>
@@ -418,6 +433,8 @@ export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode =
         <input className={field} value={f.bandcampUrl} onChange={(e) => setF({ ...f, bandcampUrl: e.target.value })} placeholder="https://artist.bandcamp.com/…" inputMode="url" aria-invalid={Boolean(mediaErrors.bandcampUrl)} />
         {mediaErrors.bandcampUrl && <p className="mt-1.5 text-[11px] font-bold text-red-400">{mediaErrors.bandcampUrl}</p>}
       </div>
+        </div>
+      )}
 
       <ErrorLine error={error} />
       <SheetFooter

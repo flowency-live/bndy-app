@@ -6,7 +6,6 @@ import { MapPin, Music2, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { HeroBack, HeroSocials } from "./HeroControls";
 import { ArtistEvents } from "./ArtistEvents";
-import { ArtistAvailability } from "./ArtistAvailability";
 import { ArtistMedia } from "./ArtistMedia";
 import { ArtistManagementBar } from "./ArtistManagementBar";
 import { cn } from "@/lib/cn";
@@ -89,7 +88,14 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
       </div>
 
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        {displayArtist && <CuratorBar target={{ kind: "artist", artist: displayArtist }} className="mt-4" />}
+        {displayArtist && (
+          <CuratorBar
+            target={{ kind: "artist", artist: displayArtist }}
+            className="mt-4"
+            onArtistUpdated={setDisplayArtist}
+            onAvailabilityUpdated={setDisplayAvailability}
+          />
+        )}
         {displayArtist && (
           <ArtistManagementBar
             artist={displayArtist}
@@ -108,12 +114,10 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
 
         <ArtistMedia socials={displayArtist?.socials} artistName={name} />
 
-        {displayArtist?.publishAvailability && <ArtistAvailability artist={displayArtist} availability={displayAvailability} />}
-
         <Link href={`/add?artistId=${id}`} className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-line bg-white/5 px-4 py-2.5 text-[13px] font-extrabold transition-transform active:scale-[.97]">
           <Plus size={15} className="text-[var(--acc)]" /> Add a gig
         </Link>
-        <ArtistEvents gigs={gigs} artistId={id} />
+        <ArtistEvents gigs={gigs} artistId={id} artist={displayArtist} availability={displayAvailability} />
       </div>
     </div>
   );

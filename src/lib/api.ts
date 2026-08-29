@@ -140,6 +140,7 @@ export interface ArtistDTO {
   youtubeUrl?: string; spotifyUrl?: string; soundcloudUrl?: string; bandcampUrl?: string;
   publishAvailability?: boolean; availabilityMode?: 'selected_dates_only' | 'free_weekends';
   contactMethod?: 'phone' | 'whatsapp'; phoneNumber?: string | null; whatsappNumber?: string | null;
+  availabilityMessage?: string | null;
 }
 export function toArtist(a: ArtistDTO): Artist {
   const legacyActs = canonicalActTypes(a.actType);
@@ -159,6 +160,7 @@ export function toArtist(a: ArtistDTO): Artist {
     contactMethod: a.contactMethod,
     phoneNumber: a.phoneNumber,
     whatsappNumber: a.whatsappNumber,
+    availabilityMessage: a.availabilityMessage,
   };
 }
 

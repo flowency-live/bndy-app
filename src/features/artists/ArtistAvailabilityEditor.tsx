@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { SheetFooter, SheetHeader } from "@/features/curator/CuratorSheets";
 import {
   getManagedArtistAvailability,
+  getOwnedArtistProfile,
   getPublicArtistAvailability,
   toggleArtistAvailability,
   updateOwnedArtistProfile,
@@ -70,24 +71,34 @@ export function ArtistAvailabilityEditor({
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [publishing, setPublishing] = useState(artist.publishAvailability ?? false);
-  const [mode, setMode] = useState<"selected_dates_only" | "free_weekends">(artist.availabilityMode ?? "selected_dates_only");
-  const [contactMethod, setContactMethod] = useState<"phone" | "whatsapp">(artist.contactMethod ?? "phone");
-  const [phoneNumber, setPhoneNumber] = useState(normalisePhone(artist.phoneNumber));
-  const [whatsappNumber, setWhatsappNumber] = useState(normalisePhone(artist.whatsappNumber));
+  const profileQuery = useQuery({
+    queryKey: ["owned-artist-profile", artist.id],
+    queryFn: () => getOwnedArtistProfile(artist.id),
+    enabled: open,
+    staleTime: 30_000,
+  });
+  const editableArtist = profileQuery.data ?? artist;
+
+  const [publishing, setPublishing] = useState(editableArtist.publishAvailability ?? false);
+  const [mode, setMode] = useState<"selected_dates_only" | "free_weekends">(editableArtist.availabilityMode ?? "selected_dates_only");
+  const [contactMethod, setContactMethod] = useState<"phone" | "whatsapp">(editableArtist.contactMethod ?? "phone");
+  const [phoneNumber, setPhoneNumber] = useState(normalisePhone(editableArtist.phoneNumber));
+  const [whatsappNumber, setWhatsappNumber] = useState(normalisePhone(editableArtist.whatsappNumber));
+  const [availabilityMessage, setAvailabilityMessage] = useState(editableArtist.availabilityMessage ?? "");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [pendingDates, setPendingDates] = useState<Set<string>>(() => new Set());
   const [dateError, setDateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setPublishing(artist.publishAvailability ?? false);
-    setMode(artist.availabilityMode ?? "selected_dates_only");
-    setContactMethod(artist.contactMethod ?? "phone");
-    setPhoneNumber(normalisePhone(artist.phoneNumber));
-    setWhatsappNumber(normalisePhone(artist.whatsappNumber));
+    setPublishing(editableArtist.publishAvailability ?? false);
+    setMode(editableArtist.availabilityMode ?? "selected_dates_only");
+    setContactMethod(editableArtist.contactMethod ?? "phone");
+    setPhoneNumber(normalisePhone(editableArtist.phoneNumber));
+    setWhatsappNumber(normalisePhone(editableArtist.whatsappNumber));
+    setAvailabilityMessage(editableArtist.availabilityMessage ?? "");
     setDateError(null);
-  }, [open, artist]);
+  }, [open, editableArtist]);
 
   const availabilityQuery = useQuery({
     queryKey: ["managed-artist-availability", artist.id, todayIso, rangeEnd],
@@ -153,6 +164,7 @@ export function ArtistAvailabilityEditor({
       contactMethod,
       phoneNumber: phoneNumber || null,
       whatsappNumber: whatsappNumber || null,
+      availabilityMessage: availabilityMessage.trim() || null,
     }),
     onSuccess: async (updated) => {
       onArtistUpdated(updated);
@@ -252,6 +264,20 @@ export function ArtistAvailabilityEditor({
       )}
 
       <div className="mt-7 border-t border-line pt-6">
+        <div className="font-meta text-[9px] font-black uppercase tracking-[1.5px] text-[var(--acc-text)]">Availability message</div>
+        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-dim">Optional. Add a short note for bookers who cannot see the date they need.</p>
+        <textarea
+          className="mt-3 w-full rounded-2xl border border-line glass px-4 py-3 text-[14px] font-semibold text-txt outline-none placeholder:text-dim2 focus:border-orange/55"
+          rows={3}
+          maxLength={500}
+          value={availabilityMessage}
+          onChange={(event) => setAvailabilityMessage(event.target.value)}
+          placeholder="If you cannot see the date you need, please get in contact anyway. We will try to help."
+        />
+        <div className="mt-1 text-right text-[9.5px] font-bold text-dim2">{availabilityMessage.length}/500</div>
+      </div>
+
+      <div className="mt-7 border-t border-line pt-6">
         <div className="font-meta text-[9px] font-black uppercase tracking-[1.5px] text-[var(--acc-text)]">Booking contact</div>
         <div className="mt-2 flex rounded-2xl border border-line p-1">
           <ContactChoice active={contactMethod === "phone"} icon={<Phone size={14} />} label="Phone" onClick={() => setContactMethod("phone")} />
@@ -318,6 +344,8 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
     const isSelected = selected.has(date);
     const isBusy = busy.has(date) && !isSelected;
     const isPending = pending.has(date);
+    const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
+    const prominent = [0, 5, 6].includes(weekday);
     return (
       <button
         key={date}
@@ -329,6 +357,7 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
         className={cn(
           "relative grid aspect-square min-h-10 place-items-center rounded-xl text-[12px] font-black transition active:scale-95 disabled:active:scale-100",
           isSelected ? "bg-acc text-on-acc shadow-md" : "border border-transparent hover:border-line-hi hover:bg-white/5",
+          prominent && !isSelected && !isBusy && "bg-white/[0.025] text-txt",
           isPast && "text-dim2 opacity-35",
           isBusy && "cursor-not-allowed bg-white/[0.025] text-dim2 opacity-60"
         )}
@@ -343,7 +372,7 @@ function MonthPicker({ month, today, selected, busy, pending, onToggle }: {
     <section>
       <h3 className="text-[13px] font-black">{month.label}</h3>
       <div className="mt-2 grid grid-cols-7 gap-1">
-        {WEEKDAYS.map((day, index) => <span key={`${day}-${index}`} className="pb-1 text-center text-[9px] font-black text-dim2">{day}</span>)}
+        {WEEKDAYS.map((day, index) => <span key={`${day}-${index}`} className={cn("pb-1 text-center text-[9px] font-black text-dim2", index >= 4 && "text-[var(--acc-text)]")}>{day}</span>)}
         {blanks}
         {days}
       </div>

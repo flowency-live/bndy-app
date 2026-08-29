@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ArtistAvailability } from "./ArtistAvailability";
 import type { Artist, AvailabilityDate } from "@/domain/types";
@@ -11,6 +11,7 @@ const artist: Artist = {
   contactMethod: "whatsapp",
   phoneNumber: "+441234567890",
   whatsappNumber: "+447700900000",
+  availabilityMessage: "If you cannot see the date you need, please get in contact anyway.",
 };
 
 const dates: AvailabilityDate[] = Array.from({ length: 10 }, (_, index) => ({
@@ -21,19 +22,20 @@ const dates: AvailabilityDate[] = Array.from({ length: 10 }, (_, index) => ({
 }));
 
 describe("ArtistAvailability", () => {
-  it("shows the preferred booking action and expands later dates", () => {
+  it("shows a full calendar, the artist message and preferred booking action", () => {
     render(<ArtistAvailability artist={artist} availability={dates} />);
 
-    expect(screen.getByRole("link", { name: /whatsapp for bookings/i }).getAttribute("href")).toBe("https://wa.me/447700900000");
-    expect(screen.queryByRole("link", { name: /call about a booking/i })).toBeNull();
-    expect(screen.getByText("Show all 10 dates")).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /show all 10 dates/i }));
-    expect(screen.getByText("Show fewer dates")).not.toBeNull();
+    expect(screen.getByText(/if you cannot see the date you need/i)).not.toBeNull();
+    expect(screen.getByRole("link", { name: "WhatsApp" }).getAttribute("href")).toBe("https://wa.me/447700900000");
+    expect(screen.queryByRole("link", { name: "Call" })).toBeNull();
+    for (const weekday of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
+      expect(screen.getByText(weekday)).not.toBeNull();
+    }
+    expect(screen.getByLabelText("2026-09-04, available")).not.toBeNull();
   });
 
-  it("keeps a clear published empty state", () => {
-    render(<ArtistAvailability artist={{ ...artist, whatsappNumber: null }} availability={[]} />);
-    expect(screen.getByText("No dates are listed right now.")).not.toBeNull();
-    expect(screen.queryByRole("link", { name: /bookings/i })).toBeNull();
+  it("renders nothing when there are no public dates", () => {
+    const { container } = render(<ArtistAvailability artist={{ ...artist, whatsappNumber: null }} availability={[]} />);
+    expect(container.childElementCount).toBe(0);
   });
 });
