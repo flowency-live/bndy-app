@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapPin, Music2, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { HeroBack, HeroSocials } from "./HeroControls";
 import { ArtistEvents } from "./ArtistEvents";
 import { ArtistAvailability } from "./ArtistAvailability";
+import { ArtistMedia } from "./ArtistMedia";
+import { ArtistManagementBar } from "./ArtistManagementBar";
 import { cn } from "@/lib/cn";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { AvatarUpload } from "@/features/curator/AvatarUpload";
@@ -16,19 +18,27 @@ import { artistTypeLabel, useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import type { Artist, Gig, AvailabilityDate } from "@/domain/types";
 
 export function ArtistProfile({ id, artist, gigs, availability }: { id: string; artist: Artist | null; gigs: Gig[]; availability: AvailabilityDate[] }) {
-  const [activeTab, setActiveTab] = useState<'events' | 'availability'>('events');
+  const [displayArtist, setDisplayArtist] = useState(artist);
+  const [displayAvailability, setDisplayAvailability] = useState(availability);
+  const displayedId = useRef(id);
+  useEffect(() => {
+    if (displayedId.current === id) return;
+    displayedId.current = id;
+    setDisplayArtist(artist);
+    setDisplayAvailability(availability);
+  }, [artist, availability, id]);
   const { data: taxonomy } = useArtistTaxonomy();
-  const name = artist?.name || gigs[0]?.artistName || "Artist";
-  const img = artist?.profileImageUrl || undefined;
-  const type = artistTypeLabel(artist?.artistType, taxonomy);
-  const genres = artist?.genres ?? [];
+  const name = displayArtist?.name || gigs[0]?.artistName || "Artist";
+  const img = displayArtist?.profileImageUrl || undefined;
+  const type = artistTypeLabel(displayArtist?.artistType, taxonomy);
+  const genres = displayArtist?.genres ?? [];
 
   return (
     <div className="pb-24 lg:pb-12">
       <div className="mx-auto max-w-content px-4 pt-3 lg:px-8 lg:pt-5">
         <div className="flex items-center justify-between">
           <HeroBack inline />
-          <HeroSocials socials={artist?.socials} name={name} inline />
+          <HeroSocials socials={displayArtist?.socials} name={name} inline />
         </div>
 
         <div className="mt-4 grid grid-cols-[96px_minmax(0,1fr)] items-start gap-4 lg:hidden">
@@ -40,10 +50,10 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
               </span>
             )}
             <h1 className="mt-2 text-[28px] font-black leading-[0.98] tracking-tight [overflow-wrap:anywhere]">{name}</h1>
-            {artist?.location && (
+            {displayArtist?.location && (
               <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] font-bold text-[var(--acc)]">
                 <MapPin size={13} className="shrink-0" />
-                <span className="min-w-0 truncate">{artist.location}</span>
+                <span className="min-w-0 truncate">{displayArtist.location}</span>
               </div>
             )}
             <div className="mt-3 flex items-center gap-2">
@@ -63,10 +73,10 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
               </span>
             )}
             <h1 className="text-4xl font-black leading-none tracking-tight [overflow-wrap:anywhere]">{name}</h1>
-            {artist?.location && (
+            {displayArtist?.location && (
               <div className="mt-1.5 flex min-w-0 items-center gap-1 text-[13px] font-bold text-[var(--acc)]">
                 <MapPin size={13} className="shrink-0" />
-                <span className="min-w-0 truncate">{artist.location}</span>
+                <span className="min-w-0 truncate">{displayArtist.location}</span>
               </div>
             )}
           </div>
@@ -79,7 +89,14 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
       </div>
 
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        {artist && <CuratorBar target={{ kind: "artist", artist }} className="mt-4" />}
+        {displayArtist && <CuratorBar target={{ kind: "artist", artist: displayArtist }} className="mt-4" />}
+        {displayArtist && (
+          <ArtistManagementBar
+            artist={displayArtist}
+            onArtistUpdated={setDisplayArtist}
+            onAvailabilityUpdated={setDisplayAvailability}
+          />
+        )}
         {genres.length > 0 && (
           <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
             {genres.map((g, i) => (
@@ -87,32 +104,16 @@ export function ArtistProfile({ id, artist, gigs, availability }: { id: string; 
             ))}
           </div>
         )}
-        {artist?.bio && <p className="mt-4 max-w-2xl text-[14.5px] leading-relaxed text-dim">{artist.bio}</p>}
+        {displayArtist?.bio && <p className="mt-4 max-w-2xl text-[14.5px] leading-relaxed text-dim">{displayArtist.bio}</p>}
+
+        <ArtistMedia socials={displayArtist?.socials} artistName={name} />
+
+        {displayArtist?.publishAvailability && <ArtistAvailability artist={displayArtist} availability={displayAvailability} />}
 
         <Link href={`/add?artistId=${id}`} className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-line bg-white/5 px-4 py-2.5 text-[13px] font-extrabold transition-transform active:scale-[.97]">
           <Plus size={15} className="text-[var(--acc)]" /> Add a gig
         </Link>
-
-        {artist?.publishAvailability && (
-          <div className="mt-6 flex gap-1 border-b border-line" role="tablist" aria-label="Artist profile views">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'events'}
-              onClick={() => setActiveTab('events')}
-              className={cn("px-4 py-2.5 text-[14px] font-bold transition-colors", activeTab === 'events' ? "border-b-2 border-[var(--acc)] text-[var(--acc)]" : "text-dim hover:text-txt")}
-            >Events</button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'availability'}
-              onClick={() => setActiveTab('availability')}
-              className={cn("px-4 py-2.5 text-[14px] font-bold transition-colors", activeTab === 'availability' ? "border-b-2 border-[var(--acc)] text-[var(--acc)]" : "text-dim hover:text-txt")}
-            >Availability</button>
-          </div>
-        )}
-
-        {artist?.publishAvailability ? (activeTab === 'events' ? <ArtistEvents gigs={gigs} artistId={id} /> : <ArtistAvailability artist={artist} availability={availability} />) : <ArtistEvents gigs={gigs} artistId={id} />}
+        <ArtistEvents gigs={gigs} artistId={id} />
       </div>
     </div>
   );

@@ -167,7 +167,7 @@ export interface Venue {
   standardTicketInformation?: string;
 }
 
-export type SocialPlatform = "facebook" | "instagram" | "website" | "spotify" | "youtube" | "x" | "other";
+export type SocialPlatform = "facebook" | "instagram" | "website" | "spotify" | "youtube" | "soundcloud" | "bandcamp" | "x" | "other";
 export interface SocialLink {
   platform: SocialPlatform;
   url: string;

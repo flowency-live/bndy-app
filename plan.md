@@ -59,7 +59,7 @@ All work will remain on `feature/artist-media-availability`, which was created f
 
 - Show a compact `Manage artist` control on the public artist profile to an authenticated owner or admin.
 - Keep curator moderation controls separate. Artist managers never receive Hide or other moderation actions.
-- Add a clear `Manage profile` action to owned artist cards in `Your bndy`.
+- Keep `Your bndy` and claim-management files untouched so the parallel claiming stream can evolve them without conflict.
 - Use a mobile bottom sheet with two focused areas: `Profile and media` and `Availability`.
 
 ### Profile and media
@@ -131,7 +131,7 @@ All work will remain on `feature/artist-media-availability`, which was created f
 - Add provider URL parsing and safe embed builders with unit tests.
 - Refactor the artist edit form so curator and owner saves use their correct endpoints.
 - Add the owner/admin management control and availability editor.
-- Add management access from `Your bndy` without changing claim code.
+- Add management access on the public artist page without changing claim or `Your bndy` code.
 - Add the public media section and redesigned public availability module.
 - Invalidate and refresh artist, membership and availability data after writes.
 

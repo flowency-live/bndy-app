@@ -18,6 +18,7 @@ import { REGIONS } from "@/features/wizard/lib";
 import { placesSuggest, placesDetails, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { canonicalArtistType, useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { cn } from "@/lib/cn";
+import { validateMediaUrl } from "@/features/artists/media";
 import type { Artist, Gig, Venue } from "@/domain/types";
 
 const field =
@@ -163,7 +164,13 @@ export function EditVenueSheet({ venue, open, onClose }: { venue: Venue; open: b
 
 type LocMode = "town" | "region";
 
-export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; open: boolean; onClose: () => void }) {
+export function EditArtistSheet({ artist, open, onClose, saveArtist, ownerMode = false }: {
+  artist: Artist;
+  open: boolean;
+  onClose: () => void;
+  saveArtist?: (fields: Record<string, unknown>) => Promise<unknown>;
+  ownerMode?: boolean;
+}) {
   const { data: taxonomy } = useArtistTaxonomy();
   const isRegion = (REGIONS as readonly string[]).includes(artist.location ?? "");
   const [f, setF] = useState({
@@ -175,6 +182,10 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
     facebookUrl: socialOf(artist, "facebook"),
     instagramUrl: socialOf(artist, "instagram"),
     websiteUrl: socialOf(artist, "website"),
+    youtubeUrl: socialOf(artist, "youtube"),
+    spotifyUrl: socialOf(artist, "spotify"),
+    soundcloudUrl: socialOf(artist, "soundcloud"),
+    bandcampUrl: socialOf(artist, "bandcamp"),
   });
   const [locMode, setLocMode] = useState<LocMode>(isRegion ? "region" : "town");
   const [region, setRegion] = useState(isRegion ? artist.location ?? "" : "");
@@ -199,6 +210,10 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
         facebookUrl: socialOf(artist, "facebook"),
         instagramUrl: socialOf(artist, "instagram"),
         websiteUrl: socialOf(artist, "website"),
+        youtubeUrl: socialOf(artist, "youtube"),
+        spotifyUrl: socialOf(artist, "spotify"),
+        soundcloudUrl: socialOf(artist, "soundcloud"),
+        bandcampUrl: socialOf(artist, "bandcamp"),
       });
       setLocMode(isReg ? "region" : "town");
       setRegion(isReg ? artist.location ?? "" : "");
@@ -252,11 +267,26 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
     facebookUrl: f.facebookUrl.trim(),
     instagramUrl: f.instagramUrl.trim(),
     websiteUrl: f.websiteUrl.trim(),
+    youtubeUrl: f.youtubeUrl.trim(),
+    spotifyUrl: f.spotifyUrl.trim(),
+    soundcloudUrl: f.soundcloudUrl.trim(),
+    bandcampUrl: f.bandcampUrl.trim(),
   }), [f, location, locMode, coords]);
+
+  const mediaErrors = {
+    youtubeUrl: validateMediaUrl("youtube", f.youtubeUrl),
+    spotifyUrl: validateMediaUrl("spotify", f.spotifyUrl),
+    soundcloudUrl: validateMediaUrl("soundcloud", f.soundcloudUrl),
+    bandcampUrl: validateMediaUrl("bandcamp", f.bandcampUrl),
+  };
+  const hasMediaError = Object.values(mediaErrors).some(Boolean);
 
   return (
     <Sheet open={open} onClose={onClose}>
-      <SheetHeader title={`Edit ${artist.name}`} sub="Name changes stay with bndy staff." />
+      <SheetHeader
+        title={`Edit ${artist.name}`}
+        sub={ownerMode ? "Keep your public profile useful, current and unmistakably yours." : "Name changes stay with bndy staff."}
+      />
 
       <label className={label}>Based in</label>
       <div className="flex gap-2">
@@ -301,7 +331,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
         </div>
       </div>
 
-      <label className={label}>They are</label>
+      <label className={label}>Artist type</label>
       <div className="relative">
         <select value={f.artistType} onChange={(e) => setF({ ...f, artistType: e.target.value })} className={cn(field, "appearance-none")}>
           <option value="">Not set</option>
@@ -310,7 +340,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
         <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-[16px] text-dim" />
       </div>
 
-      <label className={label}>They play</label>
+      <label className={label}>Plays</label>
       <div className="flex flex-wrap gap-1.5">
         {taxonomy.actTypes.map((t) => (
           <button key={t.value} type="button" onClick={() => toggleAct(t.value)}
@@ -320,7 +350,7 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
         ))}
       </div>
 
-      <label className={label}>They can perform</label>
+      <label className={label}>Can perform</label>
       <button
         type="button"
         onClick={() => setF((prev) => ({ ...prev, acoustic: !prev.acoustic }))}
@@ -367,13 +397,35 @@ export function EditArtistSheet({ artist, open, onClose }: { artist: Artist; ope
       <label className={label}>Website</label>
       <input className={field} value={f.websiteUrl} onChange={(e) => setF({ ...f, websiteUrl: e.target.value })} placeholder="https://…" inputMode="url" />
 
+      <div className="mt-6 rounded-[22px] border border-line bg-white/[0.025] p-4">
+        <div className="font-meta text-[9px] font-black uppercase tracking-[1.5px] text-[var(--acc-text)]">Listen and watch</div>
+        <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-dim">External media only. Visitors choose when a player loads, and nothing autoplays.</p>
+
+        <label className={label}>Featured YouTube video</label>
+        <input className={field} value={f.youtubeUrl} onChange={(e) => setF({ ...f, youtubeUrl: e.target.value })} placeholder="https://youtube.com/watch?v=…" inputMode="url" aria-invalid={Boolean(mediaErrors.youtubeUrl)} />
+        {mediaErrors.youtubeUrl && <p className="mt-1.5 text-[11px] font-bold text-red-400">{mediaErrors.youtubeUrl}</p>}
+        {!mediaErrors.youtubeUrl && f.youtubeUrl && !f.youtubeUrl.includes("watch?") && !f.youtubeUrl.includes("youtu.be/") && !f.youtubeUrl.includes("/shorts/") && !f.youtubeUrl.includes("/live/") && <p className="mt-1.5 text-[10.5px] font-semibold text-dim">Video and Shorts links play on the page. Channel links stay as a clean outbound button.</p>}
+
+        <label className={label}>Spotify</label>
+        <input className={field} value={f.spotifyUrl} onChange={(e) => setF({ ...f, spotifyUrl: e.target.value })} placeholder="https://open.spotify.com/artist/…" inputMode="url" aria-invalid={Boolean(mediaErrors.spotifyUrl)} />
+        {mediaErrors.spotifyUrl && <p className="mt-1.5 text-[11px] font-bold text-red-400">{mediaErrors.spotifyUrl}</p>}
+
+        <label className={label}>SoundCloud</label>
+        <input className={field} value={f.soundcloudUrl} onChange={(e) => setF({ ...f, soundcloudUrl: e.target.value })} placeholder="https://soundcloud.com/artist/track" inputMode="url" aria-invalid={Boolean(mediaErrors.soundcloudUrl)} />
+        {mediaErrors.soundcloudUrl && <p className="mt-1.5 text-[11px] font-bold text-red-400">{mediaErrors.soundcloudUrl}</p>}
+
+        <label className={label}>Bandcamp</label>
+        <input className={field} value={f.bandcampUrl} onChange={(e) => setF({ ...f, bandcampUrl: e.target.value })} placeholder="https://artist.bandcamp.com/…" inputMode="url" aria-invalid={Boolean(mediaErrors.bandcampUrl)} />
+        {mediaErrors.bandcampUrl && <p className="mt-1.5 text-[11px] font-bold text-red-400">{mediaErrors.bandcampUrl}</p>}
+      </div>
+
       <ErrorLine error={error} />
       <SheetFooter
         busy={busy}
-        disabled={!location}
+        disabled={(!ownerMode && !location) || hasMediaError}
         saveLabel="Save artist"
         onCancel={onClose}
-        onSave={() => run(() => curatorApi.updateArtist(artist.id, payload))}
+        onSave={() => run(() => saveArtist ? saveArtist(payload) : curatorApi.updateArtist(artist.id, payload))}
       />
     </Sheet>
   );

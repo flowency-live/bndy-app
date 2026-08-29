@@ -33,7 +33,9 @@ function classify(url: string): SocialPlatform {
   if (u.includes("facebook")) return "facebook";
   if (u.includes("instagram")) return "instagram";
   if (u.includes("spotify")) return "spotify";
-  if (u.includes("youtube")) return "youtube";
+  if (u.includes("youtube") || u.includes("youtu.be")) return "youtube";
+  if (u.includes("soundcloud")) return "soundcloud";
+  if (u.includes("bandcamp")) return "bandcamp";
   if (u.includes("twitter") || u.includes("x.com")) return "x";
   return "website";
 }
@@ -45,9 +47,11 @@ function toSocials(dto: Record<string, unknown>): SocialLink[] {
     seen.add(url);
     out.push({ platform: classify(url), url });
   };
+  // Dedicated profile fields are curator or artist-managed and therefore take
+  // precedence over older links left in the generic social array.
+  ["facebookUrl", "instagramUrl", "websiteUrl", "youtubeUrl", "spotifyUrl", "soundcloudUrl", "bandcampUrl", "twitterUrl", "website"].forEach((k) => push(dto[k]));
   const arr = (dto.socialMediaUrls ?? dto.socialMediaURLs) as unknown[] | undefined;
   if (Array.isArray(arr)) arr.forEach((x) => push(typeof x === "string" ? x : (x as { url?: string })?.url));
-  ["facebookUrl", "instagramUrl", "websiteUrl", "youtubeUrl", "spotifyUrl", "twitterUrl", "website"].forEach((k) => push(dto[k]));
   return out;
 }
 
@@ -129,11 +133,13 @@ export function toVenue(v: VenueDTO): Venue | null {
   };
 }
 
-interface ArtistDTO {
+export interface ArtistDTO {
   id: string; name: string; genres?: string[]; artist_type?: string; artistType?: string;
   actType?: string[]; acoustic?: boolean; location?: string; profileImageUrl?: string | null; bio?: string;
-  socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string; websiteUrl?: string; spotifyUrl?: string;
-  publishAvailability?: boolean;
+  socialMediaUrls?: string[]; facebookUrl?: string; instagramUrl?: string; websiteUrl?: string;
+  youtubeUrl?: string; spotifyUrl?: string; soundcloudUrl?: string; bandcampUrl?: string;
+  publishAvailability?: boolean; availabilityMode?: 'selected_dates_only' | 'free_weekends';
+  contactMethod?: 'phone' | 'whatsapp'; phoneNumber?: string | null; whatsappNumber?: string | null;
 }
 export function toArtist(a: ArtistDTO): Artist {
   const legacyActs = canonicalActTypes(a.actType);
@@ -149,6 +155,10 @@ export function toArtist(a: ArtistDTO): Artist {
     bio: a.bio,
     socials: toSocials(a as unknown as Record<string, unknown>),
     publishAvailability: a.publishAvailability,
+    availabilityMode: a.availabilityMode,
+    contactMethod: a.contactMethod,
+    phoneNumber: a.phoneNumber,
+    whatsappNumber: a.whatsappNumber,
   };
 }
 

@@ -8,7 +8,7 @@ import { safeHref } from "@/lib/safeHref";
 import type { SocialLink, SocialPlatform } from "@/domain/types";
 
 const ICON: Record<SocialPlatform, typeof Globe> = {
-  facebook: Facebook, instagram: Instagram, youtube: Youtube, spotify: Music2, x: Globe, website: Globe, other: Globe,
+  facebook: Facebook, instagram: Instagram, youtube: Youtube, spotify: Music2, soundcloud: Music2, bandcamp: Music2, x: Globe, website: Globe, other: Globe,
 };
 
 export function HeroBack({ inline }: { inline?: boolean }) {

@@ -64,4 +64,46 @@ describe("toArtist", () => {
     expect(a.artistType).toBe("duo");
     expect(a.socials?.some((s) => s.platform === "instagram")).toBe(true);
   });
+
+  it("maps media providers and all availability settings", () => {
+    const a = toArtist({
+      id: "a",
+      name: "Band",
+      youtubeUrl: "https://youtu.be/abcdefghijk",
+      soundcloudUrl: "https://soundcloud.com/example/live",
+      bandcampUrl: "https://example.bandcamp.com/album/live",
+      publishAvailability: true,
+      availabilityMode: "free_weekends",
+      contactMethod: "whatsapp",
+      phoneNumber: "+441234567890",
+      whatsappNumber: "+447700900000",
+    });
+
+    expect(a.socials).toEqual(expect.arrayContaining([
+      { platform: "youtube", url: "https://youtu.be/abcdefghijk" },
+      { platform: "soundcloud", url: "https://soundcloud.com/example/live" },
+      { platform: "bandcamp", url: "https://example.bandcamp.com/album/live" },
+    ]));
+    expect(a).toMatchObject({
+      publishAvailability: true,
+      availabilityMode: "free_weekends",
+      contactMethod: "whatsapp",
+      phoneNumber: "+441234567890",
+      whatsappNumber: "+447700900000",
+    });
+  });
+
+  it("prefers a managed media field over an older generic provider link", () => {
+    const artist = toArtist({
+      id: "artist-2",
+      name: "Managed media",
+      youtubeUrl: "https://youtu.be/abcdefghijk",
+      socialMediaUrls: ["https://youtu.be/lmnopqrstuv"],
+    });
+
+    expect(artist.socials?.filter((link) => link.platform === "youtube")[0]).toEqual({
+      platform: "youtube",
+      url: "https://youtu.be/abcdefghijk",
+    });
+  });
 });
