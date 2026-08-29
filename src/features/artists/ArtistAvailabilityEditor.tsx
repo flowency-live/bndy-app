@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { CalendarCheck2, CalendarDays, CalendarX2, Check, ChevronLeft, ChevronRight, Loader2, LockKeyhole, MessageCircle, Phone, UserRoundX } from "lucide-react";
+import { CalendarCheck2, CalendarDays, CalendarX2, Check, ChevronLeft, ChevronRight, Loader2, LockKeyhole, MessageCircle, Phone } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/cn";
 import { SheetFooter, SheetHeader } from "@/features/curator/CuratorSheets";
@@ -266,7 +266,6 @@ export function ArtistAvailabilityEditor({
                 <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-emerald-500 text-white"><Check size={9} strokeWidth={4} /></span> Available</span>
                 <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)]"><CalendarX2 size={8} /></span> Public gig</span>
                 <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-slate-500/20 text-dim"><LockKeyhole size={8} /></span> Private booking</span>
-                <span className="flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded bg-rose-500/15 text-rose-300"><UserRoundX size={8} /></span> Member unavailable</span>
               </div>
             </div>
           )}
@@ -276,7 +275,7 @@ export function ArtistAvailabilityEditor({
         <div className="mt-6 overflow-hidden rounded-[22px] border border-line bg-gradient-to-br from-[color-mix(in_srgb,var(--acc)_14%,transparent)] to-transparent p-5">
           <CalendarDays size={24} className="text-[var(--acc)]" />
           <div className="mt-3 text-[21px] font-black tracking-tight">{availabilityQuery.isLoading ? <Loader2 size={20} className="animate-spin text-dim" /> : `${freeWeekendCount} free weekend days`}</div>
-          <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-dim">Across the next twelve months. BNDY removes a date automatically whenever this artist has an active event.</p>
+          <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-dim">Across the next twelve months. BNDY removes public gigs and private bookings automatically.</p>
           {selected.size > 0 && <p className="mt-3 text-[10.5px] font-bold text-dim">Your {selected.size} picked date{selected.size === 1 ? "" : "s"} remain saved if you switch back.</p>}
         </div>
       )}
@@ -379,8 +378,7 @@ function MonthPicker({ month, today, selected, busy, statuses, pending, onToggle
           isPast && "text-dim2 opacity-35",
           isBusy && status?.state === "public_gig" && "cursor-not-allowed bg-[color-mix(in_srgb,var(--acc)_14%,transparent)] text-[var(--acc-text)]",
           isBusy && status?.state === "private_booking" && "cursor-not-allowed bg-slate-500/15 text-dim",
-          isBusy && status?.state === "member_unavailable" && "cursor-not-allowed bg-rose-500/12 text-rose-300",
-          isBusy && (!status || status.state === "artist_commitment") && "cursor-not-allowed bg-white/[0.035] text-dim2"
+          isBusy && !status && "cursor-not-allowed bg-white/[0.035] text-dim2"
         )}
       >
         {isPending ? <Loader2 size={13} className="animate-spin" /> : isSelected && !isBusy ? <><span>{day}</span><Check size={9} className="absolute right-1 top-1" strokeWidth={4} /></> : day}
@@ -404,13 +402,11 @@ function MonthPicker({ month, today, selected, busy, statuses, pending, onToggle
 function managedStatusLabel(status?: AvailabilityDateStatus): string {
   if (status?.state === "public_gig") return "public gig";
   if (status?.state === "private_booking") return "private booking";
-  if (status?.state === "member_unavailable") return "member unavailable";
-  return "artist unavailable";
+  return "booking";
 }
 
 function ManagedStatusIcon({ status }: { status?: AvailabilityDateStatus }) {
   const className = "absolute right-1 top-1";
   if (status?.state === "public_gig") return <CalendarX2 size={9} className={className} aria-hidden="true" />;
-  if (status?.state === "member_unavailable") return <UserRoundX size={9} className={className} aria-hidden="true" />;
   return <LockKeyhole size={8} className={className} aria-hidden="true" />;
 }

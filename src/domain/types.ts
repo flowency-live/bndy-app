@@ -150,7 +150,7 @@ export interface AvailabilityDate {
 /** Privacy-safe reason an artist cannot be booked on a date. */
 export interface AvailabilityDateStatus {
   date: string; // YYYY-MM-DD
-  state: 'public_gig' | 'private_booking' | 'artist_commitment' | 'member_unavailable';
+  state: 'public_gig' | 'private_booking';
   /** Present only for a public gig that can safely be opened. */
   eventId?: string;
 }

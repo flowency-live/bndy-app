@@ -62,8 +62,6 @@ export function ArtistAvailability({
   const canMoveForward = windowStart + AVAILABILITY_WINDOW_SIZE < months.length;
   const selectedIsAvailable = selectedDate ? dates.has(selectedDate) : false;
   const contactActions = selectedDate ? bookingContactActions(artist, selectedDate) : [];
-  const states = new Set(dateStatuses.map((item) => item.state));
-  const hasBlockedDates = dateStatuses.some((item) => item.state !== "public_gig");
 
   const moveWindow = (direction: -1 | 1) => {
     const next = Math.max(0, Math.min(months.length - AVAILABILITY_WINDOW_SIZE, windowStart + direction * AVAILABILITY_WINDOW_SIZE));
@@ -137,10 +135,8 @@ export function ArtistAvailability({
       <div className="mt-4 border-t border-line pt-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] font-bold text-dim sm:text-[12.5px]">
           <Legend icon={<Check size={10} strokeWidth={4} />} className="bg-emerald-500 text-white" label="Available" />
-          {states.has("public_gig") && <Legend icon={<CalendarCheck2 size={10} />} className="bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)]" label="Gig" />}
-          {hasBlockedDates && (
-            <Legend icon={<LockKeyhole size={9} />} className="bg-white/[0.06] text-dim2" label="Booked / unavailable" />
-          )}
+          <Legend icon={<CalendarCheck2 size={10} />} className="bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)]" label="Public gig" />
+          <Legend icon={<LockKeyhole size={9} />} className="bg-white/[0.06] text-dim2" label="Private booking" />
           <span>Unlisted dates may still be possible</span>
         </div>
 
@@ -241,7 +237,6 @@ function dateCellClass(state: CalendarCellState, prominent: boolean, selected: b
     state === "available" && "bg-emerald-500 text-white shadow-sm hover:bg-emerald-400",
     state === "public_gig" && "bg-[color-mix(in_srgb,var(--acc)_18%,transparent)] text-[var(--acc-text)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--acc)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--acc)_25%,transparent)]",
     state === "private_booking" && "bg-white/[0.035] text-dim2",
-    (state === "member_unavailable" || state === "artist_commitment") && "text-dim2 opacity-40",
     state === "unlisted" && prominent && "bg-white/[0.03] text-txt hover:bg-white/[0.07]",
     state === "unlisted" && !prominent && "text-dim hover:bg-white/[0.05] hover:text-txt",
     state === "past" && "text-dim2 opacity-30",
@@ -264,8 +259,7 @@ function DateCellContent({ day, state }: { day: number; state: CalendarCellState
 function dateAriaLabel(date: string, state: CalendarCellState): string {
   const label = formatEnquiryDate(date);
   if (state === "public_gig") return `${label}, public gig`;
-  if (state === "private_booking") return `${label}, booked`;
-  if (state === "member_unavailable" || state === "artist_commitment") return `${label}, not available`;
+  if (state === "private_booking") return `${label}, private booking`;
   if (state === "available") return `${label}, available`;
   if (state === "past") return `${label}, past date`;
   return `${label}, availability not listed`;
