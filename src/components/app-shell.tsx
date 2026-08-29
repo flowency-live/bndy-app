@@ -72,9 +72,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <UserButton variant="sidebar" />
         </div>
         <Link href="/join" className="mb-4 shrink-0 rounded-2xl border border-[var(--acc)]/35 bg-[color-mix(in_srgb,var(--acc)_7%,transparent)] px-3 py-3 transition hover:border-[var(--acc)] hover:bg-[color-mix(in_srgb,var(--acc)_11%,transparent)]">
-          <span className="block text-[10px] font-black uppercase tracking-[1.1px] text-[var(--acc-text)]">Artist or venue?</span>
-          <span className="mt-0.5 block text-[13px] font-black text-txt">Join bndy →</span>
-          <span className="mt-1 block text-[10.5px] font-semibold leading-snug text-dim">Find, claim or create your page. Your normal user features come with it.</span>
+          <span className="block text-[10px] font-black uppercase tracking-[1.1px] text-[var(--acc-text)]">Manage an artist or venue?</span>
+          <span className="mt-0.5 block text-[13px] font-black text-txt">Find or add →</span>
+          <span className="mt-1 block text-[10.5px] font-semibold leading-snug text-dim">Find, claim or add your page using your normal bndy account.</span>
         </Link>
         {gigDiscoveryView && (
           <div className="mb-5 shrink-0 px-1">

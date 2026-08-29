@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { JoinArtistFlow } from "@/features/join/JoinArtistFlow";
 
 export const metadata: Metadata = {
-  title: "Join bndy as an artist",
+  title: "Find or add an artist · bndy",
   description: "Find your artist on bndy or start a new artist page.",
 };
 

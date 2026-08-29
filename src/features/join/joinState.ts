@@ -10,6 +10,7 @@ export interface JoinJourneyState {
   entityId?: string;
   googlePlaceId?: string;
   address?: string;
+  confirmNew?: boolean;
   savedAt: number;
 }
 

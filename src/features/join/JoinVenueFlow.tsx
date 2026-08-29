@@ -182,7 +182,7 @@ export function JoinVenueFlow() {
     <main className="mx-auto max-w-xl px-4 pb-36 pt-10 lg:pt-14">
       <section className="text-center">
         <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-acc text-on-acc"><CheckCircle2 size={30} /></span>
-        <div className="mt-5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">You&apos;re on bndy</div>
+        <div className="mt-5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Venue added</div>
         <h1 className="font-disp mt-1 text-[38px] font-black leading-none tracking-tight">{joined.name}</h1>
         {joined.address && <p className="mx-auto mt-2 flex max-w-md items-start justify-center gap-1.5 text-[12px] font-bold text-dim"><MapPin size={13} className="mt-0.5" /> {joined.address}</p>}
         <p className="mx-auto mt-4 max-w-md text-[13px] font-semibold leading-relaxed text-dim">Your venue is ready and linked to your account.</p>
@@ -213,12 +213,12 @@ export function JoinVenueFlow() {
     <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10">
       <button type="button" onClick={() => setPhase("search")} className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim"><ArrowLeft size={14} /> Back to venue</button>
       <header className="mt-7"><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">New venue · step two</div><h1 className="font-disp mt-1 text-[36px] font-black leading-none tracking-tight">Great. Let&apos;s make it yours.</h1><p className="mt-3 text-[13px] font-semibold text-dim">We couldn&apos;t find this physical venue in bndy. Sign in and we&apos;ll create it and link it to your account.</p></header>
-      <AuthGate title="Sign in to join bndy">
+      <AuthGate title="Sign in to add this venue">
         <section className="mt-7 rounded-[24px] border border-[var(--acc)] glass p-5">
           <div className="flex items-start gap-3"><BadgeCheck size={21} className="mt-0.5 text-[var(--acc-text)]" /><div><div className="text-[15px] font-black">Ready to create {selected?.name ?? query}.</div><p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll check the place again before creating anything.</p></div></div>
           <div className="mt-5 border-t border-line pt-4"><div className="text-[11.5px] font-black">A little more about the venue <span className="font-semibold text-dim">· optional</span></div><p className="mt-1 text-[10.5px] font-semibold text-dim">Skip this if you want. We already have the venue identity.</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={website} onChange={(e) => setWebsite(e.target.value)} inputMode="url" placeholder="Website" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="Phone" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={facebook} onChange={(e) => setFacebook(e.target.value)} inputMode="url" placeholder="Facebook" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /><input value={instagram} onChange={(e) => setInstagram(e.target.value)} inputMode="url" placeholder="Instagram" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" /></div></div>
           {error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}
-          <button type="button" disabled={loading || !selected} onClick={createOwnedVenue} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Create my venue</button>
+          <button type="button" disabled={loading || !selected} onClick={createOwnedVenue} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-50">{loading ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />} Add this venue</button>
         </section>
       </AuthGate>
     </main>
@@ -226,8 +226,8 @@ export function JoinVenueFlow() {
 
   return (
     <main className="mx-auto max-w-xl px-4 pb-36 pt-6 lg:pt-10">
-      <Link href="/join" className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim hover:text-[var(--acc-text)]"><ArrowLeft size={14} /> Join bndy</Link>
-      <header className="mt-7"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-acc text-on-acc"><Building2 size={21} /></span><div className="mt-5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Venue · step one</div><h1 className="font-disp mt-1 text-[38px] font-black leading-none tracking-tight">Which venue is yours?</h1><p className="mt-3 text-[13px] font-semibold leading-relaxed text-dim">Start with the venue name. Place and address are part of its identity, so two pubs with the same name stay two different venues.</p></header>
+      <Link href="/join" className="inline-flex items-center gap-1.5 text-[11px] font-black text-dim hover:text-[var(--acc-text)]"><ArrowLeft size={14} /> Find artist or venue</Link>
+      <header className="mt-7"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-acc text-on-acc"><Building2 size={21} /></span><div className="mt-5 font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Venue · step one</div><h1 className="font-disp mt-1 text-[38px] font-black leading-none tracking-tight">Find or add a venue.</h1><p className="mt-3 text-[13px] font-semibold leading-relaxed text-dim">Start with the venue name. Place and address are part of its identity, so two pubs with the same name stay two different venues.</p></header>
       <section className="mt-7 rounded-[26px] border border-line glass p-5 sm:p-6">
         <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Venue name or place</label>
         <div className="relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-dim" /><input autoFocus value={query} onChange={(e) => { setQuery(e.target.value); setSelected(null); setCandidate(null); setError(null); }} placeholder="e.g. The King's Arms, Warrington" className="w-full rounded-2xl border border-line bg-transparent py-3.5 pl-11 pr-11 text-[15px] font-bold outline-none focus:border-[var(--acc)]" />{loading && <Loader2 size={16} className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-dim" />}</div>

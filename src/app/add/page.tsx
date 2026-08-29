@@ -20,8 +20,8 @@ export default function AddGigPage() {
         >
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-acc text-on-acc"><BadgeCheck size={18} /></span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-black uppercase tracking-[1.1px] text-[var(--acc-text)]">Is it your artist or venue?</span>
-            <span className="mt-0.5 block text-[13px] font-black text-txt">Join bndy to find, claim or create your page</span>
+            <span className="block text-[10px] font-black uppercase tracking-[1.1px] text-[var(--acc-text)]">Do you manage an artist or venue?</span>
+            <span className="mt-0.5 block text-[13px] font-black text-txt">Find, claim or add your artist or venue page</span>
             <span className="mt-0.5 block text-[10.5px] font-semibold text-dim">You&apos;ll use the same bndy account as favourites and personal features.</span>
           </span>
           <ArrowRight size={17} className="shrink-0 text-[var(--acc-text)]" />

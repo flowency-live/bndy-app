@@ -14,6 +14,7 @@ export interface JoinArtistInput {
   websiteUrl?: string;
   bio?: string;
   profileImageUrl?: string;
+  confirmNew?: boolean;
 }
 
 export type JoinArtistResult =
