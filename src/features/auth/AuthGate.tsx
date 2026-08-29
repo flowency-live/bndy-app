@@ -12,7 +12,7 @@ import { LoginPanel } from "./LoginPanel";
 import { ProfileSetup } from "./ProfileSetup";
 import type { ReactNode } from "react";
 
-export function AuthGate({ children, title }: { children: ReactNode; title?: string }) {
+export function AuthGate({ children, title, requireProfile = true }: { children: ReactNode; title?: string; requireProfile?: boolean }) {
   const { isAuthenticated, isLoading, profileCompleted } = useAuth();
   const path = usePathname();
   const [profileJustCompleted, setProfileJustCompleted] = useState(false);
@@ -34,7 +34,7 @@ export function AuthGate({ children, title }: { children: ReactNode; title?: str
   }
 
   // Profile completion gate (skip if just completed to prevent flash)
-  if (!profileCompleted && !profileJustCompleted) {
+  if (requireProfile && !profileCompleted && !profileJustCompleted) {
     return (
       <div className="px-4 py-8">
         <ProfileSetup mode="setup" onComplete={() => setProfileJustCompleted(true)} />

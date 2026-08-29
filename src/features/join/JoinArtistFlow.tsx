@@ -7,9 +7,10 @@ import { AuthGate } from "@/features/auth/AuthGate";
 import { useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import { placesSuggest, resolveArtist, type ArtistCandidate, type PlaceSuggestion } from "@/features/wizard/wizardApi";
 import { searchArtistAutocomplete, type ArtistAutocompleteMatch } from "./artistSearchApi";
-import { joinArtist, requestJoinClaim } from "./joinApi";
+import { joinArtist } from "./joinApi";
 import { clearJoinState, readJoinState, saveJoinState } from "./joinState";
 import { trackJoin } from "./joinAnalytics";
+import { ClaimEvidenceStep } from "./ClaimEvidenceStep";
 
 type Phase = "search" | "new" | "claim" | "success";
 type JoinedArtist = { id: string; name: string; location?: string };
@@ -69,7 +70,6 @@ export function JoinArtistFlow() {
   const [phase, setPhase] = useState<Phase>("search");
   const [claimCandidate, setClaimCandidate] = useState<ArtistCandidate | null>(null);
   const [joined, setJoined] = useState<JoinedArtist | null>(null);
-  const [claimSubmitted, setClaimSubmitted] = useState(false);
   const [artistType, setArtistType] = useState("");
   const [actType, setActType] = useState<string[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
@@ -189,36 +189,11 @@ export function JoinArtistFlow() {
   const startClaim = (candidate: ArtistCandidate) => {
     saveJoinState({ entityType: "artist", intent: "claim", name: candidate.name, location: candidate.location, entityId: candidate.id });
     setClaimCandidate(candidate);
-    setClaimSubmitted(false);
     trackJoin("claim_branch_entered", { entityType: "artist", step: "claim" });
     setError(null);
     setPhase("claim");
   };
 
-  const submitClaim = async () => {
-    if (!claimCandidate) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await requestJoinClaim({
-        entityType: "artist",
-        entityId: claimCandidate.id,
-        requestedRole: "owner",
-        evidenceHints: { searchedName: name, searchedLocation: location },
-      });
-      if (!result.ok) {
-        setError(result.message);
-        return;
-      }
-      clearJoinState();
-      trackJoin("claim_requested", { entityType: "artist", step: "claim" });
-      setClaimSubmitted(true);
-    } catch {
-      setError("Network hiccup. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const createOwnedArtist = async () => {
     const loc = pickedLocation ?? location.trim();
@@ -324,23 +299,8 @@ export function JoinArtistFlow() {
           </div>
         </section>
 
-        <AuthGate title="Sign in to claim this artist">
-          <section className="mt-5">
-            {!claimSubmitted ? (
-              <>
-                <div className="text-[15px] font-black">Claim this artist</div>
-                <p className="mt-1 text-[12px] font-semibold leading-relaxed text-dim">We&apos;ll send this to the bndy team for review.</p>
-                {error && <p className="mt-4 rounded-xl border border-red-500/30 px-3 py-2 text-[11.5px] font-bold text-red-500">{error}</p>}
-                <button type="button" disabled={loading} onClick={submitClaim} className="bndy-btn2 mt-5 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px] disabled:opacity-55">{loading && <Loader2 size={14} className="animate-spin" />} Claim this artist</button>
-              </>
-            ) : (
-              <div className="rounded-[22px] bg-[var(--surface-2)] p-5">
-                <div className="flex items-center gap-2 text-[15px] font-black"><CheckCircle2 size={18} className="text-[var(--acc-text)]" /> Claim sent</div>
-                <p className="mt-2 text-[12px] font-semibold leading-relaxed text-dim">The bndy team will review it. You can track the status in Manage.</p>
-                <Link href="/manage" className="bndy-btn2 mt-4 flex min-h-11 w-full items-center justify-center gap-2 px-4 text-[12px]">Go to Manage <ArrowRight size={14} /></Link>
-              </div>
-            )}
-          </section>
+        <AuthGate title="Sign in to claim this artist" requireProfile={false}>
+          <ClaimEvidenceStep entityType="artist" entityId={claimCandidate.id} entityName={claimCandidate.name} evidenceHints={{ searchedName: name, searchedLocation: location }} />
         </AuthGate>
       </main>
     );
