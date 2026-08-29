@@ -121,14 +121,14 @@ export interface Favourites {
 export type FavouriteType = "artist" | "venue";
 
 export async function fetchFavourites(): Promise<Favourites> {
-  const res = await fetch(`${BASE}/users/favourites`, { credentials: "include", cache: "no-store" });
+  const res = await fetch(`${BASE}/api/users/favourites`, { credentials: "include", cache: "no-store" });
   if (!res.ok) throw new Error(`GET /users/favourites → ${res.status}`);
   const data = (await res.json()) as Partial<Favourites>;
   return { artistIds: data.artistIds ?? [], venueIds: data.venueIds ?? [] };
 }
 
 export async function toggleFavourite(type: FavouriteType, id: string, favourite: boolean) {
-  return post<{ success: boolean }>("/users/favourites/toggle", { type, id, favourite });
+  return post<{ success: boolean }>("/api/users/favourites/toggle", { type, id, favourite });
 }
 
 /* ---------- saved My gigs preference ---------- */
@@ -136,7 +136,7 @@ export async function toggleFavourite(type: FavouriteType, id: string, favourite
 type GigFilterProfile = { user?: { gigFilter?: unknown; [key: string]: unknown } };
 
 async function fetchGigFilterProfile(): Promise<GigFilterProfile> {
-  const res = await fetch(`${BASE}/users/profile`, { credentials: "include", cache: "no-store" });
+  const res = await fetch(`${BASE}/api/users/profile`, { credentials: "include", cache: "no-store" });
   if (!res.ok) throw new Error(`GET /users/profile → ${res.status}`);
   return (await res.json()) as GigFilterProfile;
 }
@@ -155,7 +155,7 @@ export async function updateGigFilter(gigFilter: GigFilter): Promise<GigFilter> 
     throw new Error("Gig preferences are still being enabled. Please try again in a moment.");
   }
 
-  const res = await fetch(`${BASE}/users/profile`, {
+  const res = await fetch(`${BASE}/api/users/profile`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -206,7 +206,7 @@ export interface ProfileUpdateRequest {
 }
 
 export async function updateProfile(data: ProfileUpdateRequest): Promise<AuthUser> {
-  const res = await fetch(`${BASE}/users/profile`, {
+  const res = await fetch(`${BASE}/api/users/profile`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

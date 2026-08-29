@@ -2,7 +2,9 @@
 // A signed-in session cookie rides along automatically, so bndy can
 // come back to the reporter. That is the only difference.
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+import { apiBase } from "@/lib/apiBase";
+
+const BASE = apiBase();
 
 export type FlagEntityType = "artist" | "venue" | "event";
 

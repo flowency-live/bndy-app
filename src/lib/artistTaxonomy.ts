@@ -9,7 +9,9 @@ import {
 
 export * from "@/lib/artistTaxonomyCore";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+import { apiBase } from "@/lib/apiBase";
+
+const BASE = apiBase();
 
 export async function fetchArtistTaxonomy(): Promise<ArtistTaxonomy> {
   try {

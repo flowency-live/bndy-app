@@ -6,7 +6,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
+import { apiBase } from "@/lib/apiBase";
+
+// Same-origin on bndy.live (session cookie is scoped .bndy.live): an absolute
+// api.bndy.co.uk call carries no cookie and every curator write 401s.
+const BASE = apiBase();
 
 export type CuratorEntity = "artist" | "venue" | "event" | "festival";
 
