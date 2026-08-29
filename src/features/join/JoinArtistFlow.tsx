@@ -342,9 +342,9 @@ export function JoinArtistFlow() {
 
       <section className="mt-7 space-y-4 rounded-[26px] border border-line glass p-5 sm:p-6">
         <div>
-          <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Artist or band name</label>
+          <label htmlFor="join-artist-name" className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Artist or band name</label>
           <div className="relative">
-            <input autoFocus value={name} onChange={(e) => { setName(e.target.value); setCreatingNew(false); setConfirmedDistinct(false); setLocationMatches([]); setLocation(""); setPickedLocation(null); }} placeholder="e.g. The Torrists" className="w-full rounded-2xl border border-line bg-transparent px-4 py-3.5 pr-11 text-[15px] font-bold outline-none focus:border-[var(--acc)]" />
+            <input id="join-artist-name" autoFocus value={name} onChange={(e) => { setName(e.target.value); setCreatingNew(false); setConfirmedDistinct(false); setLocationMatches([]); setLocation(""); setPickedLocation(null); }} placeholder="e.g. The Torrists" className="w-full rounded-2xl border border-line bg-transparent px-4 py-3.5 pr-11 text-[15px] font-bold outline-none focus:border-[var(--acc)]" />
             {autocompleteLoading && <Loader2 size={17} className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-dim" />}
           </div>
         </div>
@@ -369,8 +369,8 @@ export function JoinArtistFlow() {
           <div className="space-y-4 border-t border-line pt-4">
             <div><div className="text-[13px] font-black">New artist: {name.trim()}</div><p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-dim">Add the location that makes this a different artist from any same-name matches above.</p></div>
             <div className="relative">
-              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Town, city or area</label>
-              <div className="relative"><MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-dim" /><input value={location} onChange={(e) => { setLocation(e.target.value); setPickedLocation(null); setConfirmedDistinct(false); setLocationMatches([]); }} placeholder="e.g. Liverpool" className="w-full rounded-2xl border border-line bg-transparent py-3.5 pl-11 pr-4 text-[15px] font-bold outline-none focus:border-[var(--acc)]" /></div>
+              <label htmlFor="join-artist-location" className="mb-1.5 block text-[10px] font-black uppercase tracking-[1.2px] text-dim">Town, city or area</label>
+              <div className="relative"><MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-dim" /><input id="join-artist-location" value={location} onChange={(e) => { setLocation(e.target.value); setPickedLocation(null); setConfirmedDistinct(false); setLocationMatches([]); }} placeholder="e.g. Liverpool" className="w-full rounded-2xl border border-line bg-transparent py-3.5 pl-11 pr-4 text-[15px] font-bold outline-none focus:border-[var(--acc)]" /></div>
               {places.length > 0 && <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-line bg-card shadow-xl">{places.slice(0, 5).map((place) => <button key={place.placeId} type="button" onClick={() => { const value = place.name || place.address; setLocation(value); setPickedLocation(value); setPlaces([]); setConfirmedDistinct(false); setLocationMatches([]); }} className="block w-full border-b border-line bg-card px-4 py-3 text-left last:border-0 hover:bg-card2"><span className="block text-[12px] font-black">{place.name}</span><span className="block text-[10.5px] font-semibold text-dim">{place.address}</span></button>)}</div>}
             </div>
 
