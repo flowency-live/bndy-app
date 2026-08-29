@@ -16,7 +16,7 @@ import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import { artistTypeLabel, useArtistTaxonomy } from "@/lib/artistTaxonomy";
 import type { Artist, Gig, ArtistAvailabilityCalendar } from "@/domain/types";
 
-export function ArtistProfile({ id, artist, gigs, availabilityCalendar }: { id: string; artist: Artist | null; gigs: Gig[]; availabilityCalendar: ArtistAvailabilityCalendar }) {
+export function ArtistProfile({ id, artist, gigs, pastGigs, availabilityCalendar }: { id: string; artist: Artist | null; gigs: Gig[]; pastGigs: Gig[]; availabilityCalendar: ArtistAvailabilityCalendar }) {
   const [displayArtist, setDisplayArtist] = useState(artist);
   const [displayAvailability, setDisplayAvailability] = useState(availabilityCalendar.availability);
   const [displayAvailabilityStatuses, setDisplayAvailabilityStatuses] = useState(availabilityCalendar.dateStatuses);
@@ -29,7 +29,7 @@ export function ArtistProfile({ id, artist, gigs, availabilityCalendar }: { id: 
     setDisplayAvailabilityStatuses(availabilityCalendar.dateStatuses);
   }, [artist, availabilityCalendar, id]);
   const { data: taxonomy } = useArtistTaxonomy();
-  const name = displayArtist?.name || gigs[0]?.artistName || "Artist";
+  const name = displayArtist?.name || gigs[0]?.artistName || pastGigs[0]?.artistName || "Artist";
   const img = displayArtist?.profileImageUrl || undefined;
   const type = artistTypeLabel(displayArtist?.artistType, taxonomy);
   const genres = displayArtist?.genres ?? [];
@@ -119,7 +119,7 @@ export function ArtistProfile({ id, artist, gigs, availabilityCalendar }: { id: 
         <Link href={`/add?artistId=${id}`} className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-line bg-white/5 px-4 py-2.5 text-[13px] font-extrabold transition-transform active:scale-[.97]">
           <Plus size={15} className="text-[var(--acc)]" /> Add a gig
         </Link>
-        <ArtistEvents gigs={gigs} artistId={id} artist={displayArtist} availability={displayAvailability} availabilityStatuses={displayAvailabilityStatuses} />
+        <ArtistEvents gigs={gigs} pastGigs={pastGigs} artistId={id} artist={displayArtist} availability={displayAvailability} availabilityStatuses={displayAvailabilityStatuses} />
       </div>
     </div>
   );
