@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { BadgeCheck, Building2, Check, Clipboard, ExternalLink, Loader2, MailPlus, Music2, RefreshCw, Shield, Trash2, UserCog } from "lucide-react";
+import { BadgeCheck, BadgePlus, Building2, Check, Clipboard, ExternalLink, Loader2, MailPlus, Music2, RefreshCw, Shield, Trash2, UserCog } from "lucide-react";
 import { AuthGate } from "@/features/auth/AuthGate";
 import { trackJoin } from "./joinAnalytics";
 import { VenueOwnershipTransfer } from "./VenueOwnershipTransfer";
@@ -42,8 +42,8 @@ export function ManageEntitiesPage() {
     <AuthGate title="Sign in to manage bndy">
       <main className="mx-auto max-w-4xl px-4 pb-36 pt-7 sm:px-6 lg:pt-12">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Your bndy</div><h1 className="font-disp mt-1 text-[38px] font-black leading-none tracking-tight">The things you run.</h1><p className="mt-3 max-w-xl text-[13px] font-semibold leading-relaxed text-dim">Artists, venues, pending claims and the people you trust to help. Nobody needs to share a password.</p></div>
-          <button type="button" disabled={loading} onClick={load} className="bndy-btn flex min-h-10 items-center justify-center gap-2 px-4 text-[11px]"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh</button>
+          <div><div className="font-meta text-[9px] font-black uppercase tracking-[1.6px] text-[var(--acc-text)]">Your bndy</div><h1 className="font-disp mt-1 text-[38px] font-black leading-none tracking-tight">Your artists &amp; venues.</h1><p className="mt-3 max-w-xl text-[13px] font-semibold leading-relaxed text-dim">Artists and venues you own, manage or are part of, plus pending claims and the people you trust to help. Nobody needs to share a password.</p></div>
+          <div className="flex gap-2"><Link href="/join" className="bndy-btn2 flex min-h-10 items-center justify-center gap-2 px-4 text-[11px]"><BadgePlus size={14} /> Add artist or venue</Link><button type="button" disabled={loading} onClick={load} className="bndy-btn flex min-h-10 items-center justify-center gap-2 px-4 text-[11px]"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh</button></div>
         </header>
 
         <ManageLoadOnce onLoad={load} />
@@ -59,12 +59,12 @@ export function ManageEntitiesPage() {
 
             <section>
               <div className="flex items-center gap-2"><Music2 size={17} className="text-[var(--acc-text)]" /><h2 className="font-disp text-[24px] font-black">Artists</h2><span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-black text-dim">{artists.length}</span></div>
-              {artists.length === 0 ? <EmptyState text="No artist relationships yet." href="/join/artist" label="Join as an artist" /> : <div className="mt-3 grid gap-3 md:grid-cols-2">{artists.map((artist) => <ArtistManageCard key={artist.membershipId || artist.id} artist={artist} />)}</div>}
+              {artists.length === 0 ? <EmptyState text="No artist relationships yet." href="/join/artist" label="Add an artist" /> : <div className="mt-3 grid gap-3 md:grid-cols-2">{artists.map((artist) => <ArtistManageCard key={artist.membershipId || artist.id} artist={artist} />)}</div>}
             </section>
 
             <section>
               <div className="flex items-center gap-2"><Building2 size={17} className="text-[var(--acc-text)]" /><h2 className="font-disp text-[24px] font-black">Venues</h2><span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-black text-dim">{venues.length}</span></div>
-              {venues.length === 0 ? <EmptyState text="No venue relationships yet." href="/join/venue" label="Join as a venue" /> : <div className="mt-3 space-y-3">{venues.map((venue) => <VenueManageCard key={venue.membershipId || venue.id} venue={venue} />)}</div>}
+              {venues.length === 0 ? <EmptyState text="No venue relationships yet." href="/join/venue" label="Add a venue" /> : <div className="mt-3 space-y-3">{venues.map((venue) => <VenueManageCard key={venue.membershipId || venue.id} venue={venue} />)}</div>}
             </section>
           </div>
         )}
