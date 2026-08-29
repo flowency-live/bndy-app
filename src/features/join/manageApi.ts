@@ -56,6 +56,22 @@ export type EntityInvite = {
   expiresAt: number;
 };
 
+export type MyClaim = {
+  claim_id: string;
+  entity_type: "artist" | "venue";
+  entity_id: string;
+  entity_name: string;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+  requested_role?: "owner" | "admin" | "member";
+  relationship_kind?: string | null;
+  verification_method?: string;
+  review_note?: string | null;
+  evidence_revision?: number;
+  evidence_hints?: Record<string, string>;
+};
+
 export async function getManagedArtists(): Promise<ManagedArtist[]> {
   const body = await request<{ artists?: Array<Record<string, unknown>> }>("/api/memberships/me");
   return (body.artists || []).map((membership) => {
@@ -131,7 +147,7 @@ export async function createArtistInviteLink(artistId: string): Promise<string> 
   return body.inviteLink;
 }
 
-export async function getMyClaims(): Promise<Array<{ claim_id: string; entity_type: "artist" | "venue"; entity_id: string; entity_name: string; status: string; created_at: string }>> {
-  const body = await request<{ claims?: Array<{ claim_id: string; entity_type: "artist" | "venue"; entity_id: string; entity_name: string; status: string; created_at: string }> }>("/api/claims/me");
+export async function getMyClaims(): Promise<MyClaim[]> {
+  const body = await request<{ claims?: MyClaim[] }>("/api/claims/me");
   return body.claims || [];
 }
