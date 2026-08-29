@@ -23,7 +23,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export type OwnedArtistProfileUpdate = Partial<Pick<Artist,
   "bio" | "location" | "genres" | "artistType" | "actType" | "acoustic" |
-  "publishAvailability" | "availabilityMode" | "contactMethod" | "phoneNumber" | "whatsappNumber"
+  "publishAvailability" | "availabilityMode" | "contactMethod" | "phoneNumber" | "whatsappNumber" | "availabilityMessage"
 >> & {
   locationType?: "city" | "town" | "region" | null;
   locationLat?: number | null;

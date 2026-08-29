@@ -135,6 +135,7 @@ export interface Artist {
   contactMethod?: 'phone' | 'whatsapp';
   phoneNumber?: string | null;
   whatsappNumber?: string | null;
+  availabilityMessage?: string | null;
 }
 
 /** An artist's available date for booking. */
