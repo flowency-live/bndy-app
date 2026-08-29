@@ -36,7 +36,7 @@ describe("ArtistAvailability", () => {
 
   afterAll(() => vi.useRealTimers());
 
-  it("shows distinct privacy-safe states and sends the selected date into WhatsApp", () => {
+  it("keeps blocking reasons quiet while preserving public gig and contact behaviour", () => {
     render(<ArtistAvailability artist={artist} availability={dates} dateStatuses={statuses} />);
 
     expect(screen.getByText(/if you cannot see the date you need/i)).not.toBeNull();
@@ -45,9 +45,12 @@ describe("ArtistAvailability", () => {
       expect(screen.getByText(weekday)).not.toBeNull();
     }
     expect(screen.getByRole("link", { name: /sunday, 20 september 2026, public gig/i }).getAttribute("href")).toBe("/gigs/gig-1");
-    expect(screen.getByLabelText(/monday, 21 september 2026, private booking/i)).not.toBeNull();
-    expect(screen.getByLabelText(/tuesday, 22 september 2026, artist member unavailable/i)).not.toBeNull();
-    expect(screen.getByLabelText(/wednesday, 23 september 2026, artist unavailable/i)).not.toBeNull();
+    expect(screen.getByLabelText(/monday, 21 september 2026, booked/i)).not.toBeNull();
+    expect(screen.getByLabelText(/tuesday, 22 september 2026, not available/i)).not.toBeNull();
+    expect(screen.getByLabelText(/wednesday, 23 september 2026, not available/i)).not.toBeNull();
+    expect(screen.getByText("Booked / unavailable")).not.toBeNull();
+    expect(screen.queryByText("Member unavailable")).toBeNull();
+    expect(screen.queryByText("Artist unavailable")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /friday, 4 september 2026, available/i }));
     const whatsapp = screen.getByRole("link", { name: /ask on whatsapp/i });
