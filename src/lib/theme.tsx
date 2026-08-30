@@ -44,8 +44,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // The layout's no-flash script already set the attributes pre-paint
   useEffect(() => {
     try {
-      const a = localStorage.getItem(APP_SKIN_KEY);
-      if (isAppSkinId(a)) setAppSkinState(a);
+      const raw = localStorage.getItem(APP_SKIN_KEY);
+      // Legacy id migration: "openair" (shipped as "Vibe") is now "cyberpunk".
+      const a = raw === "openair" ? "cyberpunk" : raw;
+      if (isAppSkinId(a)) {
+        setAppSkinState(a);
+        if (a !== raw) { try { localStorage.setItem(APP_SKIN_KEY, a); } catch { /* ignore */ } }
+      }
       const s = localStorage.getItem(MAP_SKIN_KEY) as SkinId | null;
       if (s === "pulse" || s === "aurora" || s === "neon-dot") setSkinState(s);
     } catch { /* ignore */ }

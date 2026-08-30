@@ -45,10 +45,10 @@ html[data-theme="bndy-dark"] {
   --on-acc: #0F172A;
 }
 
-/* Vibe keeps the luminous cyan/magenta as foreground colours; only its old
-   tertiary lavender and white-on-magenta ticket text needed correcting. */
-html[data-theme="openair"] {
-  --dim2: #847F9B;
+/* Cyberpunk keeps the luminous cyan/magenta as foreground colours; only its
+   tertiary grey and white-on-magenta ticket text needed correcting. */
+html[data-theme="cyberpunk"] {
+  --dim2: #8B97AD;
   --acc-text: #19D9F3;
   --acc2-text: #FF2BC2;
   --stub-fg: #180013;

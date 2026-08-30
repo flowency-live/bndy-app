@@ -17,7 +17,7 @@ export type BasemapKey = keyof typeof BASEMAP_URLS;
 const BASEMAP_BY_SKIN: Record<AppSkinId, BasemapKey> = {
   "bndy-light": "light",
   "bndy-dark": "dark",
-  openair: "dark",
+  cyberpunk: "dark",
   roadcase: "dark",
   flyer: "voyager",
   goldenhour: "voyager",

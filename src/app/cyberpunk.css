@@ -1,0 +1,167 @@
+/* ============================================================
+   CYBERPUNK  -  dark neon skin (was "Vibe" / theme id `openair`)
+   ------------------------------------------------------------
+   Keeps the bndy Congleton Vibe identity: cyan, magenta, violet.
+   Structure rebuilt on the findings in
+   Projects/bndy/GIGXCHANGE-DESIGN-READ-v1.md:
+     - six-step surface ladder, depth from surfaces not shadows
+     - slate-blue neutrals, blue-white text (never pure white)
+     - two-step hairlines, no heavy borders
+     - tight radius, the single strongest "tech" signal
+     - one accent gradient, used sparingly
+   Old theme id `openair` is migrated to `cyberpunk` in
+   lib/theme.tsx and the layout no-flash script.
+   ============================================================ */
+
+html[data-theme="cyberpunk"] {
+  --ink-rgb: 6 9 16;
+
+  /* Surface ladder  -  six steps, deep to raised. */
+  --surface: #06090F;
+  --card: #0C1120;
+  --card2: #151C2E;
+  --card-hover: #1B2438;
+  --input-bg: #0F1525;
+
+  /* Blue-white text, never pure white. Slate-blue greys. */
+  --txt: #F0F9FF;
+  --dim: #A3B0C6;
+  --dim2: #8B97AD;
+
+  /* Two-step hairlines. */
+  --line: #1E293B;
+  --line-hi: #2D3A4F;
+  --bw: 1px;
+
+  /* Tight radius. This is what makes it read as tech. */
+  --rad: 8px;
+  --rad-lg: 10px;
+
+  --glass: rgba(10, 14, 26, 0.78);
+  --glass-hi: rgba(6, 9, 16, 0.93);
+
+  --sh: 0 8px 24px rgba(0, 0, 0, .42);
+  --sh-lg: 0 18px 46px rgba(0, 0, 0, .5);
+  --sh-hover: 0 0 0 1px rgba(25, 217, 243, .35), 0 12px 34px rgba(25, 217, 243, .16), 0 0 30px rgba(255, 43, 194, .08);
+  --shadow: var(--sh);
+
+  /* Congleton Vibe reference: cyan navigation + magenta neon + violet detail. */
+  --acc: #19D9F3;
+  --on-acc: #031014;
+  --acc2: #FF2BC2;
+  --on-acc2: #180013;
+  --hl: #8B5CF6;
+  --on-hl: #FFFFFF;
+
+  /* One gradient, cyan to magenta through violet. Used sparingly. */
+  --grad: linear-gradient(135deg, #19D9F3, #8B5CF6, #FF2BC2);
+  --grad-h: linear-gradient(90deg, #19D9F3, #8B5CF6, #FF2BC2);
+
+  --disp: var(--font-chakra), var(--font-grotesk), sans-serif;
+  --disp-wt: 700;
+  --disp-case: none;
+  --ui: var(--font-grotesk), var(--font-inter), sans-serif;
+  --meta: var(--font-space-mono), monospace;
+  --ital: var(--font-grotesk), var(--font-inter), sans-serif;
+
+  --tick-bg: #080C16;
+  --tick-fg: #A3B0C6;
+  --tick-hl: #19D9F3;
+
+  --dayhead-bg: #0F1525;
+  --dayhead-fg: #B3C0D4;
+  --dayhead-hot-bg: #102A31;
+  --dayhead-hot-fg: #55E8FA;
+
+  --stub-bg: #FF2BC2;
+  --stub-fg: #180013;
+
+  --m-bg: #050810;
+  --m-block: #0D1220;
+  --m-road1: #1E293B;
+  --m-road2: #151C2C;
+  --m-river: #0B2430;
+  --m-park: #0F1D1D;
+  --m-lab: #6B7A93;
+
+  --pin-bd: rgba(255, 255, 255, .9);
+  --pin-sh: 0 0 10px rgba(25, 217, 243, .95), 0 0 28px rgba(25, 217, 243, .5);
+  --pin2-sh: 0 0 10px rgba(255, 43, 194, .9), 0 0 28px rgba(255, 43, 194, .45);
+  --pin-stem: rgba(255, 255, 255, .48);
+}
+
+/* ---- Skin-scoped treatments. No component structure changes. ---- */
+
+/* Luminous brand edge, as before. */
+html[data-theme="cyberpunk"] .brand-glow {
+  filter: drop-shadow(0 0 7px rgba(25, 217, 243, .72)) drop-shadow(0 0 16px rgba(255, 43, 194, .22));
+}
+
+/* Glass gets a single top highlight, not a border. */
+html[data-theme="cyberpunk"] .glass,
+html[data-theme="cyberpunk"] .glass-hi {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+/* Cards lift by one surface step on hover, not by shadow alone. */
+@media (hover: hover) {
+  html[data-theme="cyberpunk"] .card:hover,
+  html[data-theme="cyberpunk"] [data-card]:hover {
+    background-color: var(--card-hover);
+    border-color: var(--line-hi);
+  }
+}
+
+/* Inputs sit below the card surface, so fields read as recessed. */
+html[data-theme="cyberpunk"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="cyberpunk"] textarea,
+html[data-theme="cyberpunk"] select {
+  background-color: var(--input-bg);
+}
+
+/* Minimum 44px touch target on controls. */
+html[data-theme="cyberpunk"] button,
+html[data-theme="cyberpunk"] .btn,
+html[data-theme="cyberpunk"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="cyberpunk"] select {
+  min-height: 44px;
+}
+
+html[data-theme="cyberpunk"] input:focus,
+html[data-theme="cyberpunk"] button:focus-visible,
+html[data-theme="cyberpunk"] a:focus-visible {
+  outline-color: #19D9F3;
+}
+
+html[data-theme="cyberpunk"] ::selection {
+  background: rgba(255, 43, 194, .72);
+  color: #FFFFFF;
+}
+
+/* Uppercase micro-labels with tracking, the one typographic tell. */
+html[data-theme="cyberpunk"] .eyebrow,
+html[data-theme="cyberpunk"] [data-eyebrow] {
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-family: var(--meta);
+  font-size: .6875rem;
+  color: var(--dim2);
+}
+
+/* Gradient rule under section heads, replacing a plain border. */
+html[data-theme="cyberpunk"] .rule-accent,
+html[data-theme="cyberpunk"] [data-rule="accent"] {
+  border: 0;
+  height: 1px;
+  background: var(--grad-h);
+  opacity: .5;
+}
+
+html[data-theme="cyberpunk"] ::-webkit-scrollbar-thumb {
+  background: var(--line-hi);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="cyberpunk"] .brand-glow { filter: none; }
+}
