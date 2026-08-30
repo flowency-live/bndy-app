@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Archivo, Archivo_Black, Chakra_Petch, Instrument_Serif, Inter, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import "./skins.css";
-import "./vibe.css";
+import "./cyberpunk.css";
 import "./signature-skins.css";
 import "./polish.css";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -59,7 +59,7 @@ export const viewport: Viewport = {
 };
 
 /** Sets skin attributes before first paint. Family/mode map must stay in sync with src/lib/appSkins.ts. */
-const NO_FLASH = `(function(){try{var M={"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],openair:["soft","dark"],roadcase:["roadcase","dark"],flyer:["flyer","light"],goldenhour:["soft","light"],underground:["mono","light"],synthwave:["soft","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(!M[s])s="bndy-dark";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
+const NO_FLASH = `(function(){try{var M={"bndy-light":["soft","light"],"bndy-dark":["soft","dark"],cyberpunk:["soft","dark"],roadcase:["roadcase","dark"],flyer:["flyer","light"],goldenhour:["soft","light"],underground:["mono","light"],synthwave:["soft","dark"],poole:["soft","dark"],hyper:["hyper","light"]};var s=localStorage.getItem("bndy-app-skin");if(s==="openair"){s="cyberpunk";localStorage.setItem("bndy-app-skin",s);}if(!M[s])s="bndy-dark";var d=document.documentElement;d.dataset.theme=s;d.dataset.family=M[s][0];d.classList.toggle("dark",M[s][1]==="dark");d.style.colorScheme=M[s][1];}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const Shell = IS_BRASS ? BrassAppShell : AppShell;

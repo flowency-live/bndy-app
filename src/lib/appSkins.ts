@@ -5,7 +5,7 @@ export type SkinFamily = "hyper" | "soft" | "mono" | "roadcase" | "flyer";
 export type SkinMode = "light" | "mid" | "dark";
 
 export type AppSkinId =
-  | "bndy-light" | "bndy-dark" | "openair" | "goldenhour"
+  | "bndy-light" | "bndy-dark" | "cyberpunk" | "goldenhour"
   | "underground" | "synthwave" | "poole" | "hyper" | "roadcase" | "flyer";
 
 export interface AppSkin {
@@ -31,8 +31,8 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
     dots: ["#F97316", "#06B6D4", "#0F1729"],
     pal: [["#F97316", "#C2410C"], ["#06B6D4", "#0E7490"], ["#F97316", "#DB2777"], ["#8B5CF6", "#06B6D4"], ["#10B981", "#F97316"]],
   },
-  openair: {
-    key: "openair", name: "Vibe", desc: "Congleton neon · cyan, magenta & violet", family: "soft", mode: "dark",
+  cyberpunk: {
+    key: "cyberpunk", name: "Cyberpunk", desc: "Neon circuit · cyan, magenta & violet", family: "soft", mode: "dark",
     dots: ["#19D9F3", "#FF2BC2", "#8B5CF6"],
     pal: [["#19D9F3", "#086F86"], ["#FF2BC2", "#8A176B"], ["#8B5CF6", "#4C2FA3"], ["#19D9F3", "#FF2BC2"], ["#6D5DFB", "#19D9F3"]],
   },
@@ -74,7 +74,7 @@ export const APP_SKINS: Record<AppSkinId, AppSkin> = {
 };
 
 export const SKIN_ORDER: AppSkinId[] = [
-  "bndy-light", "bndy-dark", "openair", "roadcase", "flyer", "goldenhour", "underground", "synthwave", "poole", "hyper",
+  "bndy-light", "bndy-dark", "cyberpunk", "roadcase", "flyer", "goldenhour", "underground", "synthwave", "poole", "hyper",
 ];
 
 export const DEFAULT_SKIN: AppSkinId = "bndy-dark";
