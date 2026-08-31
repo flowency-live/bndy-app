@@ -21,10 +21,23 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
   if (isLoading) return null;
 
   if (!isAuthenticated) {
+    if (variant === "sidebar") {
+      return (
+        <Link
+          href="/login"
+          aria-label="Join or sign in to bndy"
+          className="group block rounded-2xl border border-[var(--acc)]/45 bg-[color-mix(in_srgb,var(--acc)_8%,transparent)] px-3 py-3 transition-colors hover:border-[var(--acc)] hover:bg-[color-mix(in_srgb,var(--acc)_12%,transparent)]"
+        >
+          <span className="block text-[10px] font-black uppercase tracking-[1.1px] text-[var(--acc-text)]">Make bndy yours</span>
+          <span className="mt-0.5 block text-[13px] font-black text-txt">Join or sign in →</span>
+          <span className="mt-1 block text-[10.5px] font-semibold leading-snug text-dim">Follow favourite artists and venues, save your filters and shape discovery around you.</span>
+        </Link>
+      );
+    }
     return (
-      <Link href="/login" aria-label="Login or Register" className={cn("flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-[13.5px] font-extrabold text-txt transition-colors hover:bg-white/5", (variant === "top" || variant === "map") && "border-0 px-2")}>
+      <Link href="/login" aria-label="Join or sign in" className={cn("flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-[13.5px] font-extrabold text-txt transition-colors hover:bg-white/5", (variant === "top" || variant === "map") && "border-0 px-2")}>
         <UserRound size={18} className="text-[var(--acc)]" />
-        <span className={cn(variant === "top" && "hidden sm:inline", variant === "map" && "hidden")}>Login or Register</span>
+        <span className={cn(variant === "top" && "hidden sm:inline", variant === "map" && "hidden")}>Join or sign in</span>
       </Link>
     );
   }

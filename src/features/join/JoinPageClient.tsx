@@ -62,7 +62,7 @@ export function JoinPageClient() {
         <p className="mx-auto mt-5 max-w-xl text-[14px] font-semibold leading-relaxed text-dim sm:text-[15px]">
           {isAuthenticated
             ? "Add another artist or venue to your account. Search bndy first, then claim an existing page or add a genuinely new one."
-            : "Search for an artist or venue already on bndy, or add a genuinely new one."}
+            : "Search for your artist or venue page first. Then use a normal bndy account to claim it, or add a genuinely new one if it is not here yet."}
         </p>
       </section>
 

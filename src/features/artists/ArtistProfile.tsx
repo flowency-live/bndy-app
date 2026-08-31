@@ -8,6 +8,7 @@ import { HeroBack, HeroSocials } from "./HeroControls";
 import { ArtistEvents } from "./ArtistEvents";
 import { ArtistMedia } from "./ArtistMedia";
 import { ArtistManagementBar } from "./ArtistManagementBar";
+import { ClaimEntityLink } from "@/features/join/ClaimEntityLink";
 import { cn } from "@/lib/cn";
 import { CuratorBar } from "@/features/curator/CuratorBar";
 import { AvatarUpload } from "@/features/curator/AvatarUpload";
@@ -90,6 +91,15 @@ export function ArtistProfile({ id, artist, gigs, pastGigs, availabilityCalendar
       </div>
 
       <div className="mx-auto max-w-content px-4 lg:px-8">
+        {displayArtist && (
+          <ClaimEntityLink
+            entityType="artist"
+            entityId={id}
+            entityName={name}
+            location={displayArtist.location}
+            className="mt-4"
+          />
+        )}
         {displayArtist && (
           <CuratorBar
             target={{ kind: "artist", artist: displayArtist }}

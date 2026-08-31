@@ -10,6 +10,7 @@ import { StartFestivalLink } from "@/features/festivals/curate/CuratorFestivalLi
 import { AvatarUpload } from "@/features/curator/AvatarUpload";
 import { FlagButton } from "@/features/shared/FlagButton";
 import { safeHref } from "@/lib/safeHref";
+import { ClaimEntityLink } from "@/features/join/ClaimEntityLink";
 import type { Gig, Venue } from "@/domain/types";
 
 function gmaps(lat: number, lng: number) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
@@ -84,12 +85,22 @@ export function VenueProfile({ id, venue, gigs }: { id: string; venue: Venue | n
       <div className="mx-auto max-w-content px-4 lg:px-8">
         <VenueTicketingBanner venue={venue} />
 
-        {venue && (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {venue && (
+            <ClaimEntityLink
+              entityType="venue"
+              entityId={id}
+              entityName={name}
+              location={venue.city || venue.address}
+            />
+          )}
+          {venue && (
+            <>
             <CuratorBar target={{ kind: "venue", venue }} />
             <StartFestivalLink venueId={id} venueName={name} />
-          </div>
-        )}
+            </>
+          )}
+        </div>
         <div className="mt-4 flex max-w-md gap-2.5">
           {loc && (
             <a href={gmaps(loc.lat, loc.lng)} target="_blank" rel="noopener"
