@@ -16,7 +16,7 @@ type PriceFilter = "all" | "free" | "ticketed";
 
 export function FestivalSchedule({ festival, gigs }: { festival: Festival; gigs: Gig[] }) {
   const [selected, setSelected] = useState<Gig | null>(null);
-  const [view, setView] = useState<ScheduleView>("time");
+  const [view, setView] = useState<ScheduleView>("venue");
   const [price, setPrice] = useState<PriceFilter>("all");
   const [venueId, setVenueId] = useState("");
   const [todayOnly, setTodayOnly] = useState(false);
@@ -261,6 +261,12 @@ function VenueView({ gigs, imgMap, onPick }: { gigs: Gig[]; imgMap: Map<string, 
           return <BlockPanel key={venueGigs[0].venueId} block={items[0]} imgMap={imgMap} onPick={onPick} first={vi === 0} />;
         }
         const times = venueGigs.map((g) => g.startTime).filter((t): t is string => !!t).sort();
+
+        // Group gigs by time period within this venue
+        const sorted = [...venueGigs].sort((a, b) => (a.startTime || "99:99").localeCompare(b.startTime || "99:99"));
+        const periods = new Set(sorted.map((g) => dayPeriod(g.startTime)));
+        const showPeriods = sorted.length >= 4 && periods.size > 1;
+
         return (
           <div key={venueGigs[0].venueId} className={vi === 0 ? "" : "border-t border-line"}>
             <div className="flex items-center gap-2 px-3 py-2.5 sm:px-4" style={{ background: "color-mix(in srgb, var(--acc) 9%, var(--card2))" }}>
@@ -271,13 +277,33 @@ function VenueView({ gigs, imgMap, onPick }: { gigs: Gig[]; imgMap: Map<string, 
                 {times.length ? ` · from ${formatTime(times[0])}` : ""}
               </span>
             </div>
-            {venueGigs.map((g) => (
-              <ProgrammeRow key={g.id} gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} onPick={onPick} first={false} hideVenue />
-            ))}
+            {(() => {
+              let lastPeriod: DayPeriod | null = null;
+              return sorted.map((g, gi) => {
+                const period = dayPeriod(g.startTime);
+                const needsHeader = showPeriods && period !== lastPeriod;
+                lastPeriod = period;
+                return (
+                  <div key={g.id}>
+                    {needsHeader && <VenuePeriodHeader label={DAY_PERIOD_LABEL[period]} />}
+                    <ProgrammeRow gig={g} imageUrl={g.artistId ? imgMap.get(g.artistId) : undefined} onPick={onPick} first={gi === 0 && !needsHeader} hideVenue />
+                  </div>
+                );
+              });
+            })()}
           </div>
         );
       })}
     </>
+  );
+}
+
+function VenuePeriodHeader({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 border-t border-line bg-card px-3 py-1.5 sm:px-4">
+      <span className="h-1.5 w-1.5 rotate-45 bg-[var(--acc2)]" />
+      <span className="font-meta text-[8px] font-black uppercase tracking-[1.6px] text-dim">{label}</span>
+    </div>
   );
 }
 

@@ -314,8 +314,9 @@ export async function fetchVenues(): Promise<Venue[]> {
   const data = await get<VenueDTO[]>("/api/venues", 600);
   return data.map(toVenue).filter((v): v is Venue => v !== null);
 }
-export async function fetchArtists(): Promise<Artist[]> {
-  const data = await get<ArtistDTO[]>("/api/artists", 600);
+export async function fetchArtists(params?: { gigging?: boolean }): Promise<Artist[]> {
+  const q = params?.gigging ? "?gigging=true" : "";
+  const data = await get<ArtistDTO[]>(`/api/artists${q}`, params?.gigging ? 120 : 600);
   return data.map(toArtist);
 }
 export async function fetchVenue(id: string): Promise<Venue | null> {

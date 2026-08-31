@@ -84,9 +84,18 @@ export function useVenue(id: string) {
   return useQuery({ queryKey: ["venue", id], queryFn: () => fetchVenue(id), enabled: !!id, staleTime: 10 * MIN });
 }
 
-/** Same opt-in gate as venues for screens that only need artists in a later tab/state. */
-export function useArtists(enabled = true) {
-  return useQuery({ queryKey: ["artists"], queryFn: fetchArtists, enabled, staleTime: 10 * MIN, gcTime: 30 * MIN });
+/** Same opt-in gate as venues for screens that only need artists in a later tab/state.
+ * Pass `{ gigging: true }` to fetch only artists with upcoming gigs (~80% smaller payload). */
+export function useArtists(opts?: { enabled?: boolean; gigging?: boolean } | boolean) {
+  const enabled = typeof opts === "boolean" ? opts : opts?.enabled ?? true;
+  const gigging = typeof opts === "boolean" ? false : opts?.gigging ?? false;
+  return useQuery({
+    queryKey: ["artists", gigging ? "gigging" : "all"],
+    queryFn: () => fetchArtists({ gigging }),
+    enabled,
+    staleTime: gigging ? 2 * MIN : 10 * MIN,
+    gcTime: 30 * MIN,
+  });
 }
 export function useArtist(id: string) {
   return useQuery({ queryKey: ["artist", id], queryFn: () => fetchArtist(id), enabled: !!id, staleTime: 10 * MIN });

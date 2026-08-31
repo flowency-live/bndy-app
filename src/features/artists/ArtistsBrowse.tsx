@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { Heart, Search } from "lucide-react";
+import { CalendarCheck, Heart, Search, Users } from "lucide-react";
 import { useArtists, useUpcomingGigsBasic } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useFavourites } from "@/lib/favourites";
@@ -11,11 +11,14 @@ import { cn } from "@/lib/cn";
 import { Deferred } from "@/components/DeferredSection";
 
 export function ArtistsBrowse() {
-  const { data: artists = [], isLoading } = useArtists();
-  // Only need existence of an upcoming gig here. Avoid festival enrichment and
-  // My Gigs filter leakage into the artist directory's gigging indicator.
-  const { data: gigs = [] } = useUpcomingGigsBasic();
-  const gigging = useMemo(() => new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)), [gigs]);
+  const [giggingOnly, setGiggingOnly] = useState(true);
+  const { data: artists = [], isLoading } = useArtists({ gigging: giggingOnly });
+  // When showing all artists, we need gigging indicator data
+  const { data: gigs = [] } = useUpcomingGigsBasic(!giggingOnly);
+  const gigging = useMemo(
+    () => giggingOnly ? null : new Set(gigs.map((g) => g.artistId).filter((x): x is string => !!x)),
+    [gigs, giggingOnly],
+  );
   const [q, setQ] = useState("");
   const { isAuthenticated } = useAuth();
   const { artistSet: favArtists } = useFavourites();
@@ -39,7 +42,7 @@ export function ArtistsBrowse() {
       <header className="mb-4 hidden lg:block">
         <h1 className="text-4xl font-black tracking-tight">Artists</h1>
         <p className="mt-1 text-[15px] font-semibold text-dim">
-          {isLoading ? "Loading…" : `${artists.length} artists gigging on bndy`}
+          {isLoading ? "Loading…" : giggingOnly ? `${artists.length} artists with upcoming gigs` : `${artists.length} artists on bndy`}
         </p>
       </header>
 
@@ -71,16 +74,28 @@ export function ArtistsBrowse() {
             </button>
           )}
         </div>
-        <div
-          className="flex w-[76px] shrink-0 flex-col items-center justify-center rounded-[var(--rad)] border border-line px-2 py-2 text-center"
-          style={{ background: "color-mix(in srgb, var(--acc) 10%, var(--glass))", borderColor: "color-mix(in srgb, var(--acc) 30%, var(--line))" }}
+        <button
+          onClick={() => setGiggingOnly((v) => !v)}
+          aria-pressed={giggingOnly}
+          aria-label={giggingOnly ? "Show all artists" : "Show only artists with upcoming gigs"}
+          className={cn(
+            "flex w-[76px] shrink-0 flex-col items-center justify-center rounded-2xl border px-2 py-2 text-center transition-colors active:scale-95",
+            giggingOnly
+              ? "border-[color-mix(in_srgb,var(--acc)_30%,var(--line))] bg-[color-mix(in_srgb,var(--acc)_10%,var(--glass))]"
+              : "border-line glass",
+          )}
         >
-          <div className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : artists.length}</div>
-          <div className="font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px] text-[var(--acc)]">Artists</div>
-        </div>
+          <div className="flex items-center gap-1">
+            {giggingOnly ? <CalendarCheck size={14} className="text-[var(--acc)]" /> : <Users size={14} className="text-dim" />}
+            <span className="tnum text-[18px] font-black leading-none text-txt">{isLoading ? "…" : artists.length}</span>
+          </div>
+          <div className={cn("font-meta mt-1 text-[8px] font-extrabold uppercase tracking-[1.5px]", giggingOnly ? "text-[var(--acc)]" : "text-dim")}>
+            {giggingOnly ? "Gigging" : "All"}
+          </div>
+        </button>
       </div>
 
-      <div className="mb-2 hidden items-center gap-2 lg:flex lg:max-w-md">
+      <div className="mb-2 hidden items-center gap-2 lg:flex lg:max-w-xl">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
           <input
@@ -92,6 +107,20 @@ export function ArtistsBrowse() {
             className="w-full rounded-2xl border border-line glass px-10 py-3 text-[15px] font-semibold outline-none placeholder:text-dim focus:border-orange/55"
           />
         </div>
+        <button
+          onClick={() => setGiggingOnly((v) => !v)}
+          aria-pressed={giggingOnly}
+          aria-label={giggingOnly ? "Show all artists" : "Show only artists with upcoming gigs"}
+          className={cn(
+            "flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-3 text-[13px] font-bold transition-colors active:scale-95",
+            giggingOnly
+              ? "border-[color-mix(in_srgb,var(--acc)_60%,transparent)] bg-[color-mix(in_srgb,var(--acc)_22%,var(--glass))] text-[var(--acc)]"
+              : "border-line glass text-dim hover:text-txt",
+          )}
+        >
+          {giggingOnly ? <CalendarCheck size={16} /> : <Users size={16} />}
+          {giggingOnly ? "Gigging" : "All artists"}
+        </button>
         {isAuthenticated && (
           <button
             onClick={() => setFavOnly((v) => !v)}
@@ -121,7 +150,7 @@ export function ArtistsBrowse() {
                 </div>
                 <Deferred count={g.items.length}>
                   <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 2xl:grid-cols-8">
-                    {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={gigging.has(a.id)} priority={idx++ < 8} />)}
+                    {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={giggingOnly || gigging?.has(a.id)} priority={idx++ < 8} />)}
                   </div>
                 </Deferred>
               </section>
