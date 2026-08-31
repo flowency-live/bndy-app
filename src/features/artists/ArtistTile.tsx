@@ -10,6 +10,7 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging, priority }
   const [failed, setFailed] = useState(false);
   const showImg = !!artist.profileImageUrl && !failed;
   const act = artist.actType?.[0];
+  const subtitle = artist.location?.split(",")[0].trim() || undefined;
 
   return (
     <div className="bndy-card bndy-tile group relative aspect-square overflow-hidden border border-line bg-card">
@@ -48,6 +49,11 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging, priority }
             </span>
           )}
           <span className="block truncate text-[12.5px] font-black leading-tight text-white [text-shadow:0_1px_5px_rgba(0,0,0,.95)]">{artist.name}</span>
+          {/* Town: the second thing that tells same-named acts apart, and the
+              only extra the tile can carry without crowding at 3 columns. */}
+          {subtitle && (
+            <span className="mt-px block truncate text-[9.5px] font-bold text-white/75 [text-shadow:0_1px_4px_rgba(0,0,0,.95)]">{subtitle}</span>
+          )}
         </span>
       </Link>
 
