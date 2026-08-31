@@ -12,7 +12,7 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging }: { artist
   const act = artist.actType?.[0];
 
   return (
-    <div className="bndy-card group relative aspect-square overflow-hidden rounded-xl border border-line bg-card">
+    <div className="bndy-card bndy-tile group relative aspect-square overflow-hidden border border-line bg-card">
       <Link href={`/artists/${artist.id}`} aria-label={`View ${artist.name}`} className="absolute inset-0 z-0 block">
         {showImg ? (
           // eslint-disable-next-line @next/next/no-img-element

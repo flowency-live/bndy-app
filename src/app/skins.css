@@ -149,6 +149,27 @@ html[data-theme="synthwave"] {
   --pin-bd: rgba(242, 233, 255, .9); --pin-sh: 0 0 12px rgba(255, 126, 219, .95), 0 0 30px rgba(255, 126, 219, .5);
   --pin2-sh: 0 0 12px rgba(54, 249, 246, .9), 0 0 28px rgba(54, 249, 246, .45); --pin-stem: rgba(242, 233, 255, .5);
 }
+/* ---------------- SYNTHWAVE SUNRISE (light variant of Synthwave · soft) ----------------
+   Same neon language read at midday: pink and cyan on warm off-white.
+   Accents are darkened from the dark variant so they clear AA on paper. */
+html[data-theme="synthwave-light"] {
+  --ink-rgb: 255 246 250;
+  --surface: #FFF6FA; --card: #FFFFFF; --card2: #FBEAF3;
+  --txt: #2B1B3D; --dim: #6B5480; --dim2: #A08CB4;
+  --line: rgba(194, 30, 99, .22); --line-hi: rgba(194, 30, 99, .4); --bw: 1px; --rad: 14px; --rad-lg: 18px;
+  --glass: rgba(255, 246, 250, 0.78); --glass-hi: rgba(255, 255, 255, 0.94);
+  --sh: 0 6px 18px rgba(43, 27, 61, .1); --sh-lg: 0 8px 30px rgba(194, 30, 99, .16); --sh-hover: 0 12px 30px rgba(14, 116, 144, .2);
+  --shadow: var(--sh);
+  --acc: #C21E63; --on-acc: #fff; --acc2: #0E7490; --on-acc2: #fff; --hl: #F5B301; --on-hl: #2B1B00;
+  --disp: var(--font-chakra), sans-serif; --disp-wt: 700; --disp-case: uppercase;
+  --ui: var(--font-grotesk), var(--font-inter), sans-serif; --meta: var(--font-space-mono), monospace; --ital: var(--font-grotesk), sans-serif;
+  --tick-bg: #2B1B3D; --tick-fg: #FFD9EC; --tick-hl: #F5B301;
+  --dayhead-bg: #2B1B3D; --dayhead-fg: #E9DCF2; --dayhead-hot-bg: #C21E63; --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #0E7490; --stub-fg: #FFFFFF;
+  --m-bg: #FDF1F7; --m-block: #FFFFFF; --m-road1: #E7D3E0; --m-road2: #F2E2EC;
+  --m-river: #CFEAF0; --m-park: #DCEEDB; --m-lab: #9E86AE;
+  --pin-bd: #fff; --pin-sh: 0 3px 12px rgba(194, 30, 99, .38); --pin2-sh: 0 3px 12px rgba(14, 116, 144, .35); --pin-stem: #2B1B3D;
+}
 /* ---------------- BLACKOUT (venue mono · mono · .dark) ---------------- */
 html[data-theme="blackout"] {
   --ink-rgb: 0 0 0;
@@ -258,6 +279,13 @@ a.bndy-stub:hover{filter:brightness(1.12)}
 
 /* ============ family flourishes: cards / buttons / chips ============ */
 /* (gig-list day headers intentionally NOT included yet  -  pending side-by-side) */
+
+/* Square media tiles (artist grid). A theme may set a pill --rad for chips and
+   buttons; a square photo tile must never become a circle, which crops the
+   artwork and clips the name. Underground (--rad:999px) is why this exists.
+   Specificity beats the html[data-family] .bndy-card rules below. */
+html[data-family] .bndy-card.bndy-tile,
+html .bndy-card.bndy-tile { border-radius: min(var(--rad), 16px); }
 
 /* .bndy-card  -  tappable list cards & tiles */
 .bndy-card{transition:transform .16s cubic-bezier(.2,.9,.3,1.25),box-shadow .16s}

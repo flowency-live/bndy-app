@@ -43,7 +43,7 @@ export function BrassAppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <SkinControl variant="sidebar" />
+        <SkinControl display="sidebar" />
       </aside>
 
       <main className="lg:pl-60" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}>{children}</main>
@@ -60,7 +60,7 @@ export function BrassAppShell({ children }: { children: ReactNode }) {
           );
         })}
       </nav>
-      <SkinControl variant="fab" side="left" />
+      <SkinControl display="fab" side="left" />
     </div>
   );
 }

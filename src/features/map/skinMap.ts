@@ -17,14 +17,16 @@ export type BasemapKey = keyof typeof BASEMAP_URLS;
 const BASEMAP_BY_SKIN: Record<AppSkinId, BasemapKey> = {
   "bndy-light": "light",
   "bndy-dark": "dark",
+  hyper: "light",
   cyberpunk: "dark",
+  "roadcase-light": "voyager",
   roadcase: "dark",
   flyer: "voyager",
-  goldenhour: "voyager",
-  underground: "light",
+  "flyer-dark": "dark",
+  "synthwave-light": "light",
   synthwave: "dark",
+  underground: "light",
   poole: "dark",
-  hyper: "light",
 };
 export function basemapFor(skin: AppSkinId): string {
   return BASEMAP_URLS[BASEMAP_BY_SKIN[skin] ?? (APP_SKINS[skin]?.mode === "dark" ? "dark" : "light")];

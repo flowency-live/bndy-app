@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Sheet } from "@/components/ui/Sheet";
 import { useTheme } from "@/lib/theme";
-import { APP_SKINS, SKIN_ORDER, type AppSkinId, type SkinMode } from "@/lib/appSkins";
+import { APP_SKINS, THEMES, skinFor, type AppSkinId, type SkinMode, type SkinVariant, type ThemeId } from "@/lib/appSkins";
 import { cn } from "@/lib/cn";
 
 function Swatch({ dots, size = 18 }: { dots: [string, string, string]; size?: number }) {
@@ -43,7 +43,7 @@ function ModeBadge({ mode }: { mode: SkinMode }) {
   );
 }
 
-export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | "fab" | "map"; side?: "left" | "right" }) {
+export function SkinControl({ display, side = "right" }: { display: "sidebar" | "fab" | "map"; side?: "left" | "right" }) {
   const [open, setOpen] = useState(false);
   const [wiping, setWiping] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -53,7 +53,7 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
     timersRef.current.forEach((id) => window.clearTimeout(id));
     timersRef.current = [];
   }, []);
-  const { appSkin, setAppSkin } = useTheme();
+  const { appSkin, setAppSkin, theme, variant } = useTheme();
   const current = APP_SKINS[appSkin];
 
   const pick = useCallback(
@@ -78,7 +78,7 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
 
   return (
     <>
-      {variant === "sidebar" && (
+      {display === "sidebar" && (
         <button
           onClick={() => setOpen(true)}
           className="mt-2 flex w-full shrink-0 items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-[14px] font-bold text-dim transition-colors hover:text-txt"
@@ -88,7 +88,7 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
           <span className="shrink-0 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-dim2">{modeLabel(current.mode)}</span>
         </button>
       )}
-      {variant === "fab" && (
+      {display === "fab" && (
         <button
           onClick={() => setOpen(true)}
           aria-label="Choose your skin"
@@ -101,7 +101,7 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
           <Swatch dots={current.dots} size={22} />
         </button>
       )}
-      {variant === "map" && (
+      {display === "map" && (
         <button
           onClick={() => setOpen(true)}
           aria-label="Choose your skin"
@@ -115,17 +115,53 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
 
       <Sheet open={open} onClose={() => setOpen(false)}>
         <h2 className="disp text-lg text-txt">Choose your skin</h2>
-        <p className="mb-4 mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-dim2">
+        <p className="mb-3 mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-dim2">
           Same gigs · your vibe · switches live
         </p>
-        <div className="grid grid-cols-2 gap-2.5 pb-2">
-          {SKIN_ORDER.map((key) => {
-            const s = APP_SKINS[key];
-            const cur = key === appSkin;
+
+        {/* One control for light/dark. Every theme below honours it, so a skin
+            is still a single click: the card applies the theme in this state. */}
+        <div
+          role="radiogroup"
+          aria-label="Light or dark"
+          className="mb-4 flex gap-1 rounded-[var(--rad)] border border-line bg-card p-1"
+        >
+          {(["light", "dark"] as SkinVariant[]).map((v) => {
+            const on = variant === v;
             return (
               <button
-                key={key}
+                key={v}
+                role="radio"
+                aria-checked={on}
+                onClick={() => { if (!on) pick(skinFor(theme, v)); }}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-2 rounded-[calc(var(--rad)-2px)] px-3 py-2 text-[12.5px] font-bold transition-colors",
+                  on ? "bg-acc text-on-acc" : "text-dim hover:text-txt",
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="h-3 w-3 rounded-full border"
+                  style={v === "light"
+                    ? { background: "#f8fafc", borderColor: "rgba(15,23,42,.35)" }
+                    : { background: "#0b0d12", borderColor: "rgba(255,255,255,.45)" }}
+                />
+                {v === "light" ? "Light" : "Dark"}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5 pb-2">
+          {THEMES.map((t) => {
+            const key = skinFor(t.id, variant);
+            const s = APP_SKINS[key];
+            const cur = t.id === theme;
+            return (
+              <button
+                key={t.id}
                 onClick={() => pick(key)}
+                aria-pressed={cur}
                 className={cn(
                   "rounded-[var(--rad)] border bg-card p-3 text-left transition-transform hover:-translate-y-0.5 active:scale-[.98]",
                   cur ? "border-transparent outline outline-2 outline-offset-1 outline-[var(--acc)]" : "border-line",
@@ -139,7 +175,7 @@ export function SkinControl({ variant, side = "right" }: { variant: "sidebar" | 
                   </span>
                   <ModeBadge mode={s.mode} />
                 </span>
-                <span className="block text-[13.5px] font-bold text-txt">{s.name}</span>
+                <span className="block text-[13.5px] font-bold text-txt">{t.name}</span>
                 <span className="mt-0.5 block text-[10.5px] leading-snug text-dim2">{s.desc}</span>
                 {cur && (
                   <span className="mt-1.5 block font-mono text-[8px] uppercase tracking-[0.15em] text-[var(--acc)]">

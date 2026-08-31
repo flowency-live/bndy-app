@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { APP_SKINS, DEFAULT_SKIN, isAppSkinId, type AppSkinId } from "@/lib/appSkins";
+import {
+  APP_SKINS, DEFAULT_SKIN, counterpart, resolveSkinId, skinFor,
+  type AppSkinId, type SkinVariant, type ThemeId,
+} from "@/lib/appSkins";
 
 export type ThemeMode = "light" | "dark";
 /** Map-marker skin (map module registry)  -  unchanged legacy concept. */
@@ -20,6 +23,13 @@ interface ThemeCtx {
   /** The 9-skin app system  -  spec: SKINS-SYSTEM-SPEC.md */
   appSkin: AppSkinId;
   setAppSkin: (s: AppSkinId) => void;
+  /** Theme + variant view of the same choice (picker uses these). */
+  theme: ThemeId;
+  variant: SkinVariant;
+  /** Keep the variant, change the identity. */
+  setTheme: (t: ThemeId) => void;
+  /** Keep the identity, change light/dark. */
+  setVariant: (v: SkinVariant) => void;
 }
 const Ctx = createContext<ThemeCtx | null>(null);
 
@@ -45,11 +55,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(APP_SKIN_KEY);
-      // Legacy id migration: "openair" (shipped as "Vibe") is now "cyberpunk".
-      const a = raw === "openair" ? "cyberpunk" : raw;
-      if (isAppSkinId(a)) {
+      // Retired ids map forward (LEGACY_SKIN_MAP), so a stored choice is never lost.
+      const a = resolveSkinId(raw);
+      if (a) {
         setAppSkinState(a);
         if (a !== raw) { try { localStorage.setItem(APP_SKIN_KEY, a); } catch { /* ignore */ } }
+      } else if (raw === null) {
+        // First visit: follow the device setting, keeping the default identity.
+        const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
+        setAppSkinState(skinFor(APP_SKINS[DEFAULT_SKIN].theme, prefersDark ? "dark" : "light"));
       }
       const s = localStorage.getItem(MAP_SKIN_KEY) as SkinId | null;
       if (s === "pulse" || s === "aurora" || s === "neon-dot") setSkinState(s);
@@ -70,8 +84,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     (m: ThemeMode) => setAppSkinState(m === "dark" ? "bndy-dark" : "bndy-light"),
     [],
   );
-  const toggle = useCallback(
-    () => setAppSkinState((cur) => (APP_SKINS[cur].mode === "dark" ? "bndy-light" : "bndy-dark")),
+  // Toggling light/dark keeps the chosen identity: Synthwave stays Synthwave.
+  const toggle = useCallback(() => setAppSkinState((cur) => counterpart(cur)), []);
+  const theme = APP_SKINS[appSkin].theme;
+  const variant = APP_SKINS[appSkin].variant;
+  const setTheme = useCallback(
+    (t: ThemeId) => setAppSkinState((cur) => skinFor(t, APP_SKINS[cur].variant)),
+    [],
+  );
+  const setVariant = useCallback(
+    (v: SkinVariant) => setAppSkinState((cur) => skinFor(APP_SKINS[cur].theme, v)),
     [],
   );
   const setSkin = useCallback((s: SkinId) => {
@@ -80,8 +102,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ mode, setMode, toggle, skin, setSkin, appSkin, setAppSkin }),
-    [mode, setMode, toggle, skin, setSkin, appSkin, setAppSkin],
+    () => ({ mode, setMode, toggle, skin, setSkin, appSkin, setAppSkin, theme, variant, setTheme, setVariant }),
+    [mode, setMode, toggle, skin, setSkin, appSkin, setAppSkin, theme, variant, setTheme, setVariant],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

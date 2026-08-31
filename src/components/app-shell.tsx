@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
         <p className="mx-auto max-w-5xl px-4 pb-4 text-[12px] font-bold uppercase tracking-[1.5px] text-dim2 lg:px-8">Keeping live music alive</p>
         <main>{children}</main>
-        <SkinControl variant="fab" />
+        <SkinControl display="fab" />
         <MyGigFilterHost />
       </div>
     );
@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <CircleHelp size={19} className={path.startsWith("/help") ? "text-[var(--acc)]" : ""} />
           Help
         </Link>
-        <SkinControl variant="sidebar" />
+        <SkinControl display="sidebar" />
       </aside>
 
       <main className="lg:pl-60" style={{ paddingTop: `calc(1.5rem + env(safe-area-inset-top, 0px))` }}>{children}</main>
@@ -156,7 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden">
         <UserButton variant="map" />
       </div>
-      <SkinControl variant="fab" side="left" />
+      <SkinControl display="fab" side="left" />
       {gigDiscoveryView && <MyGigsQuickControl />}
       <MyGigFilterHost />
 

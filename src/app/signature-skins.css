@@ -154,6 +154,117 @@ html[data-family="roadcase"] [class*="rounded-"][class*="border-line"] {
   border-radius:3px !important;
 }
 
+/* ---------------- ROADCASE DAY (light variant) ----------------
+   Same hardware language in daylight: kraft board, stencil ink, stamp red.
+   Family material overrides live below with the dark variant. */
+html[data-theme="roadcase-light"] {
+  --ink-rgb: 242 237 227;
+  --surface: #F2EDE3;
+  --card: #FBF8F1;
+  --card2: #EAE3D5;
+  --txt: #17161A;
+  --dim: #4B4841;
+  --dim2: #7E7A70;
+  --line: #9A948A;
+  --line-hi: #2E2C28;
+  --bw: 1.5px;
+  --rad: 3px;
+  --rad-lg: 6px;
+  --glass: rgba(251, 248, 241, .92);
+  --glass-hi: rgba(255, 253, 249, .97);
+  --sh: 0 4px 0 #C9C2B4, 0 8px 18px rgba(23, 22, 26, .12);
+  --sh-lg: 0 7px 0 #C9C2B4, 0 14px 30px rgba(23, 22, 26, .18);
+  --sh-hover: 0 0 0 1px #2E2C28, 0 7px 0 #C9C2B4, 0 16px 28px rgba(23, 22, 26, .2);
+  --shadow: var(--sh);
+  --acc: #C8341F;
+  --on-acc: #FFFFFF;
+  --acc2: #46505A;
+  --on-acc2: #FFFFFF;
+  --hl: #B8860B;
+  --on-hl: #FFFFFF;
+  --disp: var(--font-archivo-black), sans-serif;
+  --disp-wt: 400;
+  --disp-case: uppercase;
+  --ui: var(--font-archivo), var(--font-inter), sans-serif;
+  --meta: var(--font-space-mono), monospace;
+  --ital: var(--font-space-mono), monospace;
+  --tick-bg: #17161A;
+  --tick-fg: #EFEAE0;
+  --tick-hl: #C8341F;
+  --dayhead-bg: #17161A;
+  --dayhead-fg: #EFEAE0;
+  --dayhead-hot-bg: #C8341F;
+  --dayhead-hot-fg: #FFFFFF;
+  --stub-bg: #46505A;
+  --stub-fg: #FFFFFF;
+  --m-bg: #F0EADF;
+  --m-block: #FAF6EE;
+  --m-road1: #D3CBBC;
+  --m-road2: #E3DCCE;
+  --m-river: #C2D8E0;
+  --m-park: #D2DEC4;
+  --m-lab: #858076;
+  --pin-bd: #17161A;
+  --pin-sh: 0 0 0 2px #FBF8F1, 0 0 0 4px #C8341F, 0 5px 12px rgba(23, 22, 26, .3);
+  --pin2-sh: 0 0 0 2px #FBF8F1, 0 0 0 4px #46505A, 0 5px 12px rgba(23, 22, 26, .3);
+  --pin-stem: #46505A;
+}
+
+/* ---------------- FLYER NIGHT (dark variant: chalkboard) ----------------
+   The venue wall after close: slate board, chalk white, dusty chalk brights. */
+html[data-theme="flyer-dark"] {
+  --ink-rgb: 20 24 26;
+  --surface: #14181A;
+  --card: #1B2124;
+  --card2: #242B2E;
+  --txt: #F2F0E6;
+  --dim: #BDBFB4;
+  --dim2: #7F857F;
+  --line: #E9E6DA;
+  --line-hi: #FFFFFF;
+  --bw: 2px;
+  --rad: 1px;
+  --rad-lg: 2px;
+  --glass: rgba(20, 24, 26, .92);
+  --glass-hi: rgba(27, 33, 36, .97);
+  --sh: 4px 4px 0 #0B0E0F;
+  --sh-lg: 7px 7px 0 #0B0E0F;
+  --sh-hover: 8px 8px 0 #79D2E0;
+  --shadow: var(--sh);
+  --acc: #F2D857;
+  --on-acc: #14181A;
+  --acc2: #79D2E0;
+  --on-acc2: #05252B;
+  --hl: #FF8BB0;
+  --on-hl: #2B0A16;
+  --disp: var(--font-archivo-black), sans-serif;
+  --disp-wt: 400;
+  --disp-case: uppercase;
+  --ui: var(--font-archivo), var(--font-inter), sans-serif;
+  --meta: var(--font-space-mono), monospace;
+  --ital: var(--font-instrument), serif;
+  --tick-bg: #0B0E0F;
+  --tick-fg: #E9E6DA;
+  --tick-hl: #F2D857;
+  --dayhead-bg: #1B2124;
+  --dayhead-fg: #DCD9CC;
+  --dayhead-hot-bg: #F2D857;
+  --dayhead-hot-fg: #14181A;
+  --stub-bg: #79D2E0;
+  --stub-fg: #05252B;
+  --m-bg: #101416;
+  --m-block: #1A2023;
+  --m-road1: #2E3639;
+  --m-road2: #222A2D;
+  --m-river: #16303A;
+  --m-park: #17291B;
+  --m-lab: #8B918A;
+  --pin-bd: #E9E6DA;
+  --pin-sh: 3px 3px 0 #0B0E0F;
+  --pin2-sh: 3px 3px 0 #0B0E0F;
+  --pin-stem: #E9E6DA;
+}
+
 /* ---------------- FLYER ---------------- */
 html[data-theme="flyer"] {
   --ink-rgb: 232 220 197;
@@ -319,4 +430,83 @@ html[data-family="flyer"] .disp {
 @media (prefers-reduced-motion: reduce) {
   html[data-family="flyer"] .bndy-card,
   html[data-family="flyer"] .bndy-btn { transform:none; }
+}
+
+/* ============================================================
+   MATERIAL OVERRIDES FOR THE LIGHT/DARK COUNTERPARTS
+   The family layers above carry the material language and are written
+   for the original variant. These blocks re-light that same material.
+   Theme selectors are more specific than the family selectors, so only
+   the surfaces that must change are restated.
+   ============================================================ */
+
+/* ---- Roadcase Day: kraft board and stencil ink instead of black steel ---- */
+html[data-theme="roadcase-light"] body {
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(circle at 20% 12%, rgba(23,22,26,.05) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 73% 67%, rgba(23,22,26,.04) 0 1px, transparent 1.5px),
+    repeating-linear-gradient(91deg, rgba(23,22,26,.022) 0 1px, transparent 1px 7px),
+    linear-gradient(135deg,#F5F0E7 0%,#EBE5D9 52%,#F5F0E7 100%);
+  background-size: 19px 19px, 23px 23px, auto, auto;
+}
+html[data-theme="roadcase-light"] body::before { opacity:.06; mix-blend-mode:multiply; }
+html[data-theme="roadcase-light"] .glass,
+html[data-theme="roadcase-light"] .glass-hi {
+  background-color:#FBF8F1;
+  background-image:
+    linear-gradient(90deg,rgba(23,22,26,.04),transparent 13%,transparent 87%,rgba(23,22,26,.03)),
+    repeating-linear-gradient(0deg,rgba(23,22,26,.02) 0 1px,transparent 1px 4px);
+  border-color:#B6AFA2;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(23,22,26,.12), 0 5px 18px rgba(23,22,26,.1);
+}
+html[data-theme="roadcase-light"] .bndy-card {
+  border-color:#B6AFA2;
+  box-shadow:inset 0 0 0 1px #FFFFFF,var(--sh);
+  background-image:linear-gradient(145deg,rgba(23,22,26,.03),transparent 38%);
+}
+/* brass screws read better than chrome on board */
+html[data-theme="roadcase-light"] .bndy-card::before,
+html[data-theme="roadcase-light"] .bndy-card::after {
+  background:radial-gradient(circle at 35% 30%,#FFFFFF 0,#C9B98C 38%,#8A7B4E 70%,#5A4F30 100%);
+  box-shadow:0 1px 2px rgba(23,22,26,.35);
+}
+html[data-theme="roadcase-light"] .bndy-btn {
+  border-color:#8E2517;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),0 4px 0 #8E2517;
+}
+html[data-theme="roadcase-light"] .bndy-btn:active{box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),0 1px 0 #8E2517}
+html[data-theme="roadcase-light"] .bndy-btn2,
+html[data-theme="roadcase-light"] .bndy-chip {
+  border-color:#9A948A;
+  background-image:linear-gradient(180deg,#FFFFFF,#EFE9DD);
+}
+html[data-theme="roadcase-light"] .brand-glow{text-shadow:none;filter:drop-shadow(2px 2px 0 rgba(23,22,26,.25))}
+html[data-theme="roadcase-light"] ::selection{background:#C8341F;color:#fff}
+
+/* ---- Flyer Night: chalkboard instead of pasted paper ---- */
+html[data-theme="flyer-dark"] body {
+  background-color:#14181A;
+  background-image:
+    linear-gradient(8deg,transparent 0 71%,rgba(255,255,255,.035) 71.2%,transparent 71.8%),
+    linear-gradient(-13deg,transparent 0 38%,rgba(255,255,255,.05) 38.4%,transparent 39%),
+    radial-gradient(ellipse at 14% 28%,rgba(242,216,87,.07) 0 8%,transparent 8.5%),
+    radial-gradient(ellipse at 86% 68%,rgba(121,210,224,.06) 0 11%,transparent 11.5%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px);
+}
+/* chalk dust rather than paper grain */
+html[data-theme="flyer-dark"] body::before { opacity:.09; mix-blend-mode:screen; }
+html[data-theme="flyer-dark"] .glass,
+html[data-theme="flyer-dark"] .glass-hi {
+  background-color:#1B2124;
+  border-color:#3A4247;
+}
+html[data-theme="flyer-dark"] .bndy-card { border-color:#E9E6DA; }
+html[data-theme="flyer-dark"] .bndy-card:active{box-shadow:1px 1px 0 #0B0E0F}
+html[data-theme="flyer-dark"] .bndy-btn:hover{box-shadow:7px 7px 0 #79D2E0}
+html[data-theme="flyer-dark"] .bndy-btn:active{box-shadow:1px 1px 0 #0B0E0F}
+html[data-theme="flyer-dark"] .brand-glow{text-shadow:2px 2px 0 #79D2E0,-1px -1px 0 #FF8BB0;filter:none}
+html[data-theme="flyer-dark"] ::selection{background:#79D2E0;color:#05252B}
+html[data-theme="flyer-dark"] .disp {
+  text-shadow:1px 0 0 rgba(242,216,87,.3),-1px 0 0 rgba(121,210,224,.26);
 }
