@@ -9,6 +9,7 @@ import { LiveTicker } from "@/components/LiveTicker";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { UserButton } from "@/features/auth/UserButton";
 import { MyGigFilterHost, MyGigsInlineControl, MyGigsQuickControl } from "@/features/gigs/MyGigTools";
+import { OnboardingNudge, useProfilePulse } from "@/components/OnboardingNudge";
 import { cn } from "@/lib/cn";
 import { Disclaimer } from "@/components/Disclaimer";
 import type { ReactNode } from "react";
@@ -29,6 +30,20 @@ function activeKey(path: string, mapMode: string | null): string {
   if (path.startsWith("/map") && mapMode === "venues") return "venues";
   if (path.startsWith("/map") || path === "/") return "map";
   return "none";
+}
+
+function ProfileButtonMobile() {
+  const shouldPulse = useProfilePulse();
+  return (
+    <div
+      className={cn(
+        "fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden",
+        shouldPulse && "profile-pulse",
+      )}
+    >
+      <UserButton variant="map" />
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -153,9 +168,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         })}
       </nav>
 
-      <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-[4.75rem] z-40 flex h-12 w-12 items-center justify-center rounded-full border border-line glass-hi shadow-[var(--shadow)] lg:hidden">
-        <UserButton variant="map" />
-      </div>
+      <ProfileButtonMobile />
+      <OnboardingNudge />
       <SkinControl display="fab" side="left" />
       {gigDiscoveryView && <MyGigsQuickControl />}
       <MyGigFilterHost />

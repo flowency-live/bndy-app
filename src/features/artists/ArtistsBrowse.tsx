@@ -150,7 +150,7 @@ export function ArtistsBrowse() {
                 </div>
                 <Deferred count={g.items.length}>
                   <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 2xl:grid-cols-8">
-                    {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={giggingOnly || gigging?.has(a.id)} priority={idx++ < 8} />)}
+                    {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={gigging?.has(a.id)} priority={idx++ < 8} />)}
                   </div>
                 </Deferred>
               </section>

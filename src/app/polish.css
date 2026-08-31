@@ -186,3 +186,160 @@ button[aria-label="Favourites only"][aria-pressed="true"] > span {
     transform: none !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Onboarding Nudge Animations
+   -------------------------------------------------------------------------- */
+
+/* Bubble variant entrance */
+.onboarding-bubble-enter {
+  animation: bubble-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes bubble-enter {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Bubble collapse into orb and fly to profile icon */
+.onboarding-bubble-collapse {
+  animation: bubble-collapse 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: left bottom;
+}
+
+@keyframes bubble-collapse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    border-radius: 1rem;
+  }
+  40% {
+    opacity: 1;
+    transform: scale(0.3);
+    border-radius: 50%;
+    box-shadow: 0 0 30px var(--acc), 0 0 60px var(--acc);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.15) translate(-50px, 80px);
+    border-radius: 50%;
+    box-shadow: 0 0 40px var(--acc), 0 0 80px var(--acc);
+  }
+}
+
+/* Bottom sheet entrance */
+.onboarding-sheet-enter {
+  animation: sheet-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bottom sheet retract back toward profile icon */
+.onboarding-sheet-retract {
+  animation: sheet-retract 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: bottom left;
+}
+
+@keyframes sheet-retract {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(10%) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30%) scale(0.2) translateX(-30%);
+  }
+}
+
+/* SVG tether line retraction */
+.onboarding-tether-retract line {
+  animation: tether-retract 0.5s ease-out forwards;
+}
+
+@keyframes tether-retract {
+  to {
+    stroke-dashoffset: 200;
+    opacity: 0;
+  }
+}
+
+/* Particle effects during bubble collapse */
+.onboarding-particles {
+  position: fixed;
+  bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 100;
+}
+
+.onboarding-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+  box-shadow: 0 0 8px var(--acc), 0 0 16px var(--acc);
+  animation: particle-burst 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes particle-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(cos(calc(var(--i) * 45deg)) * 60px),
+      calc(sin(calc(var(--i) * 45deg)) * 60px - 40px)
+    ) scale(0);
+  }
+}
+
+/* Profile icon pulse for unauthenticated users */
+@keyframes profile-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--acc) 0%, transparent);
+  }
+}
+
+.profile-pulse {
+  animation: profile-pulse 2s ease-in-out infinite;
+}
+
+/* Reduced motion: instant transitions */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-bubble-enter,
+  .onboarding-bubble-collapse,
+  .onboarding-sheet-enter,
+  .onboarding-sheet-retract,
+  .onboarding-tether-retract line,
+  .onboarding-particle,
+  .profile-pulse {
+    animation: none !important;
+  }
+}
