@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { FestivalPageClient } from "@/features/festivals/FestivalPageClient";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://api.bndy.co.uk";
@@ -52,5 +53,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function FestivalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const festival = await metaFestival(slug);
+  if (!festival) notFound();
   return <FestivalPageClient slug={slug} />;
 }

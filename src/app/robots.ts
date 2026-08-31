@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://gigmap.bndy.co.uk/sitemap.xml",
+    sitemap: "https://bndy.live/sitemap.xml",
   };
 }

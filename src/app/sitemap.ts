@@ -4,7 +4,7 @@ import { fetchArtists, fetchVenues } from "@/lib/api";
 export const revalidate = 3600; // 1 hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://gigmap.bndy.co.uk";
+  const baseUrl = "https://bndy.live";
 
   const [artists, venues] = await Promise.all([
     fetchArtists(),

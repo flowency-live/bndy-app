@@ -38,7 +38,7 @@ export const metadata: Metadata = IS_BRASS ? {
 } : {
   title: "bndy · live music near you",
   description: "Find live music: gigs, artists and venues near you.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gigmap.bndy.co.uk"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://bndy.live"),
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icon.svg",
