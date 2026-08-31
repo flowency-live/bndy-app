@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { BadgePlus, CircleHelp, History, LogOut, Settings, SlidersHorizontal, UserCog, UserRound, X } from "lucide-react";
+import { BadgePlus, CircleHelp, Download, History, LogOut, Settings, Share2, SlidersHorizontal, Smartphone, UserCog, UserRound, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/cn";
 import { openGigFilterPreferences } from "@/features/gigs/MyGigTools";
+import { useInstallPrompt } from "@/lib/useInstallPrompt";
 import { ProfileSetup } from "./ProfileSetup";
 
 function displayName(name?: string | null, email?: string | null, username?: string | null): string {
@@ -17,6 +18,8 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
   const { user, isAuthenticated, isLoading, signOut, role, isCurator } = useAuth();
   const [open, setOpen] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showInstallTip, setShowInstallTip] = useState(false);
+  const { canInstall, isIOS, install, isStandalone } = useInstallPrompt();
 
   if (isLoading) return null;
 
@@ -67,6 +70,23 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
           <Link role="menuitem" href="/join" onClick={() => setOpen(false)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-[var(--acc-text)] transition-colors hover:bg-white/5"><BadgePlus size={16} />Add artist or venue</Link>
           {isCurator && <Link role="menuitem" href="/activity" onClick={() => setOpen(false)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"><History size={16} />My activity</Link>}
           <Link role="menuitem" href="/help" onClick={() => setOpen(false)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt lg:hidden"><CircleHelp size={16} />Help</Link>
+          {canInstall && !isStandalone && (
+            <button
+              role="menuitem"
+              type="button"
+              onClick={async () => {
+                setOpen(false);
+                if (isIOS) {
+                  setShowInstallTip(true);
+                } else {
+                  await install();
+                }
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt lg:hidden"
+            >
+              <Download size={16} className="text-[var(--acc)]" />Install app
+            </button>
+          )}
           <button role="menuitem" type="button" onClick={() => { setOpen(false); signOut(); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13.5px] font-bold text-dim transition-colors hover:bg-white/5 hover:text-txt"><LogOut size={16} />Sign out</button>
         </div>
       )}
@@ -76,6 +96,32 @@ export function UserButton({ variant = "sidebar" }: { variant?: "sidebar" | "top
           <div className="relative w-full max-w-sm">
             <button type="button" onClick={() => setShowProfileEdit(false)} aria-label="Close edit profile" className="absolute -right-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-card text-dim shadow-[var(--shadow)] hover:text-txt"><X size={18} /></button>
             <ProfileSetup mode="edit" initialData={{ displayName: user?.displayName, firstName: user?.firstName, lastName: user?.lastName, hometown: user?.hometown }} onComplete={() => setShowProfileEdit(false)} />
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {showInstallTip && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" role="dialog" aria-modal="true" aria-label="Install app">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-line bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <p className="text-[15px] font-black text-txt">Add to Home Screen</p>
+              <button type="button" onClick={() => setShowInstallTip(false)} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full text-dim hover:bg-white/5 hover:text-txt"><X size={16} /></button>
+            </div>
+            <div className="space-y-3 px-4 py-4">
+              <p className="text-[13px] font-semibold text-dim">To install bndy on your iPhone:</p>
+              <div className="flex items-center gap-3 rounded-xl border border-line bg-card2/70 px-3 py-2.5 text-[12px] font-bold text-txt">
+                <Share2 size={18} className="shrink-0 text-[var(--acc)]" />
+                <span>Tap the Share button in Safari</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl border border-line bg-card2/70 px-3 py-2.5 text-[12px] font-bold text-txt">
+                <Smartphone size={18} className="shrink-0 text-[var(--acc)]" />
+                <span>Select &ldquo;Add to Home Screen&rdquo;</span>
+              </div>
+            </div>
+            <div className="border-t border-line px-4 py-3">
+              <button type="button" onClick={() => setShowInstallTip(false)} className="w-full rounded-xl bg-acc py-2.5 text-[13px] font-black text-on-acc">Got it</button>
+            </div>
           </div>
         </div>,
         document.body,
