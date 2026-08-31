@@ -124,7 +124,7 @@ export function SkinControl({ display, side = "right" }: { display: "sidebar" | 
         <div
           role="radiogroup"
           aria-label="Light or dark"
-          className="mb-4 flex gap-1 rounded-[var(--rad)] border border-line bg-card p-1"
+          className="mb-4 flex gap-1 rounded-2xl border border-line bg-card p-1"
         >
           {(["light", "dark"] as SkinVariant[]).map((v) => {
             const on = variant === v;
@@ -135,7 +135,7 @@ export function SkinControl({ display, side = "right" }: { display: "sidebar" | 
                 aria-checked={on}
                 onClick={() => { if (!on) pick(skinFor(theme, v)); }}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-2 rounded-[calc(var(--rad)-2px)] px-3 py-2 text-[12.5px] font-bold transition-colors",
+                  "flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12.5px] font-bold transition-colors",
                   on ? "bg-acc text-on-acc" : "text-dim hover:text-txt",
                 )}
               >
@@ -163,7 +163,7 @@ export function SkinControl({ display, side = "right" }: { display: "sidebar" | 
                 onClick={() => pick(key)}
                 aria-pressed={cur}
                 className={cn(
-                  "rounded-[var(--rad)] border bg-card p-3 text-left transition-transform hover:-translate-y-0.5 active:scale-[.98]",
+                  "rounded-2xl border bg-card p-3 text-left transition-transform hover:-translate-y-0.5 active:scale-[.98]",
                   cur ? "border-transparent outline outline-2 outline-offset-1 outline-[var(--acc)]" : "border-line",
                 )}
               >
