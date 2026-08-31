@@ -146,39 +146,35 @@ export const PILL_IDLE = "bndy-pill-idle";
 export const MIC_ICON = "bndy-mic";
 
 /* ---------------- mic glyph for open mic gig pins ---------------- */
-function micImage(color: string, sizePx = 18): ImageData {
-  const px = sizePx * 2;
-  const cv = document.createElement("canvas");
-  cv.width = px; cv.height = px;
-  const ctx = cv.getContext("2d")!;
-  const cx = px / 2;
-  const u = px / 36;
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineCap = "round";
-  ctx.lineWidth = 3.4 * u;
-  const capW = 9 * u, capH = 15 * u, capTop = 3 * u, r = capW / 2;
-  ctx.beginPath();
-  if (typeof ctx.roundRect === "function") ctx.roundRect(cx - r, capTop, capW, capH, r);
-  else ctx.rect(cx - r, capTop, capW, capH);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(cx, capTop + capH - 3 * u, 8.5 * u, Math.PI * 0.05, Math.PI * 0.95);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx, capTop + capH + 5.5 * u);
-  ctx.lineTo(cx, px - 4 * u);
-  ctx.stroke();
-  return ctx.getImageData(0, 0, px, px);
+// Load the custom open mic PNG and render to canvas for map use
+function loadMicImage(sizePx = 18): Promise<ImageData> {
+  return new Promise((resolve, reject) => {
+    const px = sizePx * 2;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const cv = document.createElement("canvas");
+      cv.width = px; cv.height = px;
+      const ctx = cv.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, px, px);
+      resolve(ctx.getImageData(0, 0, px, px));
+    };
+    img.onerror = () => reject(new Error("Failed to load openmic icon"));
+    img.src = "/openmic-icon.png";
+  });
 }
 
-export function registerMic(map: maplibregl.Map, colors: SkinColors): void {
-  try {
-    if (map.hasImage(MIC_ICON)) map.removeImage(MIC_ICON);
-    map.addImage(MIC_ICON, micImage(colors.gigCore), { pixelRatio: 2 });
-  } catch (err) {
-    console.error("[bndy-map] mic icon registration failed:", err);
-  }
+export function registerMic(map: maplibregl.Map, _colors: SkinColors): void {
+  loadMicImage()
+    .then((imgData) => {
+      try {
+        if (map.hasImage(MIC_ICON)) map.removeImage(MIC_ICON);
+        map.addImage(MIC_ICON, imgData, { pixelRatio: 2 });
+      } catch (err) {
+        console.error("[bndy-map] mic icon registration failed:", err);
+      }
+    })
+    .catch((err) => console.error("[bndy-map] mic icon load failed:", err));
 }
 
 /* ---------------- venue name pill (stretchable nine-patch) ---------------- */
