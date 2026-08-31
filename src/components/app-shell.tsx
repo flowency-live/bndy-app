@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CalendarRange, CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
+import { ArrowRight, BadgePlus, CalendarRange, CircleHelp, Music, Map as MapIcon, MapPin, Plus, Users } from "lucide-react";
 import { SkinControl } from "@/components/SkinPicker";
 import { Splash } from "@/components/Splash";
 import { LiveTicker } from "@/components/LiveTicker";
@@ -71,10 +71,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mb-3 shrink-0">
           <UserButton variant="sidebar" />
         </div>
-        <Link href="/join" className="mb-4 shrink-0 rounded-2xl border border-[var(--acc)]/35 bg-[color-mix(in_srgb,var(--acc)_7%,transparent)] px-3 py-3 transition hover:border-[var(--acc)] hover:bg-[color-mix(in_srgb,var(--acc)_11%,transparent)]">
-          <span className="block text-[10px] font-black uppercase tracking-[1.1px] text-[var(--acc-text)]">Manage an artist or venue?</span>
-          <span className="mt-0.5 block text-[13px] font-black text-txt">Find or add →</span>
-          <span className="mt-1 block text-[10.5px] font-semibold leading-snug text-dim">Find, claim or add your page using your normal bndy account.</span>
+        <Link href="/join" className="group mb-4 flex min-h-11 shrink-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 transition hover:border-[var(--acc)] hover:bg-white/5">
+          <BadgePlus size={16} className="shrink-0 text-[var(--acc-text)]" />
+          <span className="min-w-0 flex-1 text-[11px] font-black leading-tight text-txt">Manage an artist or venue?</span>
+          <ArrowRight size={14} className="shrink-0 text-dim transition-transform group-hover:translate-x-1 group-hover:text-[var(--acc-text)]" />
         </Link>
         {gigDiscoveryView && (
           <div className="mb-5 shrink-0 px-1">

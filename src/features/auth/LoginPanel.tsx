@@ -14,9 +14,9 @@ type PhoneStage = "enter" | "code" | "onboard";
 const field = "w-full rounded-xl border border-line bg-white/5 px-4 py-3 text-[15px] font-semibold text-txt outline-none placeholder:text-dim2 focus:border-[var(--acc)]";
 const primaryBtn = "w-full rounded-xl bg-[var(--acc)] px-4 py-3 text-[15px] font-extrabold text-on-acc transition-opacity hover:opacity-90 disabled:opacity-50";
 
-export function LoginPanel({ nextPath = "/", title = "Login or Register" }: { nextPath?: string; title?: string }) {
+export function LoginPanel({ nextPath = "/", title = "Join or sign in" }: { nextPath?: string; title?: string }) {
   const { refresh } = useAuth();
-  const [method, setMethod] = useState<Method>("phone");
+  const [method, setMethod] = useState<Method>("social");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -55,12 +55,12 @@ export function LoginPanel({ nextPath = "/", title = "Login or Register" }: { ne
   return (
     <div className="mx-auto w-full max-w-sm rounded-2xl border border-line glass p-6">
       <h2 className="mb-1 text-xl font-black tracking-tight text-txt">{title}</h2>
-      <p className="mb-5 text-[13px] font-semibold text-dim">One account for gigs, favourites and more.</p>
+      <p className="mb-5 text-[13px] font-semibold text-dim">Follow your favourite artists and venues, save filters and make bndy yours.</p>
 
       <div className="mb-5 flex gap-1 rounded-xl border border-line p-1" role="group" aria-label="Sign-in method">
         {([[
-          "phone", "Phone", Phone,
-        ], ["email", "Email", Mail], ["social", "Socials", null]] as const).map(([key, label, Icon]) => (
+          "social", "Socials", null,
+        ], ["phone", "Phone", Phone], ["email", "Email", Mail]] as const).map(([key, label, Icon]) => (
           <button
             key={key}
             type="button"
