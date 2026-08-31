@@ -32,7 +32,7 @@ export function BrassAppShell({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
         <Link href="/map" className="mb-6 flex shrink-0 items-center gap-2 px-2 text-2xl font-black tracking-tight">
-          <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
+          <BrandWordmark className="h-7 w-auto text-[var(--acc)] brand-glow" />
           <span className="border border-line px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[1.6px] text-dim">Brass</span>
         </Link>
         <div className="mb-5 shrink-0"><UserButton variant="sidebar" /></div>

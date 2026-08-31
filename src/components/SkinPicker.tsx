@@ -58,20 +58,9 @@ export function SkinControl({ display, side = "right" }: { display: "sidebar" | 
 
   const pick = useCallback(
     (s: AppSkinId) => {
-      setOpen(false);
       if (s === appSkin) return;
-      timersRef.current.forEach((id) => window.clearTimeout(id));
-      timersRef.current = [];
-
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        setWiping(false);
-        setAppSkin(s);
-        return;
-      }
-
-      setWiping(true);
-      timersRef.current.push(window.setTimeout(() => setAppSkin(s), 220));
-      timersRef.current.push(window.setTimeout(() => setWiping(false), 620));
+      // Apply immediately - no wipe animation when previewing in modal
+      setAppSkin(s);
     },
     [appSkin, setAppSkin],
   );

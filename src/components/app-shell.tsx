@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-[100dvh]">
         <header className="mx-auto flex max-w-5xl items-center justify-between px-4 pb-1 lg:px-8" style={{ paddingTop: `calc(1.25rem + env(safe-area-inset-top, 0px))` }}>
           <span className="flex items-center gap-1 text-2xl font-black tracking-tight">
-            <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
+            <BrandWordmark className="h-7 w-auto text-[var(--acc)] brand-glow" />
             <span className="text-txt">.live</span>
           </span>
           <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line glass px-4 py-5 lg:flex">
         <Link href="/" className="mb-6 flex shrink-0 items-center gap-1 px-2 text-2xl font-black tracking-tight">
-          <BrandWordmark className="h-6 w-auto text-[var(--acc)] brand-glow" />
+          <BrandWordmark className="h-7 w-auto text-[var(--acc)] brand-glow" />
           <span className="text-txt">.live</span>
         </Link>
         <div className="mb-3 shrink-0">

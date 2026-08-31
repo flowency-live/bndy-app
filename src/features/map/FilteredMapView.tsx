@@ -122,7 +122,7 @@ export function FilteredMapView({
     if (!el || mapRef.current) return;
     const initialBasemap = basemapFor(appSkin);
     prevBasemapRef.current = initialBasemap;
-    const map = new maplibregl.Map({ container: el, style: initialBasemap, center: [-2.1, 53.4], zoom: 6.2, minZoom: 4, maxZoom: 18, attributionControl: { compact: true } });
+    const map = new maplibregl.Map({ container: el, style: initialBasemap, center: [-2.1, 53.4], zoom: 6.2, minZoom: 4, maxZoom: 18, attributionControl: false });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     const ro = new ResizeObserver(() => map.resize());
