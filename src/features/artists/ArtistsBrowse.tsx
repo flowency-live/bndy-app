@@ -111,19 +111,22 @@ export function ArtistsBrowse() {
         </div>
       ) : groups.length ? (
         <>
-          {groups.map((g) => (
-            <section key={g.key} id={`grp-${g.key}`} className="scroll-mt-2">
-              <div className="sticky top-0 z-10 -mx-4 mb-3 mt-6 flex items-baseline gap-2 bg-ink px-4 py-2 lg:-mx-8 lg:px-8">
-                <span className="text-[20px] font-black text-[var(--acc)] brand-glow">{g.key}</span>
-                <span className="text-[11px] font-bold text-dim2">{g.items.length}</span>
-              </div>
-              <Deferred count={g.items.length}>
-                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 2xl:grid-cols-8">
-                  {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={gigging.has(a.id)} />)}
+          {(() => {
+            let idx = 0;
+            return groups.map((g) => (
+              <section key={g.key} id={`grp-${g.key}`} className="scroll-mt-2">
+                <div className="sticky top-0 z-10 -mx-4 mb-3 mt-6 flex items-baseline gap-2 bg-ink px-4 py-2 lg:-mx-8 lg:px-8">
+                  <span className="text-[20px] font-black text-[var(--acc)] brand-glow">{g.key}</span>
+                  <span className="text-[11px] font-bold text-dim2">{g.items.length}</span>
                 </div>
-              </Deferred>
-            </section>
-          ))}
+                <Deferred count={g.items.length}>
+                  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 2xl:grid-cols-8">
+                    {g.items.map((a) => <ArtistTile key={a.id} artist={a} gigging={gigging.has(a.id)} priority={idx++ < 8} />)}
+                  </div>
+                </Deferred>
+              </section>
+            ));
+          })()}
 
           <nav aria-label="Jump to letter" className="fixed right-1 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-px rounded-full border border-line glass px-1 py-2">
             {ALPHA_INDEX.map((k) => {

@@ -6,7 +6,7 @@ import { avatarGradient, initials } from "@/domain/avatar";
 import { FavouriteButton } from "@/features/shared/FavouriteButton";
 import type { Artist } from "@/domain/types";
 
-export const ArtistTile = memo(function ArtistTile({ artist, gigging }: { artist: Artist; gigging?: boolean }) {
+export const ArtistTile = memo(function ArtistTile({ artist, gigging, priority }: { artist: Artist; gigging?: boolean; priority?: boolean }) {
   const [failed, setFailed] = useState(false);
   const showImg = !!artist.profileImageUrl && !failed;
   const act = artist.actType?.[0];
@@ -19,7 +19,8 @@ export const ArtistTile = memo(function ArtistTile({ artist, gigging }: { artist
           <img
             src={artist.profileImageUrl!}
             alt=""
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : undefined}
             referrerPolicy="no-referrer"
             onError={() => setFailed(true)}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
