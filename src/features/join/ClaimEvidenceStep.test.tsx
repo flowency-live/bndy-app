@@ -30,8 +30,8 @@ describe("ClaimEvidenceStep", () => {
     vi.mocked(requestJoinClaim).mockResolvedValue({ ok: true });
     render(<ClaimEvidenceStep entityType="artist" entityId="artist-1" entityName="The Torrists" />);
 
-    await screen.findByRole("button", { name: "Facebook Page" });
-    fireEvent.click(screen.getByRole("button", { name: "Facebook Page" }));
+    await screen.findByRole("button", { name: "Connect Facebook to see your Pages" });
+    expect(screen.getByText(/Even if you signed in with Facebook, connect once more/i)).not.toBeNull();
     act(() => {
       window.dispatchEvent(new MessageEvent("message", {
         origin: window.location.origin,
