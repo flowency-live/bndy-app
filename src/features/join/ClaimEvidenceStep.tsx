@@ -42,6 +42,7 @@ export function ClaimEvidenceStep({ entityType, entityId, entityName, evidenceHi
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const popupRef = useRef<Window | null>(null);
+  const verificationMethodTouched = useRef(false);
 
   const relationshipOptions = useMemo(() => entityType === "artist" ? [
     ["band_member", "I’m in the band", "member"],
@@ -56,7 +57,11 @@ export function ClaimEvidenceStep({ entityType, entityId, entityName, evidenceHi
   useEffect(() => {
     let active = true;
     facebookPageVerificationStatus()
-      .then((available) => { if (active) setFacebookAvailable(available); })
+      .then((available) => {
+        if (!active) return;
+        setFacebookAvailable(available);
+        if (available && !verificationMethodTouched.current) setVerificationMethod("facebook_page");
+      })
       .catch(() => { if (active) setFacebookAvailable(false); });
     return () => { active = false; };
   }, []);
@@ -178,8 +183,8 @@ export function ClaimEvidenceStep({ entityType, entityId, entityName, evidenceHi
         <div>
           <div className="text-[10px] font-black uppercase tracking-[1.2px] text-dim">How would you like to verify?</div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setVerificationMethod("facebook_page"); setError(null); }} className={`rounded-xl border px-3 py-2.5 text-[12px] font-black ${verificationMethod === "facebook_page" ? "border-[#1877F2] bg-[#1877F2]/10" : "border-line text-dim"}`}>Facebook Page</button>
-            <button type="button" onClick={() => { setVerificationMethod("manual"); setError(null); }} className={`rounded-xl border px-3 py-2.5 text-[12px] font-black ${verificationMethod === "manual" ? "border-[var(--acc)] bg-[color-mix(in_srgb,var(--acc)_10%,transparent)]" : "border-line text-dim"}`}>Manual evidence</button>
+            <button type="button" onClick={() => { verificationMethodTouched.current = true; setVerificationMethod("facebook_page"); setError(null); }} className={`rounded-xl border px-3 py-2.5 text-[12px] font-black ${verificationMethod === "facebook_page" ? "border-[#1877F2] bg-[#1877F2]/10" : "border-line text-dim"}`}>Facebook Page</button>
+            <button type="button" onClick={() => { verificationMethodTouched.current = true; setVerificationMethod("manual"); setError(null); }} className={`rounded-xl border px-3 py-2.5 text-[12px] font-black ${verificationMethod === "manual" ? "border-[var(--acc)] bg-[color-mix(in_srgb,var(--acc)_10%,transparent)]" : "border-line text-dim"}`}>Manual evidence</button>
           </div>
         </div>
       )}
@@ -187,11 +192,11 @@ export function ClaimEvidenceStep({ entityType, entityId, entityName, evidenceHi
       {verificationMethod === "facebook_page" && facebookAvailable ? (
         <div className="rounded-2xl border border-[#1877F2]/60 p-4">
           <div className="flex items-center gap-2 text-[13px] font-black"><Facebook size={16} />Verify with an official Facebook Page</div>
-          <p className="mt-1 text-[11px] font-semibold leading-relaxed text-dim">Connect Facebook, then choose a Page you manage. bndy reads the Page name and your Page access only. It cannot post, edit or advertise.</p>
+          <p className="mt-1 text-[11px] font-semibold leading-relaxed text-dim">Even if you signed in with Facebook, connect once more so bndy can show the Pages you manage. bndy cannot post, edit or advertise.</p>
           {facebookPages.length === 0 ? (
             <button type="button" onClick={connectFacebook} disabled={facebookConnecting} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1877F2] px-4 text-[12px] font-black text-white disabled:opacity-50">
               {facebookConnecting ? <Loader2 size={15} className="animate-spin" /> : <Facebook size={15} />}
-              {facebookConnecting ? "Waiting for Facebook" : "Connect Facebook"}
+              {facebookConnecting ? "Waiting for Facebook" : "Connect Facebook to see your Pages"}
             </button>
           ) : (
             <div className="mt-4 space-y-2">
@@ -212,12 +217,12 @@ export function ClaimEvidenceStep({ entityType, entityId, entityName, evidenceHi
           <div className="flex items-center gap-2 text-[13px] font-black"><MessageSquareText size={16} />Tell bndy how we can verify you</div>
           <p className="mt-1 text-[11px] font-semibold text-dim">A sentence or two is enough. Give us something useful to check rather than just “this is mine”.</p>
           <label className="sr-only" htmlFor="claim-relationship-explanation">How bndy can verify your relationship</label>
-          <textarea id="claim-relationship-explanation" value={explanation} onChange={(event) => setExplanation(event.target.value)} placeholder={entityType === "artist" ? "e.g. I’m the drummer and I run the band’s accounts." : "e.g. I manage the venue and handle the live music programme."} className="mt-3 min-h-24 w-full resize-y rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" />
+          <textarea id="claim-relationship-explanation" value={explanation} onChange={(event) => { verificationMethodTouched.current = true; setExplanation(event.target.value); }} placeholder={entityType === "artist" ? "e.g. I’m the drummer and I run the band’s accounts." : "e.g. I manage the venue and handle the live music programme."} className="mt-3 min-h-24 w-full resize-y rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" />
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <label className="sr-only" htmlFor="claim-official-email">Official email</label>
-            <input id="claim-official-email" value={officialEmail} onChange={(event) => setOfficialEmail(event.target.value)} placeholder="Official email (optional)" type="email" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" />
+            <input id="claim-official-email" value={officialEmail} onChange={(event) => { verificationMethodTouched.current = true; setOfficialEmail(event.target.value); }} placeholder="Official email (optional)" type="email" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" />
             <label className="sr-only" htmlFor="claim-supporting-url">Useful public link</label>
-            <input id="claim-supporting-url" value={supportingUrl} onChange={(event) => setSupportingUrl(event.target.value)} placeholder="Useful public link (optional)" inputMode="url" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" />
+            <input id="claim-supporting-url" value={supportingUrl} onChange={(event) => { verificationMethodTouched.current = true; setSupportingUrl(event.target.value); }} placeholder="Useful public link (optional)" inputMode="url" className="rounded-xl border border-line bg-transparent px-3 py-2.5 text-[12px] font-semibold outline-none focus:border-[var(--acc)]" />
           </div>
         </div>
       )}
